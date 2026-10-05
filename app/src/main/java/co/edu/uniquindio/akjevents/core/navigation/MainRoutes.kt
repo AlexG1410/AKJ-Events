@@ -7,6 +7,15 @@ sealed interface MainRoutes {
     data object Splash : MainRoutes
 
     @Serializable
+    data object Login : MainRoutes
+
+    @Serializable
+    data object Register : MainRoutes
+
+    @Serializable
+    data object RecoverPassword : MainRoutes
+
+    @Serializable
     data object Home : MainRoutes
 
     @Serializable

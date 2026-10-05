@@ -21,3 +21,12 @@ val BrandOnPastelYellow = Color(0xFF55450B)
 val BrandDark = Color(0xFF262220)
 val BrandMuted = Color(0xFF7A726D)
 val BrandBorder = Color(0xFFEFE6E1)
+val BrandFieldFill = Color(0xFFFBF4F0)
+
+// Tokens Material 3 del sistema de diseño (mockups/DESIGN.md) que no están en el colorScheme
+val PrimaryFixed = Color(0xFFFFDAD2)
+val PrimaryFixedDim = Color(0xFFFFB4A2)
+val OnPrimaryFixed = Color(0xFF3C0700)
+val SurfaceContainer = Color(0xFFF5ECE7)
+val SurfaceContainerLow = Color(0xFFFBF2ED)
+val OutlineColor = Color(0xFF89726C)
