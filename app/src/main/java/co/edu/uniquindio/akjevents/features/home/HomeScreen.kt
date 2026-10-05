@@ -128,6 +128,7 @@ private val SearchFieldStyle = FormFieldStyle(
 @Composable
 fun HomeScreen(
     onOpenEvent: (String) -> Unit,
+    onCreateEvent: () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -150,7 +151,13 @@ fun HomeScreen(
             AppBottomBar(
                 selected = BottomDestination.HOME,
                 hasUnreadAlerts = true,
-                onSelect = { if (it != BottomDestination.HOME) showComingSoon() }
+                onSelect = {
+                    when (it) {
+                        BottomDestination.HOME -> Unit
+                        BottomDestination.CREATE -> onCreateEvent()
+                        else -> showComingSoon()
+                    }
+                }
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -266,7 +273,7 @@ fun HomeScreen(
                 }
             }
 
-            item { LeaderBanner(onCreate = showComingSoon) }
+            item { LeaderBanner(onCreate = onCreateEvent) }
         }
     }
 }

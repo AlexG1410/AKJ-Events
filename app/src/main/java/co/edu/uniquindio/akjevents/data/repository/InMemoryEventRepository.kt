@@ -27,6 +27,15 @@ class InMemoryEventRepository(initialEvents: List<CommunityEvent> = SampleEvents
 
     override fun findPublicEvent(id: String): CommunityEvent? = _publicEvents.value.find { it.id == id }
 
+    override fun findEventsByOrganizer(organizerId: String): List<CommunityEvent> =
+        events.filter { it.organizerId == organizerId }
+
+    override fun createEvent(event: CommunityEvent) = synchronized(lock) {
+        require(events.none { it.id == event.id }) { "Ya existe un evento con el id ${event.id}" }
+        events = events + event
+        _publicEvents.value = events.filter(::isPublic)
+    }
+
     override fun confirmAttendance(eventId: String): AttendanceResult = synchronized(lock) {
         val event = findPublicEvent(eventId) ?: return AttendanceResult.NOT_FOUND
         when {

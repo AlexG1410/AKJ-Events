@@ -9,6 +9,7 @@ import androidx.navigation.toRoute
 import co.edu.uniquindio.akjevents.features.auth.login.LoginScreen
 import co.edu.uniquindio.akjevents.features.auth.recover.RecoverPasswordScreen
 import co.edu.uniquindio.akjevents.features.auth.register.RegisterScreen
+import co.edu.uniquindio.akjevents.features.event.create.CreateEventScreen
 import co.edu.uniquindio.akjevents.features.event.detail.EventDetailScreen
 import co.edu.uniquindio.akjevents.features.home.HomeScreen
 import co.edu.uniquindio.akjevents.features.splash.SplashScreen
@@ -50,14 +51,22 @@ fun AppNavigation() {
             )
         }
         composable<MainRoutes.Home> {
-            HomeScreen(onOpenEvent = { eventId ->
-                navController.navigate(MainRoutes.EventDetail(eventId))
-            })
+            HomeScreen(
+                onOpenEvent = { eventId -> navController.navigate(MainRoutes.EventDetail(eventId)) },
+                onCreateEvent = { navController.navigate(MainRoutes.CreateEvent) { launchSingleTop = true } }
+            )
         }
         composable<MainRoutes.EventDetail> { entry ->
             EventDetailScreen(
                 eventId = entry.toRoute<MainRoutes.EventDetail>().eventId,
                 onBack = { navController.popBackStack() }
+            )
+        }
+        composable<MainRoutes.CreateEvent> {
+            CreateEventScreen(
+                onBack = { navController.popBackStack() },
+                // El evento queda pendiente de verificación, así que el feed no lo muestra
+                onEventSubmitted = { navController.popBackStack(MainRoutes.Home, inclusive = false) }
             )
         }
     }

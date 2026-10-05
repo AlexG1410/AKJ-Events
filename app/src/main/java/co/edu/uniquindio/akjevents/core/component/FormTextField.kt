@@ -77,13 +77,13 @@ object FormFieldStyles {
     )
 }
 
-/** Campo de una línea con ícono inicial y contenido final opcional, como en los mockups. */
+/** Campo de una línea con ícono inicial y contenido final opcionales, como en los mockups. */
 @Composable
 fun FormTextField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    leadingIcon: ImageVector,
+    leadingIcon: ImageVector?,
     modifier: Modifier = Modifier,
     style: FormFieldStyle = FormFieldStyles.Brand,
     leadingIconTint: Color = style.iconColor,
@@ -122,12 +122,14 @@ fun FormTextField(
                     ),
                 contentAlignment = Alignment.CenterStart
             ) {
-                Icon(
-                    imageVector = leadingIcon,
-                    contentDescription = null,
-                    tint = leadingIconTint,
-                    modifier = Modifier.padding(start = style.iconStartPadding).size(style.iconSize)
-                )
+                if (leadingIcon != null) {
+                    Icon(
+                        imageVector = leadingIcon,
+                        contentDescription = null,
+                        tint = leadingIconTint,
+                        modifier = Modifier.padding(start = style.iconStartPadding).size(style.iconSize)
+                    )
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
