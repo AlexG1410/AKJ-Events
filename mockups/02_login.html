@@ -1,0 +1,160 @@
+<!DOCTYPE html><html lang="es" class="h-full"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión - AKJ Events</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cream: '#FFF8F5',
+              terracotta: '#D96B4F',
+              terracottaDark: '#B95035',
+              terracottaLight: '#FBECE7',
+              sage: '#5F8A74',
+              sageLight: '#E8F1EC',
+              pastelYellow: '#F8E7A2',
+              dark: '#262220',
+              muted: '#7A726D',
+              cardBg: '#FFFFFF',
+              border: '#EFE6E1',
+              inputBg: '#FBF4F0'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #FFF8F5;
+    }
+  </style>
+</head>
+<body class="h-full flex items-center justify-center p-0 m-0 bg-neutral-900 selection:bg-[#D96B4F] selection:text-white">
+
+  <!-- Mobile Android Container (390x844) -->
+  <div class="relative w-[390px] h-[844px] bg-[#FFF8F5] overflow-y-auto flex flex-col justify-between shadow-2xl rounded-[44px] border-[8px] border-[#2A2421]">
+
+    <!-- Top Android System Bar -->
+    <div class="w-full pt-3 px-6 flex justify-between items-center z-20 text-[#262220]">
+      <span class="text-xs font-semibold tracking-tight">9:41</span>
+      <div class="flex items-center gap-1.5 opacity-90">
+        <span class="material-symbols-rounded text-sm">signal_cellular_4_bar</span>
+        <span class="material-symbols-rounded text-sm">wifi</span>
+        <span class="material-symbols-rounded text-sm">battery_full</span>
+      </div>
+    </div>
+
+    <!-- Content Wrapper -->
+    <div class="px-6 pt-2 pb-6 flex-1 flex flex-col justify-between">
+      
+      <!-- Top Brand Header Section -->
+      <div>
+        <div class="flex items-center justify-between mt-2 mb-4">
+          <div class="w-10 h-10 rounded-2xl bg-white border border-[#EFE6E1] p-1.5 shadow-sm flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1XVoX0JQIhC8l2ZWB9xRGjGXXxRnRgMJSQ9CIZi2ys0V23rN_085wSDLBopZ7ZJrufhc175lxsnvIDOVMImRLVazJf7fRkKH9RWJkiSXjsM79dQbiMlMYluv-c6v3AVeyOMx_lw7M23aP_PPbfYa1VTNCEDBwTGN-RZ0jdcZ-MhDJhWD3IUOQrGKg3PSaWK7l3O_lImkMy5HO2bV6zF0aMSaz77HstSiPEgYCC__0nXqiFJDeh7vjAhIzE" alt="Logo AKJ Events" class="w-full h-full object-contain">
+          </div>
+          <span class="text-xs font-bold text-[#5F8A74] bg-[#E8F1EC] px-3 py-1 rounded-full flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-[#5F8A74] animate-pulse"></span>
+            Comunidad Activa
+          </span>
+        </div>
+
+        <div class="space-y-1">
+          <h2 class="text-2xl font-extrabold text-[#262220] tracking-tight">¡Bienvenido de nuevo!</h2>
+          <p class="text-xs font-medium text-[#7A726D]">Ingresa para participar y descubrir eventos comunitarios.</p>
+        </div>
+
+        <!-- Form Card (Material 3 Styled Form) -->
+        <div class="mt-6 space-y-4">
+          
+          <!-- Email Field -->
+          <div class="space-y-1.5">
+            <label class="text-xs font-bold text-[#262220] flex items-center justify-between">
+              <span class="">Correo electrónico</span>
+              <span class="text-[10px] font-medium text-[#7A726D]">Ej. camilo@quindio.org</span>
+            </label>
+            <div class="relative flex items-center">
+              <span class="material-symbols-rounded absolute left-3.5 text-[#7A726D] text-lg">mail</span>
+              <input type="email" value="camilo.rodriguez@akjevents.co" class="w-full pl-10 pr-4 py-3 bg-[#FBF4F0] border border-[#EFE6E1] rounded-2xl text-xs font-semibold text-[#262220] focus:outline-none focus:border-[#D96B4F] focus:ring-2 focus:ring-[#D96B4F]/20 transition-all" placeholder="tu.correo@ejemplo.com">
+              <span class="material-symbols-rounded absolute right-3.5 text-[#5F8A74] text-lg">check_circle</span>
+            </div>
+          </div>
+
+          <!-- Password Field -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-bold text-[#262220]">Contraseña</label>
+              <button type="button" class="text-xs font-bold text-[#D96B4F] hover:underline">
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+            <div class="relative flex items-center">
+              <span class="material-symbols-rounded absolute left-3.5 text-[#7A726D] text-lg">lock</span>
+              <input type="password" value="••••••••••••" class="w-full pl-10 pr-11 py-3 bg-[#FBF4F0] border border-[#EFE6E1] rounded-2xl text-xs font-semibold text-[#262220] focus:outline-none focus:border-[#D96B4F] focus:ring-2 focus:ring-[#D96B4F]/20 transition-all" placeholder="Tu contraseña secreta">
+              <button type="button" class="absolute right-3.5 text-[#7A726D] hover:text-[#262220]">
+                <span class="material-symbols-rounded text-lg">visibility</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Remember me & civic note -->
+          <div class="flex items-center justify-between pt-1">
+            <label class="flex items-center gap-2 cursor-pointer select-none">
+              <input type="checkbox" checked="" class="w-4 h-4 rounded text-[#D96B4F] focus:ring-[#D96B4F] accent-[#D96B4F] rounded-md">
+              <span class="text-xs font-medium text-[#262220]">Recordar este dispositivo</span>
+            </label>
+          </div>
+
+          <!-- Primary Login Button (Material 3 Elevated/Filled) -->
+          <button class="w-full py-3.5 mt-2 bg-[#D96B4F] hover:bg-[#B95035] active:scale-[0.99] text-white font-bold text-sm rounded-2xl shadow-sm shadow-[#D96B4F]/30 flex items-center justify-center gap-2 transition-all">
+            <span class="">Iniciar Sesión</span>
+            <span class="material-symbols-rounded text-lg">arrow_forward</span>
+          </button>
+
+          <!-- Divider -->
+          
+
+          <!-- Social Buttons -->
+          
+
+          <!-- Civic Trust Pill / Value Proposition -->
+          <div class="p-3 bg-[#E8F1EC]/70 rounded-2xl border border-[#5F8A74]/20 flex items-start gap-2.5">
+            <span class="material-symbols-rounded text-[#5F8A74] text-lg flex-shrink-0 mt-0.5">shield_lock</span>
+            <p class="text-[11px] text-[#262220] leading-snug font-medium">
+              Tus datos cívicos y asistencias están protegidos bajo los protocolos comunitarios de <strong>AKJ Events</strong>.
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Bottom Register Prompt -->
+      <div class="mt-4 pt-4 border-t border-[#EFE6E1] text-center space-y-2">
+        <p class="text-xs text-[#7A726D] font-medium">
+          ¿No tienes una cuenta comunitaria? 
+          <a href="#" class="font-extrabold text-[#D96B4F] hover:underline ml-1">Crear cuenta</a>
+        </p>
+        <!-- Android System Navigation Bar -->
+        <div class="w-32 h-1 bg-[#262220]/25 rounded-full mx-auto mt-2"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+</body></html>

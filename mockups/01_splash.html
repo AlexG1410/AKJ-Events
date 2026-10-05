@@ -1,0 +1,139 @@
+<!DOCTYPE html><html lang="es" class="h-full"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splash Screen - AKJ Events</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cream: '#FFF8F5',
+              terracotta: '#D96B4F',
+              terracottaDark: '#B95035',
+              terracottaLight: '#FBECE7',
+              sage: '#5F8A74',
+              sageLight: '#E8F1EC',
+              pastelYellow: '#F8E7A2',
+              dark: '#262220',
+              muted: '#7A726D',
+              cardBg: '#FFFFFF',
+              border: '#EFE6E1'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #FFF8F5;
+    }
+  </style>
+</head>
+<body class="h-full flex items-center justify-center p-0 m-0 bg-neutral-900 selection:bg-[#D96B4F] selection:text-white">
+
+  <!-- Mobile Android Container (390x844 approx) -->
+  <div class="relative w-[390px] h-[844px] bg-[#FFF8F5] overflow-hidden flex flex-col justify-between shadow-2xl rounded-[44px] border-[8px] border-[#2A2421]">
+
+    <!-- Status Bar (Android Material 3) -->
+    <div class="w-full pt-3 px-6 flex justify-between items-center z-20 text-[#262220]">
+      <span class="text-xs font-semibold tracking-tight">9:41</span>
+      <div class="flex items-center gap-1.5 opacity-90">
+        <span class="material-symbols-rounded text-sm">signal_cellular_4_bar</span>
+        <span class="material-symbols-rounded text-sm">wifi</span>
+        <span class="material-symbols-rounded text-sm">battery_full</span>
+      </div>
+    </div>
+
+    <!-- Subtle Background Ambient Elements -->
+    <div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-gradient-to-br from-[#FBECE7] to-transparent opacity-70 pointer-events-none blur-2xl"></div>
+    <div class="absolute -bottom-28 -left-20 w-80 h-80 rounded-full bg-gradient-to-tr from-[#E8F1EC] to-transparent opacity-80 pointer-events-none blur-2xl"></div>
+    
+    <!-- Background Community Geo Pattern (Subtle) -->
+    <svg class="absolute inset-0 w-full h-full opacity-[0.04] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <circle cx="20" cy="20" r="2" fill="#D96B4F"></circle>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)"></rect>
+    </svg>
+
+    <!-- Center Brand Experience -->
+    <div class="flex-1 flex flex-col items-center justify-center px-8 z-10 text-center -mt-6">
+      
+      <!-- Brand Logo Container with Glow -->
+      <div class="relative mb-6 flex items-center justify-center">
+        <div class="absolute inset-0 bg-[#D96B4F]/15 rounded-full blur-xl scale-125"></div>
+        <div class="relative w-32 h-32 rounded-full p-2 bg-white/90 shadow-md border border-[#EFE6E1] flex items-center justify-center">
+          <img src="https://lh3.googleusercontent.com/aida/AEtjO1XVoX0JQIhC8l2ZWB9xRGjGXXxRnRgMJSQ9CIZi2ys0V23rN_085wSDLBopZ7ZJrufhc175lxsnvIDOVMImRLVazJf7fRkKH9RWJkiSXjsM79dQbiMlMYluv-c6v3AVeyOMx_lw7M23aP_PPbfYa1VTNCEDBwTGN-RZ0jdcZ-MhDJhWD3IUOQrGKg3PSaWK7l3O_lImkMy5HO2bV6zF0aMSaz77HstSiPEgYCC__0nXqiFJDeh7vjAhIzE" alt="Logo AKJ Events" class="w-28 h-28 object-contain">
+        </div>
+        
+        <!-- Small floating community spark pills -->
+        <div class="absolute -top-1 -right-2 bg-[#F8E7A2] text-[#55450B] text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 border border-amber-200/60">
+          <span class="material-symbols-rounded text-xs">groups</span> Quindío
+        </div>
+      </div>
+
+      <!-- Brand Name -->
+      <div class="space-y-1">
+        <span class="text-[12px] font-extrabold tracking-[0.25em] text-[#D96B4F] uppercase">Comunidad en Movimiento</span>
+        <h1 class="text-3xl font-extrabold text-[#262220] tracking-tight">AKJ Events</h1>
+      </div>
+
+      <!-- Slogan -->
+      <p class="text-base font-semibold text-[#5F8A74] mt-2 flex items-center gap-1.5 justify-center">
+        <span class="w-1.5 h-1.5 rounded-full bg-[#5F8A74]"></span>
+        “Conecta tu comunidad”
+        <span class="w-1.5 h-1.5 rounded-full bg-[#5F8A74]"></span>
+      </p>
+
+      <p class="text-xs text-[#7A726D] max-w-[240px] mt-3 leading-relaxed font-medium">
+        Descubre, crea y participa en iniciativas, cultura y deporte cerca de ti.
+      </p>
+
+      <!-- Android Material 3 Indeterminate Circular Progress -->
+      <div class="mt-10 flex flex-col items-center gap-3">
+        <div class="w-8 h-8 rounded-full border-2 border-[#D96B4F]/20 border-t-[#D96B4F] animate-spin"></div>
+        <span class="text-[11px] font-medium text-[#7A726D] tracking-wide">Cargando eventos cercanos...</span>
+      </div>
+    </div>
+
+    <!-- Bottom Footer (Kotlin / Jetpack Compose Ready Design Stamp) -->
+    <div class="pb-8 pt-4 px-6 flex flex-col items-center gap-3 z-10">
+      <!-- Feature Pills -->
+      <div class="flex items-center gap-2 text-[11px] text-[#7A726D] font-medium bg-white/70 py-1.5 px-3.5 rounded-full border border-[#EFE6E1]">
+        <span class="flex items-center gap-1 text-[#5F8A74]">
+          <span class="material-symbols-rounded text-sm">verified</span>
+          Eventos Verificados
+        </span>
+        <span class="text-neutral-300">•</span>
+        <span class="flex items-center gap-1 text-[#D96B4F]">
+          <span class="material-symbols-rounded text-sm">qr_code_scanner</span>
+          Check-in QR
+        </span>
+      </div>
+
+      <div class="text-center">
+        <p class="text-[11px] font-semibold text-[#262220]">Nodo Armenia • Quindío</p>
+        <p class="text-[10px] text-[#A39A94]">Versión 2.4.1 • Material 3</p>
+      </div>
+
+      <!-- Android Bottom Navigation Pill -->
+      <div class="w-32 h-1 bg-[#262220]/25 rounded-full mt-1"></div>
+    </div>
+
+  </div>
+
+
+</body></html>
