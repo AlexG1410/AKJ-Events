@@ -53,3 +53,11 @@ Los mockups están en `/mockups`. `mockups/README.md` indica qué pantalla corre
 - Nunca hacer commit ni push a `main`.
 - No hacer push sin preguntar antes al usuario.
 - Al terminar cada tarea, compilar con `.\gradlew.bat assembleDebug`.
+
+## Estado de la entrega (fase 2)
+
+Hecho (puntos 1 a 9): splash, ícono adaptativo, login, registro, recuperar contraseña, feed (Home), detalle de evento, repositorio en memoria y crear evento.
+
+Pendiente:
+- Punto 10: revisión final.
+- Subir la rama `entrega-fase2` y abrir el pull request a `main`.
