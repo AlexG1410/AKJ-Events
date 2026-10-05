@@ -1,0 +1,242 @@
+<!DOCTYPE html><html lang="es" class="h-full"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Usuario - AKJ Events</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cream: '#FFF8F5',
+              terracotta: '#D96B4F',
+              terracottaDark: '#B95035',
+              terracottaLight: '#FBECE7',
+              sage: '#5F8A74',
+              sageLight: '#E8F1EC',
+              pastelYellow: '#F8E7A2',
+              dark: '#262220',
+              muted: '#7A726D',
+              cardBg: '#FFFFFF',
+              border: '#EFE6E1',
+              inputBg: '#FBF4F0'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #FFF8F5;
+    }
+    /* Hide scrollbar for clean android app look */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="h-full flex items-center justify-center p-0 m-0 bg-neutral-900 selection:bg-[#D96B4F] selection:text-white">
+
+  <!-- Mobile Android Container (390x844) -->
+  <div class="relative w-[390px] h-[844px] bg-[#FFF8F5] overflow-y-auto flex flex-col justify-between shadow-2xl rounded-[44px] border-[8px] border-[#2A2421]">
+
+    <!-- Top Android System Bar -->
+    <div class="sticky top-0 bg-[#FFF8F5]/95 backdrop-blur-sm w-full pt-3 pb-2 px-6 flex justify-between items-center z-30 text-[#262220]">
+      <span class="text-xs font-semibold tracking-tight">9:41</span>
+      <div class="flex items-center gap-1.5 opacity-90">
+        <span class="material-symbols-rounded text-sm">signal_cellular_4_bar</span>
+        <span class="material-symbols-rounded text-sm">wifi</span>
+        <span class="material-symbols-rounded text-sm">battery_full</span>
+      </div>
+    </div>
+
+    <!-- Navigation Header (Material 3 Top App Bar) -->
+    <div class="px-6 py-1 flex items-center justify-between">
+      <button class="w-9 h-9 rounded-full bg-white border border-[#EFE6E1] flex items-center justify-center text-[#262220] shadow-sm active:scale-95 transition-all">
+        <span class="material-symbols-rounded text-lg">arrow_back</span>
+      </button>
+      <div class="flex items-center gap-1.5 bg-white border border-[#EFE6E1] px-2.5 py-1 rounded-full shadow-sm">
+        <img src="https://lh3.googleusercontent.com/aida/AEtjO1XVoX0JQIhC8l2ZWB9xRGjGXXxRnRgMJSQ9CIZi2ys0V23rN_085wSDLBopZ7ZJrufhc175lxsnvIDOVMImRLVazJf7fRkKH9RWJkiSXjsM79dQbiMlMYluv-c6v3AVeyOMx_lw7M23aP_PPbfYa1VTNCEDBwTGN-RZ0jdcZ-MhDJhWD3IUOQrGKg3PSaWK7l3O_lImkMy5HO2bV6zF0aMSaz77HstSiPEgYCC__0nXqiFJDeh7vjAhIzE" alt="Logo" class="w-4 h-4 object-contain">
+        <span class="text-[11px] font-bold text-[#D96B4F]">AKJ Events</span>
+      </div>
+      <div class="w-9"></div> <!-- Spacer balance -->
+    </div>
+
+    <!-- Main Registration Form Container -->
+    <div class="px-6 pt-2 pb-6 flex-1 flex flex-col">
+
+      <!-- Title & Welcome -->
+      <div class="space-y-1 mb-4">
+        <h2 class="text-2xl font-extrabold text-[#262220] tracking-tight">Crea tu cuenta</h2>
+        <p class="text-xs font-medium text-[#7A726D]">Únete para organizar y participar con tu comunidad local.</p>
+      </div>
+
+      <!-- Reputation Starter Badge -->
+      <div class="mb-4 p-2.5 bg-[#F8E7A2]/40 border border-amber-200/80 rounded-2xl flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-xl bg-[#F8E7A2] flex items-center justify-center text-[#55450B] shadow-sm">
+          <span class="material-symbols-rounded text-base">military_tech</span>
+        </div>
+        <div>
+          <p class="text-[11px] font-extrabold text-[#55450B]">Inicia como: Espectador (Nivel 1)</p>
+          <p class="text-[10px] text-[#7A726D]">Gana +10 pts de bienvenida al completar tu registro hoy.</p>
+        </div>
+      </div>
+
+      <!-- Form Inputs -->
+      <div class="space-y-3.5 flex-1">
+
+        <!-- Nombre Completo -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-[#262220]">Nombre completo *</label>
+          <div class="relative flex items-center">
+            <span class="material-symbols-rounded absolute left-3.5 text-[#7A726D] text-lg">person</span>
+            <input type="text" value="Camilo Rodríguez" class="w-full pl-10 pr-4 py-2.5 bg-[#FBF4F0] border border-[#EFE6E1] rounded-2xl text-xs font-semibold text-[#262220] focus:outline-none focus:border-[#D96B4F] focus:ring-2 focus:ring-[#D96B4F]/20" placeholder="Tu nombre y apellido">
+          </div>
+        </div>
+
+        <!-- Correo Electrónico -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-[#262220]">Correo electrónico *</label>
+          <div class="relative flex items-center">
+            <span class="material-symbols-rounded absolute left-3.5 text-[#7A726D] text-lg">mail</span>
+            <input type="email" value="camilo.rodriguez@akjevents.co" class="w-full pl-10 pr-4 py-2.5 bg-[#FBF4F0] border border-[#EFE6E1] rounded-2xl text-xs font-semibold text-[#262220] focus:outline-none focus:border-[#D96B4F] focus:ring-2 focus:ring-[#D96B4F]/20" placeholder="correo@ejemplo.com">
+          </div>
+        </div>
+
+        <!-- Ciudad / Nodo Comunitario -->
+        <div class="space-y-1.5">
+  <div class="flex items-center justify-between">
+    <label class="text-xs font-bold text-[#262220]">Ciudad o municipio *</label>
+    <span class="text-[10px] font-semibold text-[#5F8A74] flex items-center gap-1">
+      <span class="material-symbols-rounded text-xs">check_circle</span>
+      Ubicación fijada
+    </span>
+  </div>
+  <div class="relative flex items-center">
+    <span class="material-symbols-rounded absolute left-3.5 text-[#D96B4F] text-lg">location_on</span>
+    <select class="w-full pl-10 pr-9 py-2.5 bg-[#FBF4F0] border border-[#EFE6E1] rounded-2xl text-xs font-semibold text-[#262220] appearance-none focus:outline-none focus:border-[#D96B4F]">
+      <option selected="">Armenia, Quindío</option>
+      <option>Calarcá, Quindío</option>
+      <option>Circasia, Quindío</option>
+      <option>Montenegro, Quindío</option>
+      <option>Pereira, Risaralda</option>
+      <option>Manizales, Caldas</option>
+    </select>
+    <span class="material-symbols-rounded absolute right-3 text-[#7A726D] text-lg pointer-events-none">expand_more</span>
+  </div>
+  <button type="button" class="w-full p-2.5 bg-white border border-[#EFE6E1] hover:bg-[#FBF4F0] rounded-2xl flex items-center justify-between text-left shadow-sm transition-all active:scale-[0.99]">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-xl bg-[#FFF8F5] border border-[#EFE6E1] flex items-center justify-center text-[#D96B4F]">
+        <span class="material-symbols-rounded text-base">map</span>
+      </div>
+      <div>
+        <p class="text-[11px] font-bold text-[#262220] flex items-center gap-1">
+          Seleccionar ubicación en el mapa
+          <span class="material-symbols-rounded text-xs text-[#D96B4F]">explore</span>
+        </p>
+        <p class="text-[10px] text-[#7A726D]">Cra. 14 # 21-15, Centro • 4.5389° N, 75.6725° O</p>
+      </div>
+    </div>
+    <span class="material-symbols-rounded text-sm text-[#7A726D]">chevron_right</span>
+  </button>
+</div>
+
+        <!-- Contraseña -->
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-[#262220]">Contraseña segura *</label>
+          <div class="relative flex items-center">
+            <span class="material-symbols-rounded absolute left-3.5 text-[#7A726D] text-lg">lock</span>
+            <input type="password" value="Comunidad2024*" class="w-full pl-10 pr-10 py-2.5 bg-[#FBF4F0] border border-[#EFE6E1] rounded-2xl text-xs font-semibold text-[#262220] focus:outline-none focus:border-[#D96B4F]" placeholder="Mínimo 8 caracteres">
+            <button type="button" class="absolute right-3.5 text-[#7A726D]">
+              <span class="material-symbols-rounded text-lg">visibility</span>
+            </button>
+          </div>
+          <div class="flex items-center gap-1.5 px-1 pt-0.5">
+            <div class="h-1 flex-1 rounded-full bg-[#5F8A74]"></div>
+            <div class="h-1 flex-1 rounded-full bg-[#5F8A74]"></div>
+            <div class="h-1 flex-1 rounded-full bg-[#5F8A74]"></div>
+            <span class="text-[10px] text-[#5F8A74] font-bold">Segura</span>
+          </div>
+        </div>
+
+        <!-- Intereses Comunitarios (Filter Chips Material 3) -->
+        <div class="space-y-1.5 pt-1">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-[#262220]">Intereses comunitarios</label>
+            <span class="text-[10px] font-semibold text-[#5F8A74]">3 seleccionados</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <!-- Deportes -->
+            <button type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#D96B4F] text-white flex items-center gap-1 shadow-sm">
+              <span class="material-symbols-rounded text-sm">sports_soccer</span>
+              Deportes
+            </button>
+            <!-- Cultura -->
+            <button type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#D96B4F] text-white flex items-center gap-1 shadow-sm">
+              <span class="material-symbols-rounded text-sm">palette</span>
+              Cultura
+            </button>
+            <!-- Voluntariado -->
+            <button type="button" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#D96B4F] text-white flex items-center gap-1 shadow-sm">
+              <span class="material-symbols-rounded text-sm">volunteer_activism</span>
+              Voluntariado
+            </button>
+            <!-- Académico -->
+            <button type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#262220] border border-[#EFE6E1] flex items-center gap-1 hover:bg-[#FBF4F0]">
+              <span class="material-symbols-rounded text-sm text-[#7A726D]">school</span>
+              Académico
+            </button>
+            <!-- Social -->
+            <button type="button" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white text-[#262220] border border-[#EFE6E1] flex items-center gap-1 hover:bg-[#FBF4F0]">
+              <span class="material-symbols-rounded text-sm text-[#7A726D]">forum</span>
+              Social
+            </button>
+          </div>
+        </div>
+
+        <!-- Terms Agreement -->
+        <div class="pt-1">
+          <label class="flex items-start gap-2 cursor-pointer select-none">
+            <input type="checkbox" checked="" class="w-4 h-4 mt-0.5 rounded text-[#D96B4F] focus:ring-[#D96B4F] accent-[#D96B4F]">
+            <span class="text-[11px] text-[#7A726D] font-medium leading-tight">
+              Acepto las <a href="#" class="text-[#D96B4F] font-bold underline">Normas Comunitarias</a> y la política de privacidad de Quindío.
+            </span>
+          </label>
+        </div>
+
+        <!-- Botón Crear Cuenta (Primary Button) -->
+        <button class="w-full py-3.5 mt-2 bg-[#D96B4F] hover:bg-[#B95035] active:scale-[0.99] text-white font-bold text-sm rounded-2xl shadow-sm shadow-[#D96B4F]/30 flex items-center justify-center gap-2 transition-all">
+          <span class="material-symbols-rounded text-lg">how_to_reg</span>
+          <span class="">Crear cuenta y comenzar</span>
+        </button>
+
+      </div>
+
+      <!-- Bottom Link -->
+      <div class="mt-4 pt-3 border-t border-[#EFE6E1] text-center space-y-2">
+        <p class="text-xs text-[#7A726D] font-medium">
+          ¿Ya tienes cuenta comunitaria? 
+          <a href="#" class="font-extrabold text-[#D96B4F] hover:underline ml-1">Iniciar sesión</a>
+        </p>
+        <!-- Android System Navigation Bar -->
+        <div class="w-32 h-1 bg-[#262220]/25 rounded-full mx-auto mt-2"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+
+</body></html>

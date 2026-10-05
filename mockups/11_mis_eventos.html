@@ -1,0 +1,330 @@
+<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: 'class', theme: { extend: { 'colors': { 'secondary': '#3d6752', 'tertiary-fixed': '#ffe08f', 'on-surface-variant': '#56423d', 'error-container': '#ffdad6', 'inverse-primary': '#ffb4a2', 'on-tertiary-fixed': '#241a00', 'tertiary-fixed-dim': '#e6c363', 'primary-fixed-dim': '#ffb4a2', 'surface-container-high': '#efe6e2', 'surface-variant': '#e9e1dc', 'secondary-fixed': '#bfedd3', 'on-primary-container': '#fffbff', 'primary': '#9c3e26', 'tertiary-container': '#c9a84b', 'on-secondary': '#ffffff', 'surface-container': '#f5ece7', 'surface-dim': '#e1d8d4', 'tertiary': '#755b00', 'surface-container-highest': '#e9e1dc', 'inverse-on-surface': '#f8efea', 'inverse-surface': '#34302c', 'on-primary-fixed-variant': '#802913', 'background': '#fff8f5', 'secondary-container': '#bcead0', 'on-surface': '#1e1b18', 'error': '#ba1a1a', 'on-background': '#1e1b18', 'on-secondary-container': '#416b57', 'outline': '#89726c', 'surface-tint': '#a04028', 'on-primary-fixed': '#3c0700', 'on-tertiary': '#ffffff', 'outline-variant': '#ddc0b9', 'on-secondary-fixed-variant': '#244f3c', 'primary-container': '#bc553b', 'surface': '#fff8f5', 'on-primary': '#ffffff', 'surface-container-lowest': '#ffffff', 'on-secondary-fixed': '#002114', 'on-error': '#ffffff', 'on-error-container': '#93000a', 'surface-bright': '#fff8f5', 'secondary-fixed-dim': '#a3d1b8', 'primary-fixed': '#ffdad2', 'surface-container-low': '#fbf2ed', 'on-tertiary-container': '#4f3d00', 'on-tertiary-fixed-variant': '#584400' }, 'borderRadius': { 'DEFAULT': '0.25rem', 'lg': '0.5rem', 'xl': '0.75rem', 'full': '9999px' }, 'spacing': { 'spacing-4': '0.25rem', 'spacing-12': '0.75rem', 'spacing-16': '1rem', 'spacing-32': '2rem', 'margin-mobile': '1rem', 'margin-desktop': '2rem', 'spacing-8': '0.5rem', 'spacing-40': '2.5rem', 'spacing-20': '1.25rem', 'margin-tablet': '1.5rem', 'spacing-48': '3rem', 'spacing-24': '1.5rem', 'gutter': '1rem' }, 'fontFamily': { 'display-sm': ['Plus Jakarta Sans'], 'headline-sm': ['Plus Jakarta Sans'], 'title-sm': ['Plus Jakarta Sans'], 'title-lg': ['Plus Jakarta Sans'], 'label-md': ['Plus Jakarta Sans'], 'headline-md': ['Plus Jakarta Sans'], 'label-lg': ['Plus Jakarta Sans'], 'label-sm': ['Plus Jakarta Sans'], 'title-md': ['Plus Jakarta Sans'], 'body-sm': ['Plus Jakarta Sans'], 'body-lg': ['Plus Jakarta Sans'], 'display-lg': ['Plus Jakarta Sans'], 'display-md': ['Plus Jakarta Sans'], 'headline-lg': ['Plus Jakarta Sans'], 'headline-lg-mobile': ['Plus Jakarta Sans'], 'body-md': ['Plus Jakarta Sans'] }, 'fontSize': { 'display-sm': ['36px', { 'lineHeight': '44px', 'letterSpacing': '0px', 'fontWeight': '600' }], 'headline-sm': ['24px', { 'lineHeight': '32px', 'letterSpacing': '0px', 'fontWeight': '600' }], 'title-sm': ['14px', { 'lineHeight': '20px', 'letterSpacing': '0.1px', 'fontWeight': '600' }], 'title-lg': ['22px', { 'lineHeight': '28px', 'letterSpacing': '0px', 'fontWeight': '600' }], 'label-md': ['12px', { 'lineHeight': '16px', 'letterSpacing': '0.5px', 'fontWeight': '600' }], 'headline-md': ['28px', { 'lineHeight': '36px', 'letterSpacing': '0px', 'fontWeight': '600' }], 'label-lg': ['14px', { 'lineHeight': '20px', 'letterSpacing': '0.1px', 'fontWeight': '600' }], 'label-sm': ['11px', { 'lineHeight': '16px', 'letterSpacing': '0.5px', 'fontWeight': '600' }], 'title-md': ['16px', { 'lineHeight': '24px', 'letterSpacing': '0.15px', 'fontWeight': '600' }], 'body-sm': ['12px', { 'lineHeight': '16px', 'letterSpacing': '0.4px', 'fontWeight': '400' }], 'body-lg': ['16px', { 'lineHeight': '24px', 'letterSpacing': '0.5px', 'fontWeight': '400' }], 'display-lg': ['57px', { 'lineHeight': '64px', 'letterSpacing': '-0.25px', 'fontWeight': '700' }], 'display-md': ['45px', { 'lineHeight': '52px', 'letterSpacing': '0px', 'fontWeight': '600' }], 'headline-lg': ['32px', { 'lineHeight': '40px', 'letterSpacing': '0px', 'fontWeight': '600' }], 'headline-lg-mobile': ['28px', { 'lineHeight': '36px', 'letterSpacing': '0px', 'fontWeight': '600' }], 'body-md': ['14px', { 'lineHeight': '20px', 'letterSpacing': '0.25px', 'fontWeight': '400' }] } } } };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface flex flex-col min-h-screen"><header class="fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] pt-safe"><div class="h-6 px-margin-mobile flex items-center justify-between text-on-surface select-none"><span class="font-label-md text-label-md font-bold tracking-tight">9:41</span><div class="flex items-center gap-spacing-4"><span class="material-symbols-outlined text-[16px]">wifi</span><span class="material-symbols-outlined text-[16px]">signal_cellular_alt</span><span class="material-symbols-outlined text-[16px]">battery_full</span></div></div><div class="h-16 px-margin-mobile flex items-center justify-between gap-spacing-12"><div class="flex items-center gap-spacing-12 min-w-0"><img alt="Logo AKJ Events" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1XVoX0JQIhC8l2ZWB9xRGjGXXxRnRgMJSQ9CIZi2ys0V23rN_085wSDLBopZ7ZJrufhc175lxsnvIDOVMImRLVazJf7fRkKH9RWJkiSXjsM79dQbiMlMYluv-c6v3AVeyOMx_lw7M23aP_PPbfYa1VTNCEDBwTGN-RZ0jdcZ-MhDJhWD3IUOQrGKg3PSaWK7l3O_lImkMy5HO2bV6zF0aMSaz77HstSiPEgYCC__0nXqiFJDeh7vjAhIzE"><div class="flex flex-col truncate"><span class="font-label-sm text-label-sm text-primary tracking-wider uppercase font-bold">AKJ Events</span><h1 class="font-title-lg text-title-lg text-on-surface truncate">Inicio</h1></div></div><div class="flex items-center gap-spacing-8 flex-shrink-0"><button aria-label="Buscar" class="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined">search</span></button><div class="relative flex items-center justify-center"><img alt="Profile" class="w-8 h-8 rounded-full object-cover shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA1wb5alM_oTyR-wOM91mRJ0F627NDnwJEdLswfgXGHqCQPoRbs5Zj_4XAPZ9RGo3lVZOvEtXn6KzTkOiBa8XXfaCY8TJPPAf-PfzspLnx8uE63jJxJtf59CG4DRwYHoleVQjiQzhf9bvWGbrafv77xRAKEE7PWe8loHEBH0UcYH4MX25l1f9fS67pS0GUvLXg16xP36aUFi16cZVVrvqll-4Hb6HilG3MQysaxEtxYujn2_gluwCR7uA"></div></div></div></header><main class="flex-1 flex flex-col relative w-full px-margin-mobile pt-24 pb-28 bg-surface"><div class="flex flex-col w-full pb-8">
+<!-- Top App Sub-Bar & Host Status Pill (Jetpack Compose / M3 TopAppBar Context) -->
+<div class="flex flex-col gap-spacing-12 mb-spacing-16">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-spacing-8">
+<button aria-label="Volver" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[22px]">arrow_back</span>
+</button>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface tracking-tight">Mis Eventos</h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Gestión de actividades comunitarias</span>
+</div>
+</div>
+<div class="flex items-center gap-spacing-4">
+<button aria-label="Filtrar o buscar eventos" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+</button>
+<button class="h-10 px-spacing-12 rounded-xl bg-primary text-on-primary font-label-md text-label-md flex items-center gap-spacing-4 shadow-[0_3px_10px_rgba(156,62,38,0.25)] active:scale-95 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span class="">Crear</span>
+</button>
+</div>
+</div>
+<!-- Host Reputation & Statistics Card -->
+<div class="bg-surface-container-lowest rounded-xl p-spacing-12 shadow-[0_2px_8px_rgba(45,41,38,0.05)] flex items-center justify-between gap-spacing-8">
+<div class="flex items-center gap-spacing-12 min-w-0">
+<div class="w-11 h-11 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-spacing-4">
+<span class="font-label-md text-label-md text-secondary font-bold">Organizador Verificado</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Armenia, Q.</span>
+</div>
+<span class="font-title-sm text-title-sm text-on-surface truncate">12 eventos gestionados con éxito</span>
+</div>
+</div>
+<div class="flex flex-col items-end flex-shrink-0 pl-spacing-8">
+<span class="font-label-sm text-label-sm text-tertiary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">stars</span> 98%
+        </span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Aprobación</span>
+</div>
+</div>
+</div>
+<!-- Filter Chips / Tabs Scrollable Bar (Material Design 3 Style) -->
+<div class="w-full -mx-margin-mobile px-margin-mobile overflow-x-auto no-scrollbar mb-spacing-20">
+<div class="flex items-center gap-spacing-8 min-w-max py-spacing-4" id="filterTabs">
+<!-- Active Chip: Todos -->
+<button class="filter-btn h-9 px-spacing-16 rounded-full bg-secondary text-on-secondary font-label-md text-label-md flex items-center gap-spacing-8 shadow-sm transition-all" data-filter="all" type="button">
+<span class="">Todos</span>
+<span class="w-5 h-5 rounded-full bg-on-secondary/20 text-on-secondary font-label-sm text-label-sm flex items-center justify-center">6</span>
+</button>
+<!-- Pendientes -->
+<button class="filter-btn h-9 px-spacing-16 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center gap-spacing-8 hover:bg-surface-container-high transition-all" data-filter="pending" type="button">
+<span class="">Pendientes</span>
+<span class="w-5 h-5 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm flex items-center justify-center font-bold">2</span>
+</button>
+<!-- Verificados -->
+<button class="filter-btn h-9 px-spacing-16 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center gap-spacing-8 hover:bg-surface-container-high transition-all" data-filter="verified" type="button">
+<span class="">Verificados</span>
+<span class="w-5 h-5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm flex items-center justify-center font-bold">2</span>
+</button>
+<!-- Rechazados -->
+<button class="filter-btn h-9 px-spacing-16 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center gap-spacing-8 hover:bg-surface-container-high transition-all" data-filter="rejected" type="button">
+<span class="">Requieren Ajustes</span>
+<span class="w-5 h-5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm flex items-center justify-center font-bold">1</span>
+</button>
+<!-- Finalizados -->
+<button class="filter-btn h-9 px-spacing-16 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center gap-spacing-8 hover:bg-surface-container-high transition-all" data-filter="finished" type="button">
+<span class="">Finalizados</span>
+<span class="w-5 h-5 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm flex items-center justify-center font-bold">1</span>
+</button>
+</div>
+</div>
+<!-- Event Cards Feed -->
+<div class="flex flex-col gap-spacing-16" id="eventsList">
+<!-- 1. EVENTO PENDIENTE (En moderación) -->
+<article class="event-card bg-surface-container-lowest rounded-xl p-spacing-16 shadow-[0_2px_8px_rgba(45,41,38,0.05)] flex flex-col gap-spacing-12" data-type="pending">
+<!-- Header with Status Badge -->
+<div class="flex items-start justify-between gap-spacing-8">
+<div class="flex items-center gap-spacing-8">
+<span class="inline-flex items-center gap-1.5 px- spacing-8 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]">hourglass_top</span>
+<span class="">En revisión de moderación</span>
+</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Hace 2h</span>
+</div>
+<!-- Main info with thumbnail -->
+<div class="flex gap-spacing-12 items-start">
+<img alt="Huerto Urbano" class="w-20 h-20 rounded-lg object-cover flex-shrink-0 bg-surface-container-high" data-alt="Community urban garden in Parque de la Vida Armenia Colombia, raised wooden vegetable beds, lush plants, soft warm sunlight, organic terracotta aesthetic, community workshop atmosphere" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUmSeDz3ye714d1zTFk1NZDvSKIwjxY6_EpX1XdaMiMhuAdClkP9SfkYR4407Kt6cKDosKSMkterXxVx8jaw8sVr5gcxpDFRxO2aQLVmjhj-aAxutOPj8MXuROwLaPFS9_mKVdjHdkgK5AWztkTnMBh2GY9fH0BAfmoChQRRe_HEHWEO3IccndhtfsvWrbNJVVW8EC12xPgQQXfzoHn3qAfvVnZOQtHAAyXePulLQvK6MJlxyxJrj_pg">
+<div class="flex flex-col min-w-0 flex-1">
+<h3 class="font-title-md text-title-md text-on-surface leading-snug">Taller de Huertos Urbanos y Compostaje</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 flex items-center gap-1 truncate">
+<span class="material-symbols-outlined text-[14px] text-primary flex-shrink-0">location_on</span>
+            Parque de la Vida • Sáb 02 Nov
+          </p>
+<div class="mt-spacing-4 flex items-center gap-spacing-8 font-label-sm text-label-sm text-on-surface-variant">
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">group</span>
+              Cupo: 35 pers.
+            </span>
+<span class="">•</span>
+<span class="text-secondary font-bold">Gratuito</span>
+</div>
+</div>
+</div>
+<!-- Contextual Status Note -->
+<div class="bg-surface-container-low rounded-lg p-spacing-12 flex items-start gap-spacing-8">
+<span class="material-symbols-outlined text-tertiary text-[18px] flex-shrink-0 mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          Enviado hace 2 horas. Un moderador de Armenia está evaluando los permisos del espacio público ante la administración local.
+        </p>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center justify-between pt-spacing-4 gap-spacing-8">
+<div class="flex items-center gap-spacing-8 flex-1">
+<button class="h-10 px-spacing-12 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors flex-1" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span class="">Editar</span>
+</button>
+<button class="h-10 px-spacing-12 rounded-lg bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container-highest transition-colors flex-1" type="button">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span class="">Detalles</span>
+</button>
+</div>
+<button aria-label="Cancelar solicitud" class="w-10 h-10 rounded-lg flex items-center justify-center text-error hover:bg-error-container/30 transition-colors flex-shrink-0" type="button">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</article>
+<!-- 2. EVENTO VERIFICADO (Publicado y activo) -->
+<article class="event-card bg-surface-container-lowest rounded-xl p-spacing-16 shadow-[0_4px_12px_rgba(45,41,38,0.08)] flex flex-col gap-spacing-12" data-type="verified">
+<!-- Header with Status Badge -->
+<div class="flex items-start justify-between gap-spacing-8">
+<div class="flex items-center gap-spacing-8">
+<span class="inline-flex items-center gap-1.5 px-spacing-8 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="">Verificado y Visible</span>
+</span>
+</div>
+<button aria-label="Opciones del evento" class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container" type="button">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<!-- Main Info with thumbnail -->
+<div class="flex gap-spacing-12 items-start">
+<img alt="Ciclopaseo Nocturno" class="w-20 h-20 rounded-lg object-cover flex-shrink-0 bg-surface-container-high" data-alt="Night bicycle ride cycling through Plaza de Bolívar Armenia Colombia, community group with bike lights, warm streetlamps, vibrant night urban life in Latin America" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAn-u3Hcs1t8Rq6iVOK0o1-OfBtN-P4PaEgnDWz_F3ihhrCT3jg5Qj9tLTciVPSxdSSeDXA-V2iRwgt-aO21g5IlUR6pdz7bZfH5p-UD-8m7idyBRuJphVxRF0jFv8DEh34bOTpk8fpiauHLqqCSTCEO7JX9SQvM9hKo_CdBTWXSvIKMrhiAJCc_-hsgAj4-ObDMsBIs-KPEe6v_VJJZ28Um_nouK81VoivS2C8W36wbEQaZl1EKPnxag">
+<div class="flex flex-col min-w-0 flex-1">
+<div class="flex items-center gap-1 text-primary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">campaign</span>
+<span class="">En 3 días</span>
+</div>
+<h3 class="font-title-md text-title-md text-on-surface leading-snug">Ciclopaseo nocturno por Armenia</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 flex items-center gap-1 truncate">
+<span class="material-symbols-outlined text-[14px] text-primary flex-shrink-0">place</span>
+            Plaza de Bolívar • Jue 24 Oct • 7:00 PM
+          </p>
+</div>
+</div>
+<!-- Live metrics and Progress Bar -->
+<div class="bg-surface-container-low rounded-lg p-spacing-12 flex flex-col gap-spacing-8"><button class="h-12 w-full rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-spacing-8 shadow-[0_4px_12px_rgba(156,62,38,0.28)] active:scale-98 transition-transform" type="button"><span class="material-symbols-outlined text-[20px]">qr_code_scanner</span><span class="">Mostrar QR de Asistencia</span></button><div class="grid grid-cols-2 gap-spacing-8"><button class="h-10 px-spacing-12 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">group</span><span class="">Gestionar inscritos</span></button><button class="h-10 px-spacing-12 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">notification_add</span><span class="">Enviar aviso</span></button></div><button class="h-10 w-full rounded-lg border border-outline-variant text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container transition-colors" type="button" onclick="const d = document.getElementById('dialog-confirm-finish'); if(d) d.classList.toggle('hidden');"><span class="material-symbols-outlined text-[18px] text-secondary">task_alt</span><span class="">Marcar como finalizado</span></button><div class="bg-surface-container-high rounded-xl p-spacing-12 flex flex-col gap-spacing-8 border border-outline-variant/50" id="dialog-confirm-finish"><div class="flex items-start gap-spacing-8"><span class="material-symbols-outlined text-primary text-[20px] flex-shrink-0 mt-0.5">help</span><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-bold">¿Estás seguro de que deseas finalizar este evento?</span><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Esta acción cerrará las confirmaciones de asistencia.</p></div></div><div class="flex items-center justify-end gap-spacing-8 pt-1"><button class="h-8 px-spacing-12 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container-highest transition-colors" type="button" onclick="document.getElementById('dialog-confirm-finish').classList.add('hidden')">Cancelar</button><button class="h-8 px-spacing-12 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all" type="button">Confirmar</button></div></div></div>
+<!-- Organizer Primary Actions -->
+<div class="flex flex-col gap-spacing-8 pt-spacing-4"><button class="h-12 w-full rounded-xl bg-primary text-on-primary font-label-lg text-label-lg flex items-center justify-center gap-spacing-8 shadow-[0_4px_12px_rgba(156,62,38,0.28)] active:scale-98 transition-transform" type="button"><span class="material-symbols-outlined text-[20px]">qr_code_scanner</span><span class="">Mostrar QR de Asistencia</span></button><div class="grid grid-cols-2 gap-spacing-8"><button class="h-10 px-spacing-12 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">group</span><span class="">Gestionar inscritos</span></button><button class="h-10 px-spacing-12 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[16px]">notification_add</span><span class="">Enviar aviso</span></button></div><button class="h-10 w-full rounded-lg border border-outline-variant text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-1.5 hover:bg-surface-container transition-colors" type="button" onclick="const d = document.getElementById('dialog-confirm-finish'); if(d) d.classList.toggle('hidden');"><span class="material-symbols-outlined text-[18px] text-secondary">task_alt</span><span class="">Marcar como finalizado</span></button><div class="bg-surface-container-high rounded-xl p-spacing-12 flex flex-col gap-spacing-8 border border-outline-variant/50" id="dialog-confirm-finish"><div class="flex items-start gap-spacing-8"><span class="material-symbols-outlined text-primary text-[20px] flex-shrink-0 mt-0.5">help</span><div class="flex flex-col"><span class="font-label-md text-label-md text-on-surface font-bold">¿Estás seguro de que deseas finalizar este evento?</span><p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Esta acción cerrará las confirmaciones de asistencia.</p></div></div><div class="flex items-center justify-end gap-spacing-8 pt-1"><button class="h-8 px-spacing-12 rounded-lg bg-surface-container text-on-surface-variant font-label-sm text-label-sm hover:bg-surface-container-highest transition-colors" type="button" onclick="document.getElementById('dialog-confirm-finish').classList.add('hidden')">Cancelar</button><button class="h-8 px-spacing-12 rounded-lg bg-primary text-on-primary font-label-sm text-label-sm font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all" type="button">Confirmar</button></div></div></div>
+</article>
+<!-- 3. EVENTO RECHAZADO (Requiere ajustes) -->
+<article class="event-card bg-surface-container-lowest rounded-xl p-spacing-16 shadow-[0_2px_8px_rgba(45,41,38,0.05)] flex flex-col gap-spacing-12" data-type="rejected">
+<!-- Header with Status Badge -->
+<div class="flex items-start justify-between gap-spacing-8">
+<div class="flex items-center gap-spacing-8">
+<span class="inline-flex items-center gap-1.5 px-spacing-8 py-1 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]">cancel</span>
+<span class="">Requiere ajustes / Rechazado</span>
+</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Revisado ayer</span>
+</div>
+<!-- Main info with thumbnail -->
+<div class="flex gap-spacing-12 items-start">
+<img alt="Voleibol Callejero" class="w-20 h-20 rounded-lg object-cover flex-shrink-0 bg-surface-container-high opacity-85" data-alt="Street volleyball tournament court at sunset in Barrio Granada Armenia Colombia, community sports recreation, net and balls, warm amber and terracotta tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_wF8ip8nPI1TFohHdTU3W0iXaDZXpAdpTOscqIl01nU62xSyNPQEIFQFns5TUGqDaUk2bfsybzaaN1phxhWoijJlUPQZsvO0WCScMs6WI8Bq7IMoN4J1C6hLN_GlFYbPTc_oDFglIGA0lD9NCBPIYJ_WpwO6uY7uPNzu84d8piatk1lmJ820pKoNCZrWtCF3DIX_UkQ0LM2-alRTFRfE9AkbthKlqiKlGfj_ZPs91RlihjJoqTHkx6w">
+<div class="flex flex-col min-w-0 flex-1">
+<h3 class="font-title-md text-title-md text-on-surface leading-snug">Torneo Nocturno de Voleibol Callejero</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 flex items-center gap-1 truncate">
+<span class="material-symbols-outlined text-[14px] text-error flex-shrink-0">fmd_bad</span>
+            Cancha Barrio Granada • Vie 25 Oct • 8:00 PM
+          </p>
+<span class="font-label-sm text-label-sm text-on-surface-variant mt-1">Modalidad: 6 vs 6 • Abierto</span>
+</div>
+</div>
+<!-- Moderation Rejection Reason Banner -->
+<div class="bg-primary-fixed/25 rounded-xl p-spacing-12 flex flex-col gap-spacing-4">
+<div class="flex items-center gap-spacing-8 text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+<h4 class="font-title-sm text-title-sm font-bold">Motivo: Lugar no disponible o sin permiso municipal</h4>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pl-7">
+          La cancha solicitada tiene reserva prioritaria de las escuelas deportivas del IMDERA los viernes por la noche. Por favor selecciona otro horario o adjunta autorización de la junta de acción comunal.
+        </p>
+</div>
+<!-- Recovery Actions -->
+<div class="flex items-center gap-spacing-8 pt-spacing-4">
+<button class="h-11 px-spacing-16 rounded-xl bg-primary text-on-primary font-label-md text-label-md flex-1 flex items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(156,62,38,0.2)] active:scale-98 transition-transform" type="button">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+<span class="">Modificar y reenviar</span>
+</button>
+<button class="h-11 px-spacing-12 rounded-xl bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center justify-center gap-1 hover:bg-surface-container-high transition-colors" type="button">
+<span class="">Apelar</span>
+</button>
+<button aria-label="Descartar borrador" class="w-11 h-11 rounded-xl flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors flex-shrink-0" type="button">
+<span class="material-symbols-outlined text-[20px]">archive</span>
+</button>
+</div>
+</article>
+<!-- 4. EVENTO FINALIZADO -->
+<article class="event-card bg-surface-container-lowest rounded-xl p-spacing-16 shadow-[0_2px_8px_rgba(45,41,38,0.05)] flex flex-col gap-spacing-12" data-type="finished">
+<!-- Header with Status Badge -->
+<div class="flex items-start justify-between gap-spacing-8">
+<div class="flex items-center gap-spacing-8">
+<span class="inline-flex items-center gap-1.5 px-spacing-8 py-1 rounded-full bg-surface-variant text-on-surface-variant font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">flag</span>
+<span class="">Finalizado con éxito</span>
+</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary font-bold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">eco</span>
+          +225 pts reputación
+        </span>
+</div>
+<!-- Main Info with thumbnail -->
+<div class="flex gap-spacing-12 items-start">
+<img alt="Reforestación Río Quindío" class="w-20 h-20 rounded-lg object-cover flex-shrink-0 bg-surface-container-high" data-alt="Environmental volunteer team planting native trees near Quindio river Armenia Colombia, sunny day, soil, green seedlings, smiling people in community work" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA9fooUHCdY-zqJ0i4zJkO_LjfzCtTghIEgjWx47WbPNlE6iOCNUGhgQp97izO3MmWK1lm9qb4koPOY-Vk9DSRaOLpKRcVdtUzrNPXIIJcx_fWTejppJUYJ5tQANNC5u-qHAA9Mk-ItoxOb08_8oICM6Qf9OjboCKBXnSK91OWDxqPb4W84VAR7yxPV8iic3ihDiXZdn_tQiuT-HiqT3MT_PoidA6vxFh_fJWG76nS3FN-UsVdc1fg2SA">
+<div class="flex flex-col min-w-0 flex-1">
+<h3 class="font-title-md text-title-md text-on-surface leading-snug">Jornada de Reforestación Río Quindío</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5 flex items-center gap-1 truncate">
+<span class="material-symbols-outlined text-[14px] text-secondary flex-shrink-0">forest</span>
+            Cuenca Alta • Realizado 12 Oct
+          </p>
+<div class="mt-spacing-4 flex items-center gap-spacing-4 font-label-sm text-label-sm text-secondary"><div class="flex items-center gap-spacing-4 text-secondary"><span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">verified</span><span class="">45 check-ins QR confirmados</span></div><span class="text-on-surface-variant font-normal">•</span><span class="inline-flex items-center gap-1 text-on-surface-variant font-bold"><span class="material-symbols-outlined text-[14px]">lock</span><span class="">Asistencia cerrada</span></span></div>
+</div>
+</div>
+<!-- Finalized Summary Banner -->
+<div class="bg-secondary-fixed/20 rounded-lg p-spacing-12 flex items-center justify-between">
+<div class="flex items-center gap-spacing-8">
+<div class="w-8 h-8 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">photo_library</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-bold">Memoria del Evento</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">38 fotos subidas por la comunidad</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-secondary text-[20px]">chevron_right</span>
+</div>
+<!-- Action -->
+<div class="pt-spacing-4">
+<button class="h-10 w-full rounded-lg bg-surface-container text-on-surface font-label-md text-label-md flex items-center justify-center gap-spacing-8 hover:bg-surface-container-high transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">insights</span>
+<span class="">Ver reporte de impacto y fotos</span>
+</button>
+</div>
+</article>
+<!-- Empty State helper container for empty filter views (Micro-delight) -->
+<div class="hidden bg-surface-container-lowest rounded-xl p-spacing-32 flex flex-col items-center text-center gap-spacing-12 shadow-[0_2px_8px_rgba(45,41,38,0.05)]" id="emptyFilterState">
+<div class="w-16 h-16 rounded-full bg-primary-fixed/40 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[32px]">event_busy</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="font-title-md text-title-md text-on-surface">No hay eventos en este estado</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Todos tus eventos organizados están listados en las otras pestañas.</p>
+</div>
+<button class="mt-spacing-4 h-9 px-spacing-16 rounded-full bg-surface-container text-on-surface font-label-md text-label-md" onclick="document.querySelector('[data-filter=all]').click()" type="button">
+        Volver a Todos
+      </button>
+</div>
+</div>
+<!-- Quick Floating Action / Tip Pill -->
+<div class="mt-spacing-20 flex items-center justify-between p-spacing-12 bg-tertiary-fixed/30 rounded-xl">
+<div class="flex items-center gap-spacing-8">
+<span class="material-symbols-outlined text-tertiary text-[20px]">tips_and_updates</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant">
+        ¿Deseas proponer una feria barrial? Los permisos tardan 48h hábiles.
+      </p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">arrow_forward</span>
+</div>
+</div>
+<script>
+  (function() {
+    const tabs = document.querySelectorAll('.filter-btn');
+    const cards = document.querySelectorAll('.event-card');
+    const emptyState = document.getElementById('emptyFilterState');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const filter = tab.getAttribute('data-filter');
+
+        // Toggle Tab styles (M3 Filter Chips active vs resting)
+        tabs.forEach(t => {
+          t.classList.remove('bg-secondary', 'text-on-secondary', 'shadow-sm');
+          t.classList.add('bg-surface-container', 'text-on-surface-variant');
+        });
+        tab.classList.remove('bg-surface-container', 'text-on-surface-variant');
+        tab.classList.add('bg-secondary', 'text-on-secondary', 'shadow-sm');
+
+        // Filter cards
+        let visibleCount = 0;
+        cards.forEach(card => {
+          const type = card.getAttribute('data-type');
+          if (filter === 'all' || type === filter) {
+            card.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            card.classList.add('hidden');
+          }
+        });
+
+        if (visibleCount === 0) {
+          emptyState.classList.remove('hidden');
+        } else {
+          emptyState.classList.add('hidden');
+        }
+      });
+    });
+  })();
+</script></main><nav class="fixed bottom-0 inset-x-0 z-50 bg-surface-container-lowest/95 backdrop-blur-xl shadow-[0_-2px_12px_rgba(45,41,38,0.06)] pb-safe" data-active-classes="[&amp;_.pill]:bg-primary-fixed [&amp;_.pill]:text-on-primary-fixed-variant font-bold text-on-surface"><div class="flex items-center justify-around h-16 px-spacing-8 max-w-lg mx-auto"><a aria-current="page" class="group flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 gap-spacing-4 [&amp;_.pill]:bg-primary-fixed [&amp;_.pill]:text-on-primary-fixed-variant font-bold text-on-surface" data-path="inicio" href="#"><div class="pill w-12 h-7 rounded-full flex items-center justify-center transition-all group-hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">home</span></div><span class="font-label-sm text-label-sm leading-none">Inicio</span></a><a class="group flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 gap-spacing-4 text-on-surface-variant" data-path="mapa" href="#"><div class="pill w-12 h-7 rounded-full flex items-center justify-center transition-all group-hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">map</span></div><span class="font-label-sm text-label-sm leading-none">Mapa</span></a><a class="group flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 gap-spacing-4 text-on-surface-variant" data-path="crear-evento" href="#"><div class="pill w-12 h-7 rounded-full bg-primary text-on-primary shadow-[0_4px_12px_rgba(156,62,38,0.28)] flex items-center justify-center transition-transform active:scale-95"><span class="material-symbols-outlined text-[22px]">add</span></div><span class="font-label-sm text-label-sm leading-none">Crear</span></a><a class="group flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 gap-spacing-4 text-on-surface-variant relative" data-path="notificaciones" href="#"><div class="pill w-12 h-7 rounded-full flex items-center justify-center transition-all group-hover:bg-surface-container-high relative"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1 right-2.5 w-2 h-2 rounded-full bg-primary"></span></div><span class="font-label-sm text-label-sm leading-none">Alertas</span></a><a class="group flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-14 gap-spacing-4 text-on-surface-variant" data-path="perfil" href="#"><div class="pill w-12 h-7 rounded-full flex items-center justify-center transition-all group-hover:bg-surface-container-high"><span class="material-symbols-outlined text-[20px]">person</span></div><span class="font-label-sm text-label-sm leading-none">Perfil</span></a></div><div class="h-4 flex items-center justify-center"><div class="w-32 h-1 bg-on-surface/20 rounded-full"></div></div></nav>
+
+</body></html>
