@@ -9,5 +9,6 @@ data class User(
     val location: Location,
     val role: UserRole = UserRole.USER,
     val points: Int = 0,
+    val level: UserLevel = UserLevel.SPECTATOR,
     val profilePictureUrl: String? = null
 )

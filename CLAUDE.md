@@ -27,18 +27,18 @@ Source is split by layer under `app/src/main/java/co/edu/uniquindio/akjevents/`:
 
 - `core/` — cross-cutting: `navigation/` (NavHost + routes), `theme/` (AKJ Events prototype colors), shared `component/`s, `util/RequestResult` (Loading/Success/Failure for future async operations).
 - `domain/model/` — plain Kotlin models. `CommunityEvent` enforces invariants in `init` via `require` (at least one image, `endsAt` after `startsAt`, positive capacity, `REJECTED` requires `rejectionReason`). Constructing an invalid event throws.
-- `data/demo/SampleEvents` — in-memory event list, a stand-in for a future remote repository (Supabase or Firebase are planned).
+- `domain/repository/EventRepository` + `data/repository/InMemoryEventRepository` — the single source of event data and of the session user's attendance/interest, exposed as `StateFlow`s. `InMemoryEventRepository.shared` is the app-wide instance (no DI yet); ViewModels take the repository as a constructor parameter defaulting to it, so tests pass a fresh `InMemoryEventRepository()`. Changes made in one screen (e.g. confirming attendance in the detail) show up in the others. It is seeded from `data/demo/SampleEvents` (and organizers from `SampleUsers`), stand-ins for a future remote backend (Supabase or Firebase are planned).
 - `features/<feature>/` — screens and their ViewModels (e.g. `home/HomeScreen` + `HomeViewModel`, `event/detail/EventDetailScreen`).
 
 Navigation uses type-safe Navigation Compose: routes are `@Serializable` members of the `sealed interface MainRoutes` (`core/navigation/MainRoutes.kt`) and are read back with `entry.toRoute<...>()` in `AppNavigation.kt`. To add a screen, add a route there and a `composable<Route>` entry in the NavHost. Screens receive navigation callbacks (`onOpenEvent`, `onBack`) instead of the `NavController`.
 
-State pattern: a ViewModel exposes a `StateFlow<XUiState>` backed by a private `MutableStateFlow`, updated with `_uiState.update { it.copy(...) }`. Screens get it with `viewModel()` and `collectAsState()`.
+State pattern: a ViewModel exposes a `StateFlow<XUiState>` backed by a private `MutableStateFlow`, updated with `_uiState.update { it.copy(...) }`. Screens get it with `viewModel()` and `collectAsState()`. ViewModels that read the repository collect its flows in `viewModelScope`; their unit tests need `MainDispatcherRule` (in `app/src/test`) and should create the ViewModel lazily, after the rule has set `Dispatchers.Main`.
 
 Images load from URLs with Coil 3 (`AsyncImage`), using `res/drawable/event_placeholder.xml` as the fallback.
 
 ## Domain rule: public visibility
 
-Only `EventStatus.VERIFIED` events may appear publicly. `HomeViewModel` filters the feed by status, and the detail screen uses `SampleEvents.findPublicById`, which returns `null` for non-verified events. The sample data deliberately includes a `PENDING` event and a `REJECTED` event (`pendiente-privado`, `rechazado-privado`). `PublicEventVisibilityTest` asserts that exactly 5 events are verified and that the hidden ones are not reachable, so update that test if you change the sample data. The planned moderation flow is: new events start as `PENDING`, rejection requires a reason, and moderators can mark events `FINISHED`.
+Only `EventStatus.VERIFIED` events may appear publicly. `EventRepository.publicEvents`/`findPublicEvent` only return verified events and the repository refuses to modify hidden ones, so `HomeViewModel` (search and category filters) and `EventDetailViewModel` (a hidden id shows as unavailable) never see them; `SampleEvents.findPublicById` applies the same rule. The sample data deliberately includes a `PENDING` event and a `REJECTED` event (`pendiente-privado`, `rechazado-privado`). `PublicEventVisibilityTest` asserts that exactly 5 events are verified and that the hidden ones are not reachable, so update that test if you change the sample data. The planned moderation flow is: new events start as `PENDING`, rejection requires a reason, and moderators can mark events `FINISHED`.
 
 ## Roadmap (from README)
 

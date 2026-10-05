@@ -70,7 +70,7 @@ object SampleEvents {
             startsAt = tomorrow.plusDays(5).withHour(17).withMinute(0),
             endsAt = tomorrow.plusDays(5).withHour(19).withMinute(0),
             capacity = 35,
-            attendanceCount = 20,
+            attendanceCount = 31,
             interestCount = 31,
             status = EventStatus.VERIFIED
         ),
@@ -86,7 +86,7 @@ object SampleEvents {
             startsAt = tomorrow.plusDays(6).withHour(16).withMinute(0),
             endsAt = tomorrow.plusDays(6).withHour(18).withMinute(0),
             capacity = 25,
-            attendanceCount = 10,
+            attendanceCount = 25,
             interestCount = 8,
             status = EventStatus.VERIFIED
         ),
