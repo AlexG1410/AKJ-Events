@@ -20,4 +20,7 @@ sealed interface MainRoutes {
 
     @Serializable
     data class EventDetail(val eventId: String) : MainRoutes
+
+    @Serializable
+    data object CreateEvent : MainRoutes
 }

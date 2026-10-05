@@ -26,6 +26,16 @@ object EventFormat {
     fun longDate(date: LocalDateTime): String =
         "${weekday.format(date).capitalized()}, ${date.dayOfMonth} de ${monthLong.format(date)} de ${date.year}"
 
+    /** "Sábado 02 Nov 2024" */
+    fun weekdayFullDate(date: LocalDateTime): String =
+        "${weekday.format(date).capitalized()} ${"%02d".format(date.dayOfMonth)} ${shortMonth(date).capitalized()} ${date.year}"
+
+    /** "9:00 AM" */
+    fun timeOfDay(date: LocalDateTime): String = time.format(date)
+
+    /** "12:30 PM (3 h 30 min)" */
+    fun timeWithDuration(start: LocalDateTime, end: LocalDateTime): String = "${time.format(end)} (${duration(start, end)})"
+
     /** "7:00 PM - 10:00 PM (3 horas)" */
     fun timeRange(start: LocalDateTime, end: LocalDateTime): String =
         "${time.format(start)} - ${time.format(end)} (${duration(start, end)})"

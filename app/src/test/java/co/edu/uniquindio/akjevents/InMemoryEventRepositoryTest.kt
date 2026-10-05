@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import co.edu.uniquindio.akjevents.data.demo.SampleEvents
 import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.repository.AttendanceResult
@@ -76,5 +77,17 @@ class InMemoryEventRepositoryTest {
         assertEquals(false, repository.toggleInterest("feria-cultural"))
         assertEquals(before, repository.findPublicEvent("feria-cultural")!!.interestCount)
         assertFalse("feria-cultural" in repository.interestedEventIds.value)
+    }
+
+    @Test
+    fun createdPendingEventIsStoredButNotPublic() {
+        val pending = SampleEvents.all.first().copy(id = "nuevo", organizerId = "user-1", status = EventStatus.PENDING)
+
+        repository.createEvent(pending)
+
+        assertEquals(listOf(pending), repository.findEventsByOrganizer("user-1"))
+        assertNull(repository.findPublicEvent("nuevo"))
+        assertEquals(5, repository.publicEvents.value.size)
+        assertEquals(AttendanceResult.NOT_FOUND, repository.confirmAttendance("nuevo"))
     }
 }

@@ -21,6 +21,12 @@ interface EventRepository {
 
     fun findPublicEvent(id: String): CommunityEvent?
 
+    /** Eventos creados por un usuario, en cualquier estado (pendientes y rechazados incluidos). */
+    fun findEventsByOrganizer(organizerId: String): List<CommunityEvent>
+
+    /** Guarda un evento nuevo. Si no está verificado, no aparece en [publicEvents]. */
+    fun createEvent(event: CommunityEvent)
+
     /** Suma un asistente si hay cupo y el usuario no había confirmado antes. */
     fun confirmAttendance(eventId: String): AttendanceResult
 
