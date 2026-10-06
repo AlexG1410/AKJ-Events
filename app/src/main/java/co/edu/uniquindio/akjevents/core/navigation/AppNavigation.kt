@@ -1,6 +1,7 @@
 package co.edu.uniquindio.akjevents.core.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,57 +20,64 @@ fun AppNavigation() {
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = MainRoutes.Splash) {
-        composable<MainRoutes.Splash> {
+        composable<MainRoutes.Splash> { entry ->
             SplashScreen(onFinished = {
-                navController.navigate(MainRoutes.Login) {
-                    // Saca el splash de la pila para que "atrás" no regrese a él
-                    popUpTo<MainRoutes.Splash> { inclusive = true }
+                navController.fromTop(entry) {
+                    navigate(MainRoutes.Login) {
+                        // Saca el splash de la pila para que "atrás" no regrese a él
+                        popUpTo<MainRoutes.Splash> { inclusive = true }
+                    }
                 }
             })
         }
-        composable<MainRoutes.Login> {
+        composable<MainRoutes.Login> { entry ->
             LoginScreen(
-                onLoginSuccess = { navController.navigateToHome() },
-                onCreateAccount = {
-                    navController.navigate(MainRoutes.Register) { launchSingleTop = true }
-                },
-                onForgotPassword = {
-                    navController.navigate(MainRoutes.RecoverPassword) { launchSingleTop = true }
-                }
+                onLoginSuccess = { navController.fromTop(entry) { navigateToHome() } },
+                onCreateAccount = { navController.fromTop(entry) { navigate(MainRoutes.Register) } },
+                onForgotPassword = { navController.fromTop(entry) { navigate(MainRoutes.RecoverPassword) } }
             )
         }
-        composable<MainRoutes.Register> {
+        composable<MainRoutes.Register> { entry ->
             RegisterScreen(
-                onBack = { navController.popBackStack() },
-                onRegisterSuccess = { navController.navigateToHome() }
+                onBack = { navController.fromTop(entry) { popBackStack() } },
+                onRegisterSuccess = { navController.fromTop(entry) { navigateToHome() } }
             )
         }
-        composable<MainRoutes.RecoverPassword> {
+        composable<MainRoutes.RecoverPassword> { entry ->
             RecoverPasswordScreen(
-                onBack = { navController.popBackStack() },
-                onLinkSent = { navController.popBackStack() }
+                onBack = { navController.fromTop(entry) { popBackStack() } },
+                onLinkSent = { navController.fromTop(entry) { popBackStack() } }
             )
         }
-        composable<MainRoutes.Home> {
+        composable<MainRoutes.Home> { entry ->
             HomeScreen(
-                onOpenEvent = { eventId -> navController.navigate(MainRoutes.EventDetail(eventId)) },
-                onCreateEvent = { navController.navigate(MainRoutes.CreateEvent) { launchSingleTop = true } }
+                onOpenEvent = { eventId -> navController.fromTop(entry) { navigate(MainRoutes.EventDetail(eventId)) } },
+                onCreateEvent = { navController.fromTop(entry) { navigate(MainRoutes.CreateEvent) } }
             )
         }
         composable<MainRoutes.EventDetail> { entry ->
             EventDetailScreen(
                 eventId = entry.toRoute<MainRoutes.EventDetail>().eventId,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.fromTop(entry) { popBackStack() } }
             )
         }
-        composable<MainRoutes.CreateEvent> {
+        composable<MainRoutes.CreateEvent> { entry ->
             CreateEventScreen(
-                onBack = { navController.popBackStack() },
+                onBack = { navController.fromTop(entry) { popBackStack() } },
                 // El evento queda pendiente de verificación, así que el feed no lo muestra
-                onEventSubmitted = { navController.popBackStack(MainRoutes.Home, inclusive = false) }
+                onEventSubmitted = { navController.fromTop(entry) { popBackStack(MainRoutes.Home, inclusive = false) } }
             )
         }
     }
+}
+
+/**
+ * Navega solo si [entry] sigue siendo la pantalla de arriba de la pila. Evita que un doble toque
+ * abra dos veces una pantalla o saque también la anterior (dejando la app en blanco), y que una
+ * confirmación tardía navegue cuando el usuario ya salió con "atrás".
+ */
+private inline fun NavHostController.fromTop(entry: NavBackStackEntry, action: NavHostController.() -> Unit) {
+    if (currentBackStackEntry?.id == entry.id) action()
 }
 
 /** Va al Home sacando de la pila el Login y lo que haya encima (Registro). */
