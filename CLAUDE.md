@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-AKJ Events is a single-module Android app (`:app`, package `co.edu.uniquindio.akjevents`) for discovering community events, built as a university class project. It is at "Paso 1": all data is local demo data, with no backend, auth, or persistence yet. Code comments, UI strings, and the README are in Spanish; keep new user-facing text and comments in Spanish to match.
+AKJ Events is a single-module Android app (`:app`, package `co.edu.uniquindio.akjevents`) for discovering community events, built as a university class project. It is at "Fase 2": all data is local demo data and the session is simulated (login, registration and password recovery only validate input), with no backend, auth, or persistence yet. Code comments, UI strings, and the README are in Spanish; keep new user-facing text and comments in Spanish to match.
 
 Toolchain: JDK 17, Gradle 9.6, AGP 9.4, Kotlin 2.4, compileSdk/targetSdk 37, minSdk 28. Dependency versions live in `gradle/libs.versions.toml`.
 
@@ -56,8 +56,7 @@ Los mockups están en `/mockups`. `mockups/README.md` indica qué pantalla corre
 
 ## Estado de la entrega (fase 2)
 
-Hecho (puntos 1 a 9): splash, ícono adaptativo, login, registro, recuperar contraseña, feed (Home), detalle de evento, repositorio en memoria y crear evento.
+Hecho (puntos 1 a 10): splash, ícono adaptativo, login, registro, recuperar contraseña, feed (Home), detalle de evento, repositorio en memoria, crear evento y revisión final (navegación protegida contra dobles toques con `fromTop` en `AppNavigation.kt`, limpieza de código sin uso, README de la fase 2).
 
 Pendiente:
-- Punto 10: revisión final.
 - Subir la rama `entrega-fase2` y abrir el pull request a `main`.
