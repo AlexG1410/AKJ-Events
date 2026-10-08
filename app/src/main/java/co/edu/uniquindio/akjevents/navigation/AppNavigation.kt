@@ -1,4 +1,4 @@
-package co.edu.uniquindio.akjevents.core.navigation
+package co.edu.uniquindio.akjevents.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavBackStackEntry

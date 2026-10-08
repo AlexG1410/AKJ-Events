@@ -10,6 +10,11 @@ object FormValidation {
 
     fun isValidPassword(password: String): Boolean = password.length >= MIN_PASSWORD_LENGTH
 
+    fun isStrongPassword(password: String): Boolean =
+        isValidPassword(password) && password.any(Char::isUpperCase) && password.any(Char::isDigit)
+
     const val INVALID_EMAIL_MESSAGE = "Ingresa un correo electrónico válido"
     const val SHORT_PASSWORD_MESSAGE = "La contraseña debe tener al menos $MIN_PASSWORD_LENGTH caracteres"
+    const val WEAK_PASSWORD_MESSAGE =
+        "La contraseña debe tener al menos $MIN_PASSWORD_LENGTH caracteres, una mayúscula y un número"
 }

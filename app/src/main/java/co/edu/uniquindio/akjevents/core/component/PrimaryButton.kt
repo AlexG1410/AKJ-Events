@@ -32,6 +32,7 @@ fun PrimaryButton(
     modifier: Modifier = Modifier,
     leadingIcon: ImageVector? = null,
     trailingIcon: ImageVector? = null,
+    enabled: Boolean = true,
     isLoading: Boolean = false,
     loadingText: String = text,
     containerColor: Color = BrandTerracotta,
@@ -42,7 +43,7 @@ fun PrimaryButton(
 ) {
     Button(
         onClick = onClick,
-        enabled = !isLoading,
+        enabled = enabled && !isLoading,
         modifier = modifier.fillMaxWidth().height(height),
         shape = shape,
         colors = ButtonDefaults.buttonColors(

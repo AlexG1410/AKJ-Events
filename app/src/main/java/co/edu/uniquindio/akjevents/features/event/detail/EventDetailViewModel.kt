@@ -25,7 +25,7 @@ data class EventDetailUiState(
 )
 
 /**
- * Detalle de un evento público. Recibe el id que llega en la ruta [co.edu.uniquindio.akjevents.core.navigation.MainRoutes.EventDetail].
+ * Detalle de un evento público. Recibe el id que llega en la ruta [co.edu.uniquindio.akjevents.navigation.MainRoutes.EventDetail].
  * La asistencia y el interés se guardan en el [EventRepository], así que el Home ve los mismos cambios.
  */
 class EventDetailViewModel(

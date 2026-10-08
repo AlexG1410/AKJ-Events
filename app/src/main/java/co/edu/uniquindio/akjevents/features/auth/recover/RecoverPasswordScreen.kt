@@ -59,6 +59,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.uniquindio.akjevents.core.component.FormFieldError
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
 import co.edu.uniquindio.akjevents.core.component.PrimaryButton
@@ -228,14 +229,17 @@ fun RecoverPasswordScreen(
                             onValueChange = viewModel::onEmailChange,
                             placeholder = "ejemplo@akjevents.co",
                             leadingIcon = Icons.Outlined.Mail,
+                            isError = state.emailError != null,
                             style = RecoverFieldStyle,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Send),
                             keyboardActions = KeyboardActions(onSend = { send() })
                         )
+                        FormFieldError(state.emailError)
                     }
                     PrimaryButton(
                         text = "Enviar enlace de recuperación",
                         leadingIcon = Icons.AutoMirrored.Outlined.Send,
+                        enabled = state.isFormValid,
                         isLoading = state.isBusy,
                         loadingText = "Enviando...",
                         containerColor = Terracotta,

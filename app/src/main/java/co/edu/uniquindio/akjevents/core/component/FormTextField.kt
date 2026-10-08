@@ -42,6 +42,7 @@ import co.edu.uniquindio.akjevents.core.theme.BrandDark
 import co.edu.uniquindio.akjevents.core.theme.BrandFieldFill
 import co.edu.uniquindio.akjevents.core.theme.BrandMuted
 import co.edu.uniquindio.akjevents.core.theme.BrandTerracotta
+import co.edu.uniquindio.akjevents.core.theme.ErrorColor
 
 /** Apariencia de un [FormTextField]; cada mockup define la suya. */
 data class FormFieldStyle(
@@ -88,6 +89,7 @@ fun FormTextField(
     style: FormFieldStyle = FormFieldStyles.Brand,
     leadingIconTint: Color = style.iconColor,
     trailingContent: (@Composable () -> Unit)? = null,
+    isError: Boolean = false,
     readOnly: Boolean = false,
     enabled: Boolean = true,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
@@ -109,7 +111,7 @@ fun FormTextField(
         singleLine = true,
         visualTransformation = visualTransformation,
         interactionSource = interactionSource,
-        cursorBrush = SolidColor(style.focusedBorderColor),
+        cursorBrush = SolidColor(if (isError) ErrorColor else style.focusedBorderColor),
         decorationBox = { innerTextField ->
             Box(
                 modifier = Modifier
@@ -117,7 +119,11 @@ fun FormTextField(
                     .background(if (isFocused) style.focusedContainerColor else style.containerColor, style.shape)
                     .border(
                         width = if (isFocused) style.focusedBorderWidth else 1.dp,
-                        color = if (isFocused) style.focusedBorderColor else style.borderColor,
+                        color = when {
+                            isError -> ErrorColor
+                            isFocused -> style.focusedBorderColor
+                            else -> style.borderColor
+                        },
                         shape = style.shape
                     ),
                 contentAlignment = Alignment.CenterStart
@@ -159,6 +165,7 @@ fun PasswordFormTextField(
     onTogglePasswordVisibility: () -> Unit,
     modifier: Modifier = Modifier,
     style: FormFieldStyle = FormFieldStyles.Brand,
+    isError: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default
 ) {
@@ -169,6 +176,7 @@ fun PasswordFormTextField(
         leadingIcon = leadingIcon,
         modifier = modifier,
         style = style,
+        isError = isError,
         keyboardOptions = keyboardOptions,
         keyboardActions = keyboardActions,
         visualTransformation = if (isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
@@ -183,4 +191,19 @@ fun PasswordFormTextField(
             }
         }
     )
+}
+
+/** Mensaje compacto para explicar por qué un campo de formulario no es válido. */
+@Composable
+fun FormFieldError(message: String?, modifier: Modifier = Modifier) {
+    if (message != null) {
+        Text(
+            text = message,
+            color = ErrorColor,
+            fontSize = 10.sp,
+            lineHeight = 14.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = modifier.padding(start = 4.dp, top = 2.dp)
+        )
+    }
 }

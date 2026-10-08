@@ -91,6 +91,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.akjevents.R
+import co.edu.uniquindio.akjevents.core.component.FormFieldError
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyles
 import co.edu.uniquindio.akjevents.core.component.FormTextField
 import co.edu.uniquindio.akjevents.core.component.PasswordFormTextField
@@ -187,13 +188,14 @@ fun RegisterScreen(
                 Spacer(Modifier.height(16.dp))
 
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    LabeledField("Nombre completo *") {
+                    LabeledField("Nombre completo *", error = state.fullNameError) {
                         FormTextField(
                             value = state.fullName,
                             onValueChange = viewModel::onFullNameChange,
                             placeholder = "Tu nombre y apellido",
                             leadingIcon = Icons.Outlined.Person,
                             style = RegisterFieldStyle,
+                            isError = state.fullNameError != null,
                             keyboardOptions = KeyboardOptions(
                                 capitalization = KeyboardCapitalization.Words,
                                 imeAction = ImeAction.Next
@@ -201,13 +203,14 @@ fun RegisterScreen(
                         )
                     }
 
-                    LabeledField("Correo electrónico *") {
+                    LabeledField("Correo electrónico *", error = state.emailError) {
                         FormTextField(
                             value = state.email,
                             onValueChange = viewModel::onEmailChange,
                             placeholder = "correo@ejemplo.com",
                             leadingIcon = Icons.Outlined.Mail,
                             style = RegisterFieldStyle,
+                            isError = state.emailError != null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next)
                         )
                     }
@@ -222,6 +225,7 @@ fun RegisterScreen(
 
                     LabeledField(
                         label = "Contraseña segura *",
+                        error = state.passwordError,
                         modifier = Modifier.bringIntoViewRequester(passwordRequester)
                     ) {
                         PasswordFormTextField(
@@ -233,11 +237,29 @@ fun RegisterScreen(
                             isPasswordVisible = state.isPasswordVisible,
                             onTogglePasswordVisibility = viewModel::togglePasswordVisibility,
                             style = RegisterFieldStyle,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
+                            isError = state.passwordError != null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next)
                         )
                         if (state.passwordStrength != PasswordStrength.NONE) {
                             PasswordStrengthIndicator(state.passwordStrength)
                         }
+                    }
+
+                    LabeledField(
+                        label = "Confirmar contraseña *",
+                        error = state.confirmPasswordError
+                    ) {
+                        PasswordFormTextField(
+                            value = state.confirmPassword,
+                            onValueChange = viewModel::onConfirmPasswordChange,
+                            placeholder = "Repite tu contraseña",
+                            leadingIcon = Icons.Outlined.Lock,
+                            isPasswordVisible = state.isConfirmPasswordVisible,
+                            onTogglePasswordVisibility = viewModel::toggleConfirmPasswordVisibility,
+                            style = RegisterFieldStyle,
+                            isError = state.confirmPasswordError != null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done)
+                        )
                     }
 
                     InterestsSection(
@@ -253,6 +275,7 @@ fun RegisterScreen(
                     PrimaryButton(
                         text = "Crear cuenta y comenzar",
                         leadingIcon = Icons.Outlined.HowToReg,
+                        enabled = state.isFormValid,
                         isLoading = state.isBusy,
                         loadingText = "Creando cuenta...",
                         onClick = {
@@ -361,10 +384,16 @@ private fun StartingLevelBadge(levelLabel: String) {
 }
 
 @Composable
-private fun LabeledField(label: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+private fun LabeledField(
+    label: String,
+    modifier: Modifier = Modifier,
+    error: String? = null,
+    content: @Composable () -> Unit
+) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(label, color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         content()
+        FormFieldError(error)
     }
 }
 

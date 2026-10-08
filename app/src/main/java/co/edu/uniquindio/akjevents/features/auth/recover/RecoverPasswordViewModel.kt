@@ -15,6 +15,11 @@ data class RecoverPasswordUiState(
     val email: String = "",
     val result: RequestResult? = null
 ) {
+    val emailError: String?
+        get() = if (email.isNotBlank() && !FormValidation.isValidEmail(email)) {
+            FormValidation.INVALID_EMAIL_MESSAGE
+        } else null
+    val isFormValid: Boolean get() = FormValidation.isValidEmail(email)
     val isBusy: Boolean get() = result is RequestResult.Loading || result is RequestResult.Success
 }
 

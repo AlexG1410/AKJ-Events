@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.akjevents.R
+import co.edu.uniquindio.akjevents.core.component.FormFieldError
 import co.edu.uniquindio.akjevents.core.component.FormTextField
 import co.edu.uniquindio.akjevents.core.component.PasswordFormTextField
 import co.edu.uniquindio.akjevents.core.component.PrimaryButton
@@ -151,6 +152,7 @@ fun LoginScreen(
                             onValueChange = viewModel::onEmailChange,
                             placeholder = "tu.correo@ejemplo.com",
                             leadingIcon = Icons.Outlined.Mail,
+                            isError = state.emailError != null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                             trailingContent = if (state.isEmailValid) {
                                 {
@@ -163,6 +165,7 @@ fun LoginScreen(
                                 }
                             } else null
                         )
+                        FormFieldError(state.emailError)
                     }
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -187,12 +190,14 @@ fun LoginScreen(
                             leadingIcon = Icons.Outlined.Lock,
                             isPasswordVisible = state.isPasswordVisible,
                             onTogglePasswordVisibility = viewModel::togglePasswordVisibility,
+                            isError = state.passwordError != null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = {
                                 focusManager.clearFocus()
                                 viewModel.login()
                             })
                         )
+                        FormFieldError(state.passwordError)
                     }
 
                     Row(
@@ -217,6 +222,7 @@ fun LoginScreen(
                     PrimaryButton(
                         text = "Iniciar Sesión",
                         trailingIcon = Icons.AutoMirrored.Rounded.ArrowForward,
+                        enabled = state.isFormValid,
                         isLoading = state.isBusy,
                         loadingText = "Ingresando...",
                         onClick = {
