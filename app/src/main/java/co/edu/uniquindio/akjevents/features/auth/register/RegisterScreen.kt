@@ -406,25 +406,34 @@ private fun CityDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
-        FormTextField(
-            value = selectedCity,
-            onValueChange = {},
-            readOnly = true,
-            placeholder = "Selecciona tu ciudad o municipio",
-            leadingIcon = Icons.Outlined.LocationOn,
-            leadingIconTint = BrandTerracotta,
-            style = RegisterFieldStyle,
-            trailingContent = {
-                Icon(
-                    Icons.Outlined.ExpandMore,
-                    contentDescription = null,
-                    tint = BrandMuted,
-                    modifier = Modifier.padding(end = 8.dp).size(18.dp)
-                )
-            },
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-        )
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = {}) {
+        // El contenedor controla el toque; el campo interno solo dibuja el valor seleccionado.
+        // Así BasicTextField no consume el evento antes de que se abra el menú.
+        Box(
+            modifier = Modifier
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = false)
+                .fillMaxWidth()
+                .clickable(role = Role.Button) { expanded = !expanded }
+        ) {
+            FormTextField(
+                value = selectedCity,
+                onValueChange = {},
+                readOnly = true,
+                enabled = false,
+                placeholder = "Selecciona tu ciudad o municipio",
+                leadingIcon = Icons.Outlined.LocationOn,
+                leadingIconTint = BrandTerracotta,
+                style = RegisterFieldStyle,
+                trailingContent = {
+                    Icon(
+                        Icons.Outlined.ExpandMore,
+                        contentDescription = if (expanded) "Ocultar ciudades" else "Mostrar ciudades",
+                        tint = BrandMuted,
+                        modifier = Modifier.padding(end = 8.dp).size(18.dp)
+                    )
+                }
+            )
+        }
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
