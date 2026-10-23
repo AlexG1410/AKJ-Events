@@ -40,6 +40,28 @@ object EventFormat {
     fun timeRange(start: LocalDateTime, end: LocalDateTime): String =
         "${time.format(start)} - ${time.format(end)} (${duration(start, end)})"
 
+    /** "Sáb 02 Nov • 9:00 AM" */
+    fun shortDateTime(date: LocalDateTime): String =
+        "${weekday.format(date).take(3).capitalized()} ${"%02d".format(date.dayOfMonth)} ${shortMonth(date).capitalized()} • ${time.format(date)}"
+
+    /** "Hace 25 min", "Hace 3 horas", "Ayer", "Hace 4 días" o la fecha si es más antigua. */
+    fun relative(date: LocalDateTime, now: LocalDateTime = LocalDateTime.now()): String {
+        val minutes = Duration.between(date, now).toMinutes()
+        return when {
+            minutes < 1 -> "Ahora"
+            minutes < 60 -> "Hace $minutes min"
+            minutes < 120 -> "Hace 1 hora"
+            minutes < 24 * 60 -> "Hace ${minutes / 60} horas"
+            minutes < 48 * 60 -> "Ayer"
+            minutes < 7 * 24 * 60 -> "Hace ${minutes / (24 * 60)} días"
+            else -> "${date.dayOfMonth} ${shortMonth(date).capitalized()} ${date.year}"
+        }
+    }
+
+    /** "850 m" o "4.2 km" */
+    fun distance(km: Double): String =
+        if (km < 1) "${(km * 1000).toInt()} m" else "${"%.1f".format(Locale.US, km)} km"
+
     private fun duration(start: LocalDateTime, end: LocalDateTime): String {
         val minutes = Duration.between(start, end).toMinutes()
         val hours = minutes / 60

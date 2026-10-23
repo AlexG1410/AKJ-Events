@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,17 +44,24 @@ enum class BottomDestination(val label: String, val icon: ImageVector) {
     HOME("Inicio", Icons.Outlined.Home),
     MAP("Mapa", Icons.Outlined.Map),
     CREATE("Crear", Icons.Outlined.Add),
+    MODERATION("Moderar", Icons.Outlined.Shield),
     ALERTS("Alertas", Icons.Outlined.Notifications),
     PROFILE("Perfil", Icons.Outlined.Person)
 }
 
-/** Barra inferior del mockup 05: Inicio, Mapa, Crear (destacado), Alertas y Perfil. */
+/**
+ * Barra inferior del mockup 05: Inicio, Mapa, Crear (destacado), Alertas y Perfil.
+ * Para un moderador, el botón central abre el panel de moderación en lugar de Crear.
+ */
 @Composable
 fun AppBottomBar(
-    selected: BottomDestination,
+    selected: BottomDestination?,
     onSelect: (BottomDestination) -> Unit,
-    hasUnreadAlerts: Boolean = false
+    hasUnreadAlerts: Boolean = false,
+    isModerator: Boolean = false
 ) {
+    val center = if (isModerator) BottomDestination.MODERATION else BottomDestination.CREATE
+    val destinations = listOf(BottomDestination.HOME, BottomDestination.MAP, center, BottomDestination.ALERTS, BottomDestination.PROFILE)
     Surface(color = Color.White.copy(alpha = 0.95f), shadowElevation = 8.dp) {
         Row(
             modifier = Modifier
@@ -64,10 +72,11 @@ fun AppBottomBar(
             horizontalArrangement = Arrangement.SpaceAround,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BottomDestination.entries.forEach { destination ->
+            destinations.forEach { destination ->
                 BottomBarItem(
                     destination = destination,
                     isSelected = destination == selected,
+                    isHighlighted = destination == center,
                     showBadge = destination == BottomDestination.ALERTS && hasUnreadAlerts,
                     onClick = { onSelect(destination) }
                 )
@@ -80,17 +89,17 @@ fun AppBottomBar(
 private fun BottomBarItem(
     destination: BottomDestination,
     isSelected: Boolean,
+    isHighlighted: Boolean,
     showBadge: Boolean,
     onClick: () -> Unit
 ) {
-    val isCreate = destination == BottomDestination.CREATE
     val pillColor = when {
-        isCreate -> Terracotta
+        isHighlighted -> Terracotta
         isSelected -> PrimaryFixed
         else -> Color.Transparent
     }
     val iconColor = when {
-        isCreate -> Color.White
+        isHighlighted -> Color.White
         isSelected -> OnPrimaryFixedVariant
         else -> MutedText
     }
@@ -105,7 +114,7 @@ private fun BottomBarItem(
         Box(
             modifier = Modifier
                 .size(width = 48.dp, height = 28.dp)
-                .then(if (isCreate) Modifier.shadow(4.dp, CircleShape) else Modifier)
+                .then(if (isHighlighted) Modifier.shadow(4.dp, CircleShape) else Modifier)
                 .background(pillColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
@@ -113,7 +122,7 @@ private fun BottomBarItem(
                 destination.icon,
                 contentDescription = null,
                 tint = iconColor,
-                modifier = Modifier.size(if (isCreate) 22.dp else 20.dp)
+                modifier = Modifier.size(if (isHighlighted) 22.dp else 20.dp)
             )
             if (showBadge) {
                 Box(

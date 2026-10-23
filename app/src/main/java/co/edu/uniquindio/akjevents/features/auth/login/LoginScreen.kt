@@ -83,7 +83,7 @@ import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (isModerator: Boolean) -> Unit,
     onCreateAccount: () -> Unit,
     onForgotPassword: () -> Unit,
     viewModel: LoginViewModel = viewModel()
@@ -96,7 +96,7 @@ fun LoginScreen(
         result = state.result,
         snackbarHostState = snackbarHostState,
         onFailureShown = viewModel::onFailureShown,
-        onSuccess = onLoginSuccess
+        onSuccess = { onLoginSuccess(state.isModerator) }
     )
 
     Scaffold(

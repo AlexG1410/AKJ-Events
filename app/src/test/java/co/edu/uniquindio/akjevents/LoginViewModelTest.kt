@@ -3,6 +3,7 @@ package co.edu.uniquindio.akjevents
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
 import co.edu.uniquindio.akjevents.data.demo.SampleUsers
+import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.features.auth.login.LoginViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -13,11 +14,11 @@ class LoginViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val viewModel by lazy { LoginViewModel(simulatedRequestMs = 0) }
+    private val viewModel by lazy { LoginViewModel(InMemoryUserRepository(), simulatedRequestMs = 0) }
 
     @Test
-    fun demoCredentialsBelongToCurrentUser() {
-        assertEquals(SampleUsers.currentUser.email, DemoCredentials.email)
+    fun demoCredentialsBelongToTheDemoUser() {
+        assertEquals(SampleUsers.demoUser.email, DemoCredentials.email)
     }
 
     @Test
@@ -29,6 +30,18 @@ class LoginViewModelTest {
         viewModel.login()
 
         assertTrue(viewModel.uiState.value.result is RequestResult.Success)
+        assertTrue(!viewModel.uiState.value.isModerator)
+    }
+
+    @Test
+    fun moderatorCredentialsAreFlaggedForTheModerationPanel() {
+        viewModel.onEmailChange(DemoCredentials.moderatorEmail)
+        viewModel.onPasswordChange(DemoCredentials.moderatorPassword)
+
+        viewModel.login()
+
+        assertTrue(viewModel.uiState.value.result is RequestResult.Success)
+        assertTrue(viewModel.uiState.value.isModerator)
     }
 
     @Test

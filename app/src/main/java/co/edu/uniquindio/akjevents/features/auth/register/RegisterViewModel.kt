@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
+import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
+import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
+import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
+import co.edu.uniquindio.akjevents.domain.repository.UserRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -78,19 +82,13 @@ data class RegisterUiState(
 }
 
 class RegisterViewModel(
+    private val users: UserRepository = InMemoryUserRepository.shared,
     private val simulatedRequestMs: Long = SIMULATED_REQUEST_MS
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
-    val cities = listOf(
-        "Armenia, Quindío",
-        "Calarcá, Quindío",
-        "Circasia, Quindío",
-        "Montenegro, Quindío",
-        "Pereira, Risaralda",
-        "Manizales, Caldas"
-    )
+    val cities: List<String> = SamplePlaces.cities.map { it.name }
 
     fun onFullNameChange(name: String) = _uiState.update { it.copy(fullName = name) }
 
@@ -135,11 +133,14 @@ class RegisterViewModel(
 
         _uiState.update { it.copy(result = RequestResult.Loading) }
         viewModelScope.launch {
-            // Simulación: todavía no hay backend de registro
+            // La cuenta se guarda en memoria; con el backend la creará el servicio de autenticación
             delay(simulatedRequestMs)
-            _uiState.update {
-                it.copy(result = RequestResult.Success("¡Cuenta creada! Empiezas como ${it.startingLevel.label} (Nivel 1)"))
+            val result = when (users.register(state.fullName, state.email, state.city, state.password, state.interests)) {
+                is RegisterResult.Success ->
+                    RequestResult.Success("¡Cuenta creada! Empiezas como ${state.startingLevel.label} (Nivel 1)")
+                RegisterResult.EmailInUse -> RequestResult.Failure("Ya existe una cuenta con ese correo")
             }
+            _uiState.update { it.copy(result = result) }
         }
     }
 

@@ -8,7 +8,8 @@ import java.time.LocalDateTime
 
 /** Datos locales de demostración. Se reemplazarán por un repositorio remoto. */
 object SampleEvents {
-    private val tomorrow = LocalDateTime.now().plusDays(1)
+    private val now = LocalDateTime.now()
+    private val tomorrow = now.plusDays(1)
 
     val all: List<CommunityEvent> = listOf(
         CommunityEvent(
@@ -91,6 +92,55 @@ object SampleEvents {
             status = EventStatus.VERIFIED
         ),
         CommunityEvent(
+            id = "cine-foro",
+            organizerId = "user-1",
+            title = "Cine foro al parque",
+            category = EventCategory.CULTURE,
+            description = "Proyección al aire libre de cine colombiano y conversación con la comunidad. Trae tu cobija o silla plegable.",
+            address = "Biblioteca Pública Municipal, Armenia, Quindío",
+            location = Location(4.5356, -75.6762),
+            imageUrls = listOf("https://picsum.photos/seed/akj-cine/900/500"),
+            startsAt = tomorrow.plusDays(2).withHour(18).withMinute(30),
+            endsAt = tomorrow.plusDays(2).withHour(21).withMinute(0),
+            capacity = 60,
+            attendanceCount = 18,
+            interestCount = 22,
+            status = EventStatus.VERIFIED,
+            createdAt = now.minusDays(6)
+        ),
+        CommunityEvent(
+            id = "caminata-cocora",
+            organizerId = "organizer-3",
+            title = "Caminata ecológica Valle de Cocora",
+            category = EventCategory.SPORTS,
+            description = "Recorrido guiado de 12 km entre palmas de cera. Nivel intermedio; lleva botas, impermeable y refrigerio.",
+            address = "Valle de Cocora, Salento, Quindío",
+            location = Location(4.6380, -75.4870),
+            imageUrls = listOf("https://picsum.photos/seed/akj-cocora/900/500"),
+            startsAt = tomorrow.plusDays(9).withHour(6).withMinute(30),
+            endsAt = tomorrow.plusDays(9).withHour(13).withMinute(0),
+            capacity = 40,
+            attendanceCount = 27,
+            interestCount = 44,
+            status = EventStatus.VERIFIED
+        ),
+        CommunityEvent(
+            id = "hackaton-utp",
+            organizerId = "organizer-4",
+            title = "Hackatón universitario de soluciones cívicas",
+            category = EventCategory.ACADEMIC,
+            description = "24 horas para crear soluciones tecnológicas para la región. Equipos de 3 a 5 personas; hay mentorías y comida.",
+            address = "Universidad Tecnológica de Pereira, Pereira, Risaralda",
+            location = Location(4.7946, -75.6900),
+            imageUrls = listOf("https://picsum.photos/seed/akj-hackaton/900/500"),
+            startsAt = tomorrow.plusDays(12).withHour(8).withMinute(0),
+            endsAt = tomorrow.plusDays(13).withHour(8).withMinute(0),
+            capacity = 120,
+            attendanceCount = 64,
+            interestCount = 58,
+            status = EventStatus.VERIFIED
+        ),
+        CommunityEvent(
             id = "pendiente-privado",
             organizerId = "organizer-6",
             title = "Evento en revisión",
@@ -101,7 +151,54 @@ object SampleEvents {
             imageUrls = listOf("https://picsum.photos/seed/akj-pendiente/900/500"),
             startsAt = tomorrow.plusDays(7).withHour(10).withMinute(0),
             endsAt = tomorrow.plusDays(7).withHour(12).withMinute(0),
-            status = EventStatus.PENDING
+            status = EventStatus.PENDING,
+            createdAt = now.minusDays(1)
+        ),
+        CommunityEvent(
+            id = "huertos-urbanos",
+            organizerId = "user-1",
+            title = "Taller de Huertos Urbanos y Compostaje",
+            category = EventCategory.VOLUNTEERING,
+            description = "Aprenderemos a cultivar alimentos orgánicos en balcones y terrazas reducidas, a preparar compost casero " +
+                "y técnicas de reciclaje de sustrato para la comunidad.",
+            address = "Parque de la Vida, Armenia, Quindío",
+            location = Location(4.5511, -75.6598),
+            imageUrls = listOf("https://picsum.photos/seed/akj-huertos/900/500"),
+            startsAt = tomorrow.plusDays(8).withHour(9).withMinute(0),
+            endsAt = tomorrow.plusDays(8).withHour(12).withMinute(30),
+            capacity = 35,
+            status = EventStatus.PENDING,
+            createdAt = now.minusHours(2)
+        ),
+        CommunityEvent(
+            id = "microfutbol",
+            organizerId = "organizer-5",
+            title = "Torneo Relámpago de Microfútbol",
+            category = EventCategory.SPORTS,
+            description = "Torneo de un día para equipos barriales de 5 jugadores. Inscripción por equipos en la casa comunal.",
+            address = "Estadio Centenario, Armenia, Quindío",
+            location = Location(4.5208, -75.6858),
+            imageUrls = listOf("https://picsum.photos/seed/akj-microfutbol/900/500"),
+            startsAt = tomorrow.plusDays(10).withHour(14).withMinute(0),
+            endsAt = tomorrow.plusDays(10).withHour(19).withMinute(0),
+            capacity = 60,
+            status = EventStatus.PENDING,
+            createdAt = now.minusMinutes(40)
+        ),
+        CommunityEvent(
+            id = "muestra-artesanal",
+            organizerId = "organizer-2",
+            title = "Muestra Artesanal y Café Quindiano",
+            category = EventCategory.SOCIAL,
+            description = "Artesanos y caficultores de la región muestran su trabajo. Habrá catas guiadas de café de origen.",
+            address = "Plaza principal de Calarcá, Calarcá, Quindío",
+            location = Location(4.5296, -75.6431),
+            imageUrls = listOf("https://picsum.photos/seed/akj-artesanal/900/500"),
+            startsAt = tomorrow.plusDays(14).withHour(10).withMinute(0),
+            endsAt = tomorrow.plusDays(14).withHour(18).withMinute(0),
+            capacity = 120,
+            status = EventStatus.PENDING,
+            createdAt = now.minusHours(5)
         ),
         CommunityEvent(
             id = "rechazado-privado",
@@ -116,6 +213,39 @@ object SampleEvents {
             endsAt = tomorrow.plusDays(8).withHour(12).withMinute(0),
             status = EventStatus.REJECTED,
             rejectionReason = "Falta información sobre el lugar del evento"
+        ),
+        CommunityEvent(
+            id = "voleibol-callejero",
+            organizerId = "user-1",
+            title = "Torneo Nocturno de Voleibol Callejero",
+            category = EventCategory.SPORTS,
+            description = "Torneo abierto de voleibol 6 contra 6 en la cancha del barrio, con premiación para los tres primeros equipos.",
+            address = "Cancha Barrio Granada, Armenia, Quindío",
+            location = Location(4.5150, -75.6920),
+            imageUrls = listOf("https://picsum.photos/seed/akj-voleibol/900/500"),
+            startsAt = tomorrow.plusDays(3).withHour(19).withMinute(0),
+            endsAt = tomorrow.plusDays(3).withHour(22).withMinute(0),
+            status = EventStatus.REJECTED,
+            rejectionReason = "Lugar no disponible o sin permiso municipal: la cancha tiene reserva prioritaria de las escuelas " +
+                "deportivas los viernes por la noche. Elige otro horario o adjunta la autorización de la junta de acción comunal.",
+            createdAt = now.minusDays(3)
+        ),
+        CommunityEvent(
+            id = "reforestacion-rio",
+            organizerId = "user-1",
+            title = "Jornada de Reforestación Río Quindío",
+            category = EventCategory.VOLUNTEERING,
+            description = "Siembra de árboles nativos en la cuenca alta del río Quindío junto con la comunidad y guardabosques.",
+            address = "Cuenca Alta del Río Quindío, Salento, Quindío",
+            location = Location(4.6290, -75.5300),
+            imageUrls = listOf("https://picsum.photos/seed/akj-reforestacion/900/500"),
+            startsAt = now.minusDays(12).withHour(7).withMinute(0),
+            endsAt = now.minusDays(12).withHour(13).withMinute(0),
+            capacity = 50,
+            attendanceCount = 45,
+            interestCount = 33,
+            status = EventStatus.FINISHED,
+            createdAt = now.minusDays(25)
         )
     )
 

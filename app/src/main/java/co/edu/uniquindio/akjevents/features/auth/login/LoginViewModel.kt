@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
-import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
+import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
+import co.edu.uniquindio.akjevents.domain.repository.UserRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,7 +18,9 @@ data class LoginUiState(
     val password: String = "",
     val isPasswordVisible: Boolean = false,
     val rememberDevice: Boolean = false,
-    val result: RequestResult? = null
+    val result: RequestResult? = null,
+    // Define a qué pantalla se entra después de iniciar sesión
+    val isModerator: Boolean = false
 ) {
     val isEmailValid: Boolean get() = FormValidation.isValidEmail(email)
     val emailError: String?
@@ -31,6 +34,7 @@ data class LoginUiState(
 }
 
 class LoginViewModel(
+    private val users: UserRepository = InMemoryUserRepository.shared,
     private val simulatedRequestMs: Long = SIMULATED_REQUEST_MS
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -61,16 +65,15 @@ class LoginViewModel(
 
         _uiState.update { it.copy(result = RequestResult.Loading) }
         viewModelScope.launch {
-            // Simulación local: estas credenciales se reemplazarán por el servicio de autenticación.
+            // Las cuentas viven en memoria; con el backend las validará el servicio de autenticación
             delay(simulatedRequestMs)
-            val credentialsMatch = state.email.trim().equals(DemoCredentials.email, ignoreCase = true) &&
-                state.password == DemoCredentials.password
-            val result = if (credentialsMatch) {
-                RequestResult.Success("¡Bienvenido de nuevo! Iniciaste sesión")
+            val user = users.login(state.email, state.password)
+            val result = if (user != null) {
+                RequestResult.Success("¡Bienvenido de nuevo, ${user.firstName}!")
             } else {
                 RequestResult.Failure("Correo o contraseña incorrectos")
             }
-            _uiState.update { it.copy(result = result) }
+            _uiState.update { it.copy(result = result, isModerator = user?.isModerator == true) }
         }
     }
 

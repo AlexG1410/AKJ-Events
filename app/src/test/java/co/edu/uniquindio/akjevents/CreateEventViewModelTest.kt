@@ -1,10 +1,11 @@
 package co.edu.uniquindio.akjevents
 
 import co.edu.uniquindio.akjevents.core.util.RequestResult
-import co.edu.uniquindio.akjevents.data.demo.SampleUsers
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
+import co.edu.uniquindio.akjevents.core.util.PickedLocation
+import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
+import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.features.event.create.CreateEventViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -19,16 +20,20 @@ class CreateEventViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val now = LocalDateTime.of(2026, 10, 5, 12, 0)
-    private val repository = InMemoryEventRepository()
-    private val viewModel by lazy { CreateEventViewModel(repository, now = { now }) }
+    private val repos = TestRepositories()
+    private val repository = repos.events
 
-    private val currentUserId = SampleUsers.currentUser.id
+    // Un usuario recién registrado, sin eventos propios, abre la sesión
+    private val currentUserId = (repos.users.register("Ana Gómez", "ana@ejemplo.com", "Armenia, Quindío", "Comunidad1", emptySet()) as RegisterResult.Success).user.id
+    private val viewModel by lazy { CreateEventViewModel(repository, repos.users, now = { now }) }
+    private val parqueDeLaVida = PickedLocation("Parque de la Vida, Av. Bolívar", Location(4.5511, -75.6598))
 
     private fun fillValidForm() = with(viewModel) {
         onTitleChange("Taller de huertos urbanos")
         selectCategory(EventCategory.VOLUNTEERING)
         onDescriptionChange("Aprenderemos a cultivar en balcones y terrazas.")
         onPlaceChange("Parque de la Vida, Armenia")
+        onLocationPicked(parqueDeLaVida)
         onStartsAtChange(now.plusDays(2).withHour(9))
         onEndsAtChange(now.plusDays(2).withHour(12))
     }
@@ -49,8 +54,9 @@ class CreateEventViewModelTest {
         assertEquals("Taller de huertos urbanos", created.title)
         assertEquals(35, created.capacity)
         assertEquals(listOf(viewModel.uiState.value.imageUrl), created.imageUrls)
+        assertEquals(parqueDeLaVida.location, created.location)
         assertNull(repository.findPublicEvent(created.id))
-        assertEquals(5, repository.publicEvents.value.size)
+        assertEquals(8, repository.publicEvents.value.size)
     }
 
     @Test
@@ -81,6 +87,10 @@ class CreateEventViewModelTest {
         assertEquals("Indica el lugar o punto de encuentro", errorMessage())
 
         viewModel.onPlaceChange("Plaza de Bolívar")
+        viewModel.submit()
+        assertEquals("Elige la ubicación del evento en el mapa", errorMessage())
+
+        viewModel.onLocationPicked(parqueDeLaVida)
         viewModel.submit()
         assertEquals("Elige la fecha y hora de inicio y de fin", errorMessage())
 
@@ -147,5 +157,42 @@ class CreateEventViewModelTest {
 
         assertNotEquals(before, viewModel.uiState.value.imageUrl)
         assertTrue(viewModel.uiState.value.imageUrl.startsWith("https://picsum.photos/seed/"))
+    }
+
+    @Test
+    fun pickedLocationFillsAnEmptyPlace() {
+        viewModel.onLocationPicked(parqueDeLaVida)
+
+        assertEquals(parqueDeLaVida.address, viewModel.uiState.value.place)
+        assertEquals(parqueDeLaVida.location, viewModel.uiState.value.location)
+    }
+
+    @Test
+    fun editingARejectedEventResubmitsItForReview() {
+        val demo = TestRepositories()
+        val edit = CreateEventViewModel(demo.events, demo.users, eventId = "voleibol-callejero", now = { now })
+        assertTrue(edit.uiState.value.isEditing)
+        assertEquals("Torneo Nocturno de Voleibol Callejero", edit.uiState.value.title)
+
+        edit.onTitleChange("Torneo de Voleibol en la cancha comunal")
+        edit.onStartsAtChange(now.plusDays(3).withHour(15))
+        edit.onEndsAtChange(now.plusDays(3).withHour(18))
+        edit.submit()
+
+        assertEquals(RequestResult.Success(CreateEventViewModel.RESUBMITTED_MESSAGE), edit.uiState.value.result)
+        val event = demo.events.findEvent("voleibol-callejero")!!
+        assertEquals("Torneo de Voleibol en la cancha comunal", event.title)
+        assertEquals(EventStatus.PENDING, event.status)
+        assertNull(event.rejectionReason)
+    }
+
+    @Test
+    fun othersCannotEditAnEvent() {
+        val demo = TestRepositories()
+        val edit = CreateEventViewModel(demo.events, demo.users, eventId = "ciclopaseo", now = { now })
+
+        assertTrue(!edit.uiState.value.canSubmit)
+        edit.submit()
+        assertEquals("Ciclopaseo nocturno por Armenia", demo.events.findEvent("ciclopaseo")!!.title)
     }
 }

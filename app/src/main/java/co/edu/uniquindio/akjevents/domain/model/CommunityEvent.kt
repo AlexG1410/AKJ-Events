@@ -17,7 +17,8 @@ data class CommunityEvent(
     val attendanceCount: Int = 0,
     val interestCount: Int = 0,
     val status: EventStatus = EventStatus.PENDING,
-    val rejectionReason: String? = null
+    val rejectionReason: String? = null,
+    val createdAt: LocalDateTime = startsAt.minusDays(7)
 ) {
     init {
         require(imageUrls.isNotEmpty()) { "El evento debe tener al menos una imagen" }
@@ -27,4 +28,11 @@ data class CommunityEvent(
             "Un evento rechazado debe indicar el motivo"
         }
     }
+
+    /**
+     * Código que muestra el QR del organizador y que valida el check-in de los asistentes.
+     * Se deriva del id; en la siguiente fase lo generará y verificará el servidor.
+     */
+    val checkInCode: String
+        get() = "AKJ-" + Integer.toUnsignedString(id.hashCode(), 36).uppercase().padStart(6, '0').take(6)
 }

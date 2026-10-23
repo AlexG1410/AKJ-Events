@@ -36,7 +36,10 @@ import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Done
+import androidx.compose.material.icons.outlined.EditOff
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.EventAvailable
@@ -52,7 +55,6 @@ import androidx.compose.material.icons.outlined.School
 import androidx.compose.material.icons.outlined.SportsSoccer
 import androidx.compose.material.icons.outlined.TheaterComedy
 import androidx.compose.material.icons.outlined.VerifiedUser
-import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
@@ -74,11 +76,11 @@ import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,8 +103,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.uniquindio.akjevents.R
-import co.edu.uniquindio.akjevents.core.component.AppBottomBar
-import co.edu.uniquindio.akjevents.core.component.BottomDestination
+import co.edu.uniquindio.akjevents.core.component.EmptyState
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
 import co.edu.uniquindio.akjevents.core.component.PrimaryButton
@@ -123,16 +124,16 @@ import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.PickedLocation
+import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
-
-private const val COMING_SOON = "Disponible próximamente"
+import java.util.Locale
 
 private val OnSecondaryFixed = Color(0xFF002114)
 
@@ -171,27 +172,36 @@ private val EventCategory.formIcon: ImageVector
 /** Fecha y hora que se están eligiendo con los diálogos de Material 3. */
 private enum class DateTimeField { START, END }
 
+/**
+ * Formulario de los mockups 07 (crear) y 08 (editar, cuando llega [eventId]).
+ * La ubicación se elige en el mapa con [onPickLocation] y regresa en [pickedLocation].
+ */
 @Composable
 fun CreateEventScreen(
     onBack: () -> Unit,
     onEventSubmitted: () -> Unit,
-    viewModel: CreateEventViewModel = viewModel()
+    onPickLocation: (PickedLocation?) -> Unit,
+    pickedLocation: PickedLocation?,
+    onPickedLocationConsumed: () -> Unit,
+    bottomBar: @Composable () -> Unit,
+    eventId: String? = null,
+    viewModel: CreateEventViewModel = viewModel(key = eventId ?: "nuevo-evento") { CreateEventViewModel(eventId = eventId) }
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
-
-    val showComingSoon: () -> Unit = {
-        scope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar(COMING_SOON)
-        }
-    }
+    var showHelp by remember { mutableStateOf(false) }
 
     // Primero se elige la fecha y luego la hora
     var datePickerField by remember { mutableStateOf<DateTimeField?>(null) }
     var timePickerField by remember { mutableStateOf<DateTimeField?>(null) }
     var pickedDate by remember { mutableStateOf<LocalDate?>(null) }
+
+    LaunchedEffect(pickedLocation) {
+        if (pickedLocation != null) {
+            viewModel.onLocationPicked(pickedLocation)
+            onPickedLocationConsumed()
+        }
+    }
 
     RequestResultEffect(
         result = state.result,
@@ -202,23 +212,20 @@ fun CreateEventScreen(
 
     Scaffold(
         containerColor = WarmBackground,
-        topBar = { CreateEventTopBar(onBack = onBack, onDraft = showComingSoon, onHelp = showComingSoon) },
-        bottomBar = {
-            AppBottomBar(
-                selected = BottomDestination.CREATE,
-                hasUnreadAlerts = true,
-                onSelect = {
-                    when (it) {
-                        BottomDestination.HOME -> onBack()
-                        BottomDestination.CREATE -> Unit
-                        else -> showComingSoon()
-                    }
-                }
-            )
-        },
+        topBar = { CreateEventTopBar(isEditing = state.isEditing, onBack = onBack, onHelp = { showHelp = true }) },
+        bottomBar = bottomBar,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets(0)
     ) { innerPadding ->
+        if (!state.canSubmit) {
+            EmptyState(
+                icon = Icons.Outlined.EditOff,
+                title = "No puedes editar este evento",
+                message = "Solo su organizador puede editarlo, y los eventos finalizados ya no se modifican.",
+                modifier = Modifier.padding(innerPadding)
+            )
+            return@Scaffold
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -238,7 +245,10 @@ fun CreateEventScreen(
                 state = state,
                 onPlaceChange = viewModel::onPlaceChange,
                 onPickStart = { datePickerField = DateTimeField.START },
-                onPickEnd = { datePickerField = DateTimeField.END }
+                onPickEnd = { datePickerField = DateTimeField.END },
+                onPickLocation = {
+                    onPickLocation(state.location?.let { PickedLocation(state.place, it) })
+                }
             )
 
             CapacitySection(
@@ -254,25 +264,26 @@ fun CreateEventScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
                 PrimaryButton(
-                    text = "Enviar para verificación",
+                    text = if (state.isEditing) "Guardar cambios" else "Enviar para verificación",
                     onClick = viewModel::submit,
-                    trailingIcon = Icons.AutoMirrored.Outlined.Send,
+                    leadingIcon = if (state.isEditing) Icons.Outlined.Save else null,
+                    trailingIcon = if (state.isEditing) null else Icons.AutoMirrored.Outlined.Send,
                     isLoading = state.isBusy,
-                    loadingText = "Enviando...",
+                    loadingText = if (state.isEditing) "Guardando..." else "Enviando...",
                     containerColor = Terracotta,
                     shape = CircleShape,
                     modifier = Modifier.shadow(8.dp, CircleShape, ambientColor = Terracotta, spotColor = Terracotta)
                 )
                 Surface(
-                    onClick = showComingSoon,
+                    onClick = onBack,
                     shape = CircleShape,
                     color = SurfaceContainerHigh,
                     modifier = Modifier.fillMaxWidth().height(44.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Outlined.Visibility, contentDescription = null, tint = WarmText, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Close, contentDescription = null, tint = WarmText, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Vista previa del evento", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text(if (state.isEditing) "Cancelar edición" else "Cancelar", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -313,10 +324,29 @@ fun CreateEventScreen(
             }
         )
     }
+
+    if (showHelp) {
+        AlertDialog(
+            onDismissRequest = { showHelp = false },
+            containerColor = SurfaceContainerLow,
+            title = { Text("Guía para publicar", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "• Usa un título claro y una descripción con lo que deben llevar los asistentes.\n" +
+                        "• Elige el punto exacto en el mapa para que la comunidad llegue sin problema.\n" +
+                        "• Los eventos deben ser reales, gratuitos o de bajo costo y respetar las Normas Comunitarias.\n" +
+                        "• Un moderador revisa cada evento nuevo o editado antes de publicarlo.",
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = { TextButton(onClick = { showHelp = false }) { Text("Entendido") } }
+        )
+    }
 }
 
 @Composable
-private fun CreateEventTopBar(onBack: () -> Unit, onDraft: () -> Unit, onHelp: () -> Unit) {
+private fun CreateEventTopBar(isEditing: Boolean, onBack: () -> Unit, onHelp: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -337,18 +367,23 @@ private fun CreateEventTopBar(onBack: () -> Unit, onDraft: () -> Unit, onHelp: (
             }
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text("Crear Evento", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold)
-            Text("Publica para la comunidad local", color = MutedText, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
-        }
-        Surface(onClick = onDraft, shape = CircleShape, color = SurfaceContainer) {
-            Row(
-                modifier = Modifier.height(36.dp).padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(Icons.Outlined.Save, contentDescription = null, tint = MutedText, modifier = Modifier.size(16.dp))
-                Text("Borrador", color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            if (isEditing) {
+                Text("EDICIÓN ACTIVA", color = Terracotta, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             }
+            Text(
+                if (isEditing) "Editar Evento" else "Crear Evento",
+                color = WarmText,
+                fontSize = 22.sp,
+                lineHeight = 28.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                if (isEditing) "Los cambios pasan de nuevo por moderación" else "Publica para la comunidad local",
+                color = MutedText,
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
         IconButton(onClick = onHelp, modifier = Modifier.size(36.dp)) {
             Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "Guía y ayuda", tint = MutedText, modifier = Modifier.size(18.dp))
@@ -675,7 +710,8 @@ private fun ScheduleSection(
     state: CreateEventUiState,
     onPlaceChange: (String) -> Unit,
     onPickStart: () -> Unit,
-    onPickEnd: () -> Unit
+    onPickEnd: () -> Unit,
+    onPickLocation: () -> Unit
 ) {
     FormCard {
         SectionHeader(
@@ -721,6 +757,55 @@ private fun ScheduleSection(
                 style = PlaceFieldStyle,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done)
             )
+        }
+
+        LocationPickerRow(location = state.location, onPick = onPickLocation)
+    }
+}
+
+/** Fila que abre el mapa para elegir el punto exacto del evento (mockups 08 y 09). */
+@Composable
+private fun LocationPickerRow(location: Location?, onPick: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FieldLabel("Ubicación en el mapa *")
+        Surface(
+            onClick = onPick,
+            shape = RoundedCornerShape(8.dp),
+            color = if (location != null) SecondaryFixed.copy(alpha = 0.6f) else SurfaceContainerLow,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier.size(40.dp).background(if (location != null) Sage else Terracotta, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Outlined.Map, contentDescription = null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        if (location != null) "Coordenadas verificadas" else "Elegir en el mapa",
+                        color = if (location != null) OnSecondaryFixedVariant else WarmText,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        location?.let { "Lat ${"%.4f".format(Locale.US, it.latitude)}, Lon ${"%.4f".format(Locale.US, it.longitude)}" }
+                            ?: "Marca el punto exacto del encuentro",
+                        color = MutedText,
+                        fontSize = 12.sp
+                    )
+                }
+                Text(
+                    if (location != null) "Ajustar pin" else "Abrir mapa",
+                    color = Terracotta,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }

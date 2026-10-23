@@ -1,6 +1,5 @@
 package co.edu.uniquindio.akjevents.features.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -32,6 +30,9 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.LocationCity
+import androidx.compose.material.icons.outlined.NearMe
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PinDrop
 import androidx.compose.material.icons.outlined.Schedule
@@ -48,15 +49,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,9 +67,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -78,11 +77,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import co.edu.uniquindio.akjevents.R
-import co.edu.uniquindio.akjevents.core.component.AppBottomBar
-import co.edu.uniquindio.akjevents.core.component.BottomDestination
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.CategoryChip
+import co.edu.uniquindio.akjevents.core.component.EventImage
+import co.edu.uniquindio.akjevents.core.component.FilterPill
+import co.edu.uniquindio.akjevents.core.component.MainTopBar
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
 import co.edu.uniquindio.akjevents.core.component.VerifiedBadge
@@ -105,10 +104,6 @@ import co.edu.uniquindio.akjevents.core.util.occupancy
 import co.edu.uniquindio.akjevents.core.util.remainingSpots
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
-import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
-
-private const val COMING_SOON = "Disponible próximamente"
 
 private val SearchFieldStyle = FormFieldStyle(
     height = 48.dp,
@@ -129,38 +124,29 @@ private val SearchFieldStyle = FormFieldStyle(
 fun HomeScreen(
     onOpenEvent: (String) -> Unit,
     onCreateEvent: () -> Unit,
+    onOpenMap: () -> Unit,
+    onOpenProfile: () -> Unit,
+    onOpenMyEvents: () -> Unit,
+    onChangeCity: () -> Unit,
+    bottomBar: @Composable () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     val searchFocus = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
-
-    val showComingSoon: () -> Unit = {
-        scope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar(COMING_SOON)
-        }
-    }
+    var showLocationFilters by rememberSaveable { mutableStateOf(false) }
+    val filtersActive = showLocationFilters || state.locationFilter != LocationFilter.ALL
 
     Scaffold(
         containerColor = WarmBackground,
-        topBar = { HomeTopBar(onSearchClick = { searchFocus.requestFocus() }) },
-        bottomBar = {
-            AppBottomBar(
-                selected = BottomDestination.HOME,
-                hasUnreadAlerts = true,
-                onSelect = {
-                    when (it) {
-                        BottomDestination.HOME -> Unit
-                        BottomDestination.CREATE -> onCreateEvent()
-                        else -> showComingSoon()
-                    }
+        topBar = {
+            MainTopBar(title = "Inicio", user = state.user, onAvatarClick = onOpenProfile) {
+                IconButton(onClick = { searchFocus.requestFocus() }) {
+                    Icon(Icons.Outlined.Search, contentDescription = "Buscar", tint = MutedText)
                 }
-            )
+            }
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        bottomBar = bottomBar
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -171,8 +157,8 @@ fun HomeScreen(
                 Greeting(
                     firstName = state.userFirstName,
                     city = state.city,
-                    onCalendarClick = showComingSoon,
-                    onChangeCity = showComingSoon
+                    onCalendarClick = onOpenMyEvents,
+                    onChangeCity = onChangeCity
                 )
             }
 
@@ -203,14 +189,19 @@ fun HomeScreen(
                             .focusRequester(searchFocus)
                     )
                     Surface(
-                        onClick = showComingSoon,
+                        onClick = { showLocationFilters = !showLocationFilters },
                         modifier = Modifier.size(48.dp),
                         shape = RoundedCornerShape(12.dp),
-                        color = SurfaceContainerLow,
+                        color = if (filtersActive) PrimaryFixed else SurfaceContainerLow,
                         shadowElevation = 1.dp
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Outlined.Tune, contentDescription = "Filtros avanzados", tint = WarmText, modifier = Modifier.size(20.dp))
+                            Icon(
+                                Icons.Outlined.Tune,
+                                contentDescription = "Filtrar por ubicación",
+                                tint = if (filtersActive) Terracotta else WarmText,
+                                modifier = Modifier.size(20.dp)
+                            )
                         }
                     }
                 }
@@ -218,6 +209,12 @@ fun HomeScreen(
 
             item {
                 CategoryChips(selected = state.category, onSelect = viewModel::selectCategory)
+            }
+
+            if (filtersActive) {
+                item {
+                    LocationFilterChips(selected = state.locationFilter, onSelect = viewModel::selectLocationFilter)
+                }
             }
 
             if (!state.hasResults) {
@@ -232,7 +229,7 @@ fun HomeScreen(
                             iconTint = Terracotta,
                             title = "Eventos Destacados",
                             action = "Ver mapa",
-                            onAction = showComingSoon
+                            onAction = onOpenMap
                         )
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = 16.dp),
@@ -259,13 +256,14 @@ fun HomeScreen(
                         iconTint = Sage,
                         title = "Próximos en tu comunidad",
                         action = "Filtrar",
-                        onAction = showComingSoon
+                        onAction = { showLocationFilters = true }
                     )
                 }
                 items(state.upcomingEvents, key = { it.id }) { event ->
                     UpcomingEventCard(
                         event = event,
                         isInterested = event.id in state.interestedEventIds,
+                        distanceKm = state.distancesKm[event.id],
                         onOpen = { onOpenEvent(event.id) },
                         onToggleInterest = { viewModel.toggleInterest(event.id) },
                         modifier = Modifier.padding(horizontal = 16.dp)
@@ -279,34 +277,21 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomeTopBar(onSearchClick: () -> Unit) {
-    Surface(color = WarmBackground.copy(alpha = 0.95f), shadowElevation = 1.dp) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .height(64.dp)
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.logo),
-                contentDescription = "Logo AKJ Events",
-                modifier = Modifier.size(32.dp)
-            )
-            Column(modifier = Modifier.weight(1f)) {
-                Text("AKJ EVENTS", color = Terracotta, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                Text("Inicio", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold)
-            }
-            IconButton(onClick = onSearchClick) {
-                Icon(Icons.Outlined.Search, contentDescription = "Buscar", tint = MutedText)
-            }
-            Image(
-                painter = painterResource(R.drawable.avatar),
-                contentDescription = "Perfil",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(32.dp).shadow(1.dp, CircleShape).clip(CircleShape)
+private fun LocationFilterChips(selected: LocationFilter, onSelect: (LocationFilter) -> Unit) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(LocationFilter.entries) { filter ->
+            FilterPill(
+                text = filter.label,
+                icon = when (filter) {
+                    LocationFilter.ALL -> Icons.Outlined.Public
+                    LocationFilter.NEARBY -> Icons.Outlined.NearMe
+                    LocationFilter.CITY -> Icons.Outlined.LocationCity
+                },
+                isSelected = selected == filter,
+                onClick = { onSelect(filter) }
             )
         }
     }
@@ -363,39 +348,14 @@ private fun CategoryChips(selected: EventCategory?, onSelect: (EventCategory?) -
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            FilterPill(text = "Todos", icon = Icons.Outlined.Stars, isSelected = selected == null, onClick = { onSelect(null) })
+            FilterPill(text = "Todos", icon = Icons.Outlined.Stars, isSelected = selected == null, onClick = { onSelect(null) }, selectedColor = Terracotta)
         }
         items(EventCategory.entries) { category ->
             FilterPill(
                 text = "${category.label} ${category.style.emoji}",
                 isSelected = selected == category,
-                onClick = { onSelect(category) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilterPill(text: String, isSelected: Boolean, onClick: () -> Unit, icon: ImageVector? = null) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = if (isSelected) Terracotta else SurfaceContainer,
-        shadowElevation = if (isSelected) 1.dp else 0.dp
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            icon?.let {
-                Icon(it, contentDescription = null, tint = if (isSelected) Color.White else WarmText, modifier = Modifier.size(16.dp))
-            }
-            Text(
-                text,
-                color = if (isSelected) Color.White else WarmText,
-                fontSize = 12.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
+                onClick = { onSelect(category) },
+                selectedColor = Terracotta
             )
         }
     }
@@ -418,18 +378,6 @@ private fun SectionHeader(icon: ImageVector, iconTint: Color, title: String, act
             modifier = Modifier.clickable(onClick = onAction).padding(4.dp)
         )
     }
-}
-
-@Composable
-private fun EventImage(event: CommunityEvent, modifier: Modifier = Modifier) {
-    AsyncImage(
-        model = event.imageUrls.first(),
-        contentDescription = "Imagen del evento ${event.title}",
-        contentScale = ContentScale.Crop,
-        placeholder = painterResource(R.drawable.event_placeholder),
-        error = painterResource(R.drawable.event_placeholder),
-        modifier = modifier
-    )
 }
 
 @Composable
@@ -577,6 +525,7 @@ private fun CapacitySummary(event: CommunityEvent) {
 private fun UpcomingEventCard(
     event: CommunityEvent,
     isInterested: Boolean,
+    distanceKm: Double?,
     onOpen: () -> Unit,
     onToggleInterest: () -> Unit,
     modifier: Modifier = Modifier
@@ -633,7 +582,7 @@ private fun UpcomingEventCard(
                 AvailabilityLabel(event)
                 Text("  •  ", color = MutedText.copy(alpha = 0.4f), fontSize = 11.sp)
                 Text(
-                    "${event.attendanceCount} asistirán",
+                    "${event.attendanceCount} asistirán" + (distanceKm?.let { " • a ${EventFormat.distance(it)}" } ?: ""),
                     color = MutedText,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,

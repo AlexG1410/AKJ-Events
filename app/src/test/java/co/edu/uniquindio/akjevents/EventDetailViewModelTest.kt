@@ -1,6 +1,7 @@
 package co.edu.uniquindio.akjevents
 
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
+import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
+import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.features.event.detail.EventDetailViewModel
 import co.edu.uniquindio.akjevents.features.home.HomeViewModel
 import org.junit.Assert.assertEquals
@@ -15,9 +16,10 @@ class EventDetailViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val repository = InMemoryEventRepository()
+    private val repos = TestRepositories()
+    private val repository = repos.events
 
-    private fun detail(id: String) = EventDetailViewModel(id, repository)
+    private fun detail(id: String, viewer: TestRepositories = repos) = EventDetailViewModel(id, viewer.events, viewer.users)
 
     @Test
     fun loadsVerifiedEventWithItsOrganizer() {
@@ -25,13 +27,37 @@ class EventDetailViewModelTest {
 
         assertEquals("ciclopaseo", state.event?.id)
         assertEquals("organizer-1", state.organizer?.id)
+        assertTrue(state.canParticipate)
     }
 
     @Test
-    fun pendingAndRejectedEventsAreNotAvailable() {
+    fun pendingAndRejectedEventsOfOthersAreNotAvailable() {
         assertNull(detail("pendiente-privado").uiState.value.event)
         assertNull(detail("rechazado-privado").uiState.value.event)
         assertNull(detail("no-existe").uiState.value.event)
+    }
+
+    @Test
+    fun theOrganizerAndModeratorsCanSeeAPendingEvent() {
+        val own = detail("huertos-urbanos").uiState.value
+        assertNotNull(own.event)
+        assertTrue(own.isOwner)
+        assertTrue(own.canEdit)
+        assertFalse(own.canParticipate)
+
+        val asModerator = detail("pendiente-privado", TestRepositories(sessionUserId = MODERATOR)).uiState.value
+        assertNotNull(asModerator.event)
+        assertFalse(asModerator.canParticipate)
+    }
+
+    @Test
+    fun finishedEventsAreVisibleButClosed() {
+        val state = detail("reforestacion-rio").uiState.value
+
+        assertNotNull(state.event)
+        assertFalse(state.canParticipate)
+        assertTrue(state.canComment)
+        assertFalse(state.canEdit)
     }
 
     @Test
@@ -101,8 +127,26 @@ class EventDetailViewModelTest {
     }
 
     @Test
+    fun sendingACommentPublishesItAndClearsTheDraft() {
+        val viewModel = detail("ciclopaseo")
+        val before = viewModel.uiState.value.comments.size
+
+        viewModel.sendComment()
+        assertEquals("Escribe tu comentario antes de enviarlo", viewModel.uiState.value.userMessage)
+
+        viewModel.onCommentChange("¿Hay parqueadero para bicicletas?")
+        viewModel.sendComment()
+
+        val state = viewModel.uiState.value
+        assertEquals(before + 1, state.comments.size)
+        assertEquals("¿Hay parqueadero para bicicletas?", state.comments.last().comment.text)
+        assertEquals(DEMO_USER, state.comments.last().author?.id)
+        assertEquals("", state.commentDraft)
+    }
+
+    @Test
     fun changesInTheDetailAreVisibleInTheHome() {
-        val home = HomeViewModel(repository)
+        val home = HomeViewModel(repository, repos.users)
         val viewModel = detail("ciclopaseo")
         fun homeEvent() = home.uiState.value.let { it.featuredEvents + it.upcomingEvents }.first { it.id == "ciclopaseo" }
         val attendanceBefore = homeEvent().attendanceCount

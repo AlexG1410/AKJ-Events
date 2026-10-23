@@ -1,7 +1,37 @@
 package co.edu.uniquindio.akjevents.features.event.detail
 
 import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.outlined.Directions
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.QrCodeScanner
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
+import co.edu.uniquindio.akjevents.core.component.FormTextField
+import co.edu.uniquindio.akjevents.core.component.MapMarker
+import co.edu.uniquindio.akjevents.core.component.MessageEffect
+import co.edu.uniquindio.akjevents.core.component.SimulatedMap
+import co.edu.uniquindio.akjevents.core.component.StatusBadge
+import co.edu.uniquindio.akjevents.core.component.UserAvatar
+import co.edu.uniquindio.akjevents.core.component.rememberSimulatedMapState
+import co.edu.uniquindio.akjevents.core.theme.ErrorColor
+import co.edu.uniquindio.akjevents.core.theme.OnSecondaryFixedVariant
+import co.edu.uniquindio.akjevents.core.theme.OnTertiaryContainer
+import co.edu.uniquindio.akjevents.core.theme.SecondaryFixed
+import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
+import co.edu.uniquindio.akjevents.domain.model.EventStatus
+import java.util.Locale
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -43,7 +73,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -96,36 +125,32 @@ private val CardShape = RoundedCornerShape(16.dp)
 fun EventDetailScreen(
     eventId: String,
     onBack: () -> Unit,
+    onEditEvent: (String) -> Unit,
+    onOpenCheckIn: (String) -> Unit,
     viewModel: EventDetailViewModel = viewModel(key = eventId) { EventDetailViewModel(eventId) }
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val commentFocus = remember { FocusRequester() }
 
-    LaunchedEffect(state.userMessage) {
-        val message = state.userMessage ?: return@LaunchedEffect
-        // Se muestra en otro scope para que limpiar el mensaje no cancele el Snackbar
-        scope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar(message)
-        }
-        viewModel.onMessageShown()
-    }
-
-    val showComingSoon: () -> Unit = {
-        scope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar("Disponible próximamente")
-        }
-    }
+    MessageEffect(state.userMessage, snackbarHostState, viewModel::onMessageShown)
 
     val event = state.event
     Scaffold(
         containerColor = WarmBackground,
-        topBar = { DetailTopBar(onBack = onBack) },
+        topBar = {
+            DetailTopBar(
+                onBack = onBack,
+                onEdit = if (state.canEdit && event != null) {
+                    { onEditEvent(event.id) }
+                } else null
+            )
+        },
         bottomBar = {
-            if (event != null) {
+            if (event != null && state.canParticipate) {
                 AttendanceBar(
                     isInterested = state.isInterested,
                     isAttending = state.isAttending,
@@ -145,16 +170,22 @@ fun EventDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
+                .consumeWindowInsets(innerPadding)
+                .imePadding()
+                .verticalScroll(scrollState)
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             QuickActions(
                 event = event,
                 isInterested = state.isInterested,
+                canToggleInterest = state.canParticipate,
                 onShare = { context.startActivity(shareIntent(event)) },
                 onToggleInterest = viewModel::toggleInterest
             )
+            if (event.status != EventStatus.VERIFIED) {
+                StatusBanner(event = event, isOwner = state.isOwner)
+            }
             HeroImage(event)
             Text(
                 event.title,
@@ -165,13 +196,46 @@ fun EventDetailScreen(
                 letterSpacing = (-0.5).sp
             )
             DateAndPlaceCard(event)
+            if (state.isAttending && state.canParticipate) {
+                CheckInCard(isCheckedIn = state.isCheckedIn, onOpenCheckIn = { onOpenCheckIn(event.id) })
+            }
             CapacityCard(event)
             DescriptionSection(event.description)
+            LocationSection(
+                event = event,
+                distanceKm = state.distanceKm,
+                onDirections = { context.startActivity(directionsIntent(event)) }
+            )
             state.organizer?.let { organizer ->
-                OrganizerSection(organizer, state.organizerEventCount, onContact = showComingSoon)
+                OrganizerSection(
+                    organizer = organizer,
+                    eventCount = state.organizerEventCount,
+                    showContact = state.canComment && !state.isOwner,
+                    onContact = {
+                        scope.launch {
+                            scrollState.animateScrollTo(scrollState.maxValue)
+                            commentFocus.requestFocus()
+                        }
+                    }
+                )
             }
+            CommentsSection(
+                comments = state.comments,
+                organizerId = event.organizerId,
+                canComment = state.canComment,
+                draft = state.commentDraft,
+                onDraftChange = viewModel::onCommentChange,
+                onSend = viewModel::sendComment,
+                focusRequester = commentFocus
+            )
         }
     }
+}
+
+private fun directionsIntent(event: CommunityEvent): Intent {
+    // Abre la app de mapas del teléfono en las coordenadas del evento
+    val uri = Uri.parse("geo:${event.location.latitude},${event.location.longitude}?q=${event.location.latitude},${event.location.longitude}(${Uri.encode(event.title)})")
+    return Intent.createChooser(Intent(Intent.ACTION_VIEW, uri), "Cómo llegar")
 }
 
 private fun shareIntent(event: CommunityEvent): Intent {
@@ -184,7 +248,7 @@ private fun shareIntent(event: CommunityEvent): Intent {
 }
 
 @Composable
-private fun DetailTopBar(onBack: () -> Unit) {
+private fun DetailTopBar(onBack: () -> Unit, onEdit: (() -> Unit)?) {
     Surface(color = WarmBackground.copy(alpha = 0.95f), shadowElevation = 1.dp) {
         Row(
             modifier = Modifier
@@ -199,13 +263,31 @@ private fun DetailTopBar(onBack: () -> Unit) {
                 Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = WarmText)
             }
             Image(painter = painterResource(R.drawable.logo), contentDescription = null, modifier = Modifier.size(32.dp))
-            Text("Detalle del evento", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Detalle del evento",
+                color = WarmText,
+                fontSize = 22.sp,
+                lineHeight = 28.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            if (onEdit != null) {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Outlined.Edit, contentDescription = "Editar evento", tint = Terracotta)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun QuickActions(event: CommunityEvent, isInterested: Boolean, onShare: () -> Unit, onToggleInterest: () -> Unit) {
+private fun QuickActions(
+    event: CommunityEvent,
+    isInterested: Boolean,
+    canToggleInterest: Boolean,
+    onShare: () -> Unit,
+    onToggleInterest: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -226,12 +308,14 @@ private fun QuickActions(event: CommunityEvent, isInterested: Boolean, onShare: 
             modifier = Modifier.weight(1f)
         )
         RoundAction(Icons.Outlined.Share, "Compartir evento", WarmText, onShare)
-        RoundAction(
-            if (isInterested) Icons.Rounded.Favorite else Icons.Outlined.FavoriteBorder,
-            if (isInterested) "Quitar de me interesa" else "Me interesa",
-            Terracotta,
-            onToggleInterest
-        )
+        if (canToggleInterest) {
+            RoundAction(
+                if (isInterested) Icons.Rounded.Favorite else Icons.Outlined.FavoriteBorder,
+                if (isInterested) "Quitar de me interesa" else "Me interesa",
+                Terracotta,
+                onToggleInterest
+            )
+        }
     }
 }
 
@@ -278,7 +362,11 @@ private fun HeroImage(event: CommunityEvent) {
                 content = WarmText,
                 iconTint = Terracotta
             )
-            HeroBadge(icon = Icons.Rounded.Verified, text = "Verificado ✓", container = Sage, content = Color.White, iconTint = Color.White)
+            if (event.status == EventStatus.VERIFIED) {
+                HeroBadge(icon = Icons.Rounded.Verified, text = "Verificado ✓", container = Sage, content = Color.White, iconTint = Color.White)
+            } else {
+                StatusBadge(event.status)
+            }
         }
     }
 }
@@ -417,7 +505,7 @@ private fun DescriptionSection(description: String) {
 }
 
 @Composable
-private fun OrganizerSection(organizer: User, eventCount: Int, onContact: () -> Unit) {
+private fun OrganizerSection(organizer: User, eventCount: Int, showContact: Boolean, onContact: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Organizador", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -438,7 +526,7 @@ private fun OrganizerSection(organizer: User, eventCount: Int, onContact: () -> 
                     modifier = Modifier.size(56.dp).background(PrimaryFixed, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(organizer.initials(), color = OnPrimaryFixed, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(organizer.initials, color = OnPrimaryFixed, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -453,22 +541,228 @@ private fun OrganizerSection(organizer: User, eventCount: Int, onContact: () -> 
                     )
                 }
             }
-            Surface(onClick = onContact, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = SurfaceContainerHigh) {
-                Row(
-                    modifier = Modifier.padding(vertical = 10.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, tint = WarmText, modifier = Modifier.size(18.dp))
-                    Text("  Contactar organizador", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+            if (showContact) {
+                Surface(onClick = onContact, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = SurfaceContainerHigh) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, tint = WarmText, modifier = Modifier.size(18.dp))
+                        Text("  Preguntar al organizador", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             }
         }
     }
 }
 
-private fun User.initials(): String =
-    name.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
+/** Aviso para el organizador o el moderador cuando el evento no es público. */
+private data class BannerContent(val title: String, val message: String, val container: Color, val content: Color)
+
+@Composable
+private fun StatusBanner(event: CommunityEvent, isOwner: Boolean) {
+    val banner = when (event.status) {
+        EventStatus.PENDING -> BannerContent(
+            "En revisión de moderación",
+            if (isOwner) "Solo tú y los moderadores pueden verlo. Será público cuando lo aprueben." else "Este evento espera la verificación de un moderador.",
+            TertiaryFixed,
+            OnTertiaryContainer
+        )
+        EventStatus.REJECTED -> BannerContent("Evento rechazado", "Motivo: ${event.rejectionReason}", Color(0xFFFFDAD6), ErrorColor)
+        else -> BannerContent("Evento finalizado", "Este evento ya terminó; ya no recibe confirmaciones de asistencia.", SurfaceContainerHigh, MutedText)
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(banner.container, CardShape)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        StatusBadge(event.status)
+        Text(banner.title, color = banner.content, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        Text(banner.message, color = banner.content, fontSize = 13.sp, lineHeight = 18.sp)
+    }
+}
+
+@Composable
+private fun CheckInCard(isCheckedIn: Boolean, onOpenCheckIn: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(SecondaryFixed.copy(alpha = 0.6f), CardShape)
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Box(modifier = Modifier.size(40.dp).background(Sage, CircleShape), contentAlignment = Alignment.Center) {
+            Icon(Icons.Outlined.QrCodeScanner, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                if (isCheckedIn) "Asistencia registrada con QR" else "Ya tienes tu cupo",
+                color = OnSecondaryFixedVariant,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                if (isCheckedIn) "Sumaste puntos de reputación por asistir." else "Al llegar, escanea el QR del organizador para registrar tu asistencia.",
+                color = OnSecondaryFixedVariant,
+                fontSize = 12.sp,
+                lineHeight = 16.sp
+            )
+        }
+        if (!isCheckedIn) {
+            Surface(onClick = onOpenCheckIn, shape = CircleShape, color = Sage) {
+                Text(
+                    "Check-in",
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocationSection(event: CommunityEvent, distanceKm: Double?, onDirections: () -> Unit) {
+    val mapState = rememberSimulatedMapState(center = event.location, latSpan = 0.02)
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Ubicación exacta", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .shadow(1.dp, CardShape)
+                .background(Color.White, CardShape)
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            SimulatedMap(
+                state = mapState,
+                markers = listOf(MapMarker(event.id, event.location, event.category.label, event.category.style.icon, Terracotta)),
+                selectedMarkerId = event.id,
+                interactive = false,
+                modifier = Modifier.fillMaxWidth().height(160.dp)
+            )
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(event.address, color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Lat ${"%.4f".format(Locale.US, event.location.latitude)}, Lon ${"%.4f".format(Locale.US, event.location.longitude)}" +
+                            (distanceKm?.let { " • a ${EventFormat.distance(it)} de ti" } ?: ""),
+                        color = MutedText,
+                        fontSize = 12.sp
+                    )
+                }
+                Surface(onClick = onDirections, shape = RoundedCornerShape(12.dp), color = SurfaceContainerHigh) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(Icons.Outlined.Directions, contentDescription = null, tint = Sage, modifier = Modifier.size(18.dp))
+                        Text("Cómo llegar", color = WarmText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommentsSection(
+    comments: List<CommentItem>,
+    organizerId: String,
+    canComment: Boolean,
+    draft: String,
+    onDraftChange: (String) -> Unit,
+    onSend: () -> Unit,
+    focusRequester: FocusRequester
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Comentarios", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text("${comments.size}", color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+        }
+        if (comments.isEmpty()) {
+            Text(
+                "Aún no hay comentarios. Comparte información útil o pregúntale al organizador.",
+                color = MutedText,
+                fontSize = 13.sp
+            )
+        }
+        comments.forEach { item ->
+            CommentRow(item, isOrganizer = item.comment.authorId == organizerId)
+        }
+        if (canComment) {
+            FormTextField(
+                value = draft,
+                onValueChange = onDraftChange,
+                placeholder = "Escribe un comentario...",
+                leadingIcon = Icons.Outlined.ChatBubbleOutline,
+                style = CommentFieldStyle,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(onSend = { onSend() }),
+                trailingContent = {
+                    IconButton(onClick = onSend, modifier = Modifier.size(40.dp)) {
+                        Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = "Publicar comentario", tint = Terracotta, modifier = Modifier.size(20.dp))
+                    }
+                },
+                modifier = Modifier.focusRequester(focusRequester)
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+private val CommentFieldStyle = FormFieldStyle(
+    height = 52.dp,
+    shape = RoundedCornerShape(16.dp),
+    containerColor = Color.White,
+    borderColor = SurfaceContainerHigh,
+    focusedBorderColor = Terracotta,
+    textStyle = TextStyle(fontSize = 14.sp, color = WarmText),
+    placeholderColor = MutedText.copy(alpha = 0.7f),
+    iconColor = MutedText,
+    iconSize = 20.dp,
+    iconStartPadding = 14.dp,
+    textStartPadding = 44.dp
+)
+
+@Composable
+private fun CommentRow(item: CommentItem, isOrganizer: Boolean) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        if (item.author != null) {
+            UserAvatar(item.author, size = 36.dp)
+        } else {
+            Box(Modifier.size(36.dp).background(SurfaceContainerHigh, CircleShape))
+        }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .background(if (isOrganizer) SecondaryFixed.copy(alpha = 0.5f) else SurfaceContainerLow, RoundedCornerShape(12.dp))
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    item.author?.name ?: "Cuenta eliminada",
+                    color = WarmText,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                if (isOrganizer) {
+                    Text("Organizador", color = Sage, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Text(item.comment.text, color = WarmText, fontSize = 14.sp, lineHeight = 20.sp)
+            Text(EventFormat.relative(item.comment.createdAt), color = MutedText, fontSize = 11.sp)
+        }
+    }
+}
 
 @Composable
 private fun AttendanceBar(

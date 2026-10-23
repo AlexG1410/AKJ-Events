@@ -9,8 +9,9 @@ import org.junit.Test
 class PublicEventVisibilityTest {
     @Test
     fun pendingAndRejectedEventsAreNotPubliclyAccessible() {
-        assertEquals(5, SampleEvents.all.count { it.status == EventStatus.VERIFIED })
+        assertEquals(8, SampleEvents.all.count { it.status == EventStatus.VERIFIED })
         assertNull(SampleEvents.findPublicById("pendiente-privado"))
         assertNull(SampleEvents.findPublicById("rechazado-privado"))
+        assertNull(SampleEvents.findPublicById("reforestacion-rio"))
     }
 }

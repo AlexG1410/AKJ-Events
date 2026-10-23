@@ -1,8 +1,12 @@
 package co.edu.uniquindio.akjevents
 
 import co.edu.uniquindio.akjevents.core.util.RequestResult
+import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
+import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
+import co.edu.uniquindio.akjevents.domain.model.UserLevel
 import co.edu.uniquindio.akjevents.features.auth.register.PasswordStrength
 import co.edu.uniquindio.akjevents.features.auth.register.RegisterViewModel
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -12,7 +16,8 @@ class RegisterViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val viewModel by lazy { RegisterViewModel(simulatedRequestMs = 0) }
+    private val users = InMemoryUserRepository()
+    private val viewModel by lazy { RegisterViewModel(users, simulatedRequestMs = 0) }
 
     private fun fillForm(password: String, confirmation: String = password) = with(viewModel) {
         onFullNameChange("Ana Gómez")
@@ -54,5 +59,18 @@ class RegisterViewModelTest {
 
         viewModel.register()
         assertTrue(viewModel.uiState.value.result is RequestResult.Success)
+        val created = users.currentUser.value!!
+        assertEquals("ana.gomez@ejemplo.com", created.email)
+        assertEquals(UserLevel.SPECTATOR, created.level)
+    }
+
+    @Test
+    fun emailAlreadyInUseCannotRegister() {
+        fillForm(password = "Comunidad1")
+        viewModel.onEmailChange(DemoCredentials.email)
+
+        viewModel.register()
+
+        assertEquals("Ya existe una cuenta con ese correo", (viewModel.uiState.value.result as RequestResult.Failure).errorMessage)
     }
 }
