@@ -3,6 +3,7 @@ package co.edu.uniquindio.akjevents.features.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
+import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
 import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
@@ -85,21 +86,23 @@ class HomeViewModel(
         private fun List<Interest>.idsOf(user: User?): Set<String> =
             filter { it.userId == user?.id }.map { it.eventId }.toSet()
 
-        /** Destacados: los de más asistentes confirmados. El resto se lista por fecha. */
+        /** Destacados: los de más votos «Me interesa»; los empates se ordenan por fecha e id. */
         private fun HomeUiState.filtered(events: List<CommunityEvent>): HomeUiState {
             val search = query.normalizedForSearch()
             val distances = user?.let { u -> events.associate { it.id to u.location.distanceKmTo(it.location) } }.orEmpty()
-            val userCity = user?.city?.substringBefore(",")?.normalizedForSearch().orEmpty()
+            val userCity = user?.city?.let(SamplePlaces::cityNamed)
             val matching = events.filter { event ->
                 (category == null || event.category == category) &&
                     (search.isEmpty() || event.title.normalizedForSearch().contains(search)) &&
                     when (locationFilter) {
                         LocationFilter.ALL -> true
                         LocationFilter.NEARBY -> (distances[event.id] ?: Double.MAX_VALUE) <= NEARBY_RADIUS_KM
-                        LocationFilter.CITY -> userCity.isNotEmpty() && event.address.normalizedForSearch().contains(userCity)
+                        LocationFilter.CITY -> userCity != null && SamplePlaces.cityForLocation(event.location) == userCity
                     }
             }
-            val featured = matching.sortedByDescending { it.attendanceCount }.take(FEATURED_COUNT)
+            val featured = matching.sortedWith(
+                compareByDescending<CommunityEvent> { it.interestCount }.thenBy { it.startsAt }.thenBy { it.id }
+            ).take(FEATURED_COUNT)
             val featuredIds = featured.map { it.id }.toSet()
             return copy(
                 featuredEvents = featured,

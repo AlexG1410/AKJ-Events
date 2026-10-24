@@ -2,6 +2,7 @@ package co.edu.uniquindio.akjevents.domain.repository
 
 import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
+import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.PointsEntry
 import co.edu.uniquindio.akjevents.domain.model.User
 import kotlinx.coroutines.flow.StateFlow
@@ -35,7 +36,9 @@ interface UserRepository {
         email: String,
         city: String,
         password: String,
-        interests: Set<EventCategory>
+        interests: Set<EventCategory>,
+        address: String,
+        location: Location
     ): RegisterResult
 
     /** Cambia los datos personales; el rol, los puntos y las insignias no se modifican aquí. */

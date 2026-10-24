@@ -63,11 +63,12 @@ class MapViewModel(
     private fun MapUiState.filtered(): MapUiState {
         val search = query.normalizedForSearch()
         val distances = user?.let { u -> publicEvents.associate { it.id to u.location.distanceKmTo(it.location) } }.orEmpty()
-        val weekLimit = now().plusDays(7)
+        val currentTime = now()
+        val weekLimit = currentTime.plusDays(7)
         val visible = publicEvents.filter { event ->
             (search.isEmpty() || event.title.normalizedForSearch().contains(search) || event.address.normalizedForSearch().contains(search)) &&
                 (!nearbyOnly || (distances[event.id] ?: Double.MAX_VALUE) <= NEARBY_RADIUS_KM) &&
-                (!thisWeekOnly || event.startsAt.isBefore(weekLimit)) &&
+                (!thisWeekOnly || (!event.startsAt.isBefore(currentTime) && event.startsAt.isBefore(weekLimit))) &&
                 (category == null || event.category == category)
         }.sortedBy { it.startsAt }
         // Si el evento elegido deja de verse, se elige el más próximo

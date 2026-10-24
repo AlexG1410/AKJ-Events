@@ -5,6 +5,7 @@ import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
 import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
+import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
 import co.edu.uniquindio.akjevents.domain.model.UserRole
@@ -44,15 +45,18 @@ class InMemoryUserRepositoryTest {
 
     @Test
     fun registrationCreatesASpectatorAndRejectsTakenEmails() {
-        val result = users.register("Ana Gómez", "ana@ejemplo.com", "Calarcá, Quindío", "Comunidad1", setOf(EventCategory.CULTURE))
+        val location = Location(4.5296, -75.6431)
+        val result = users.register("Ana Gómez", "ana@ejemplo.com", "Calarcá, Quindío", "Comunidad1", setOf(EventCategory.CULTURE), "Parque Bolívar", location)
 
         val user = (result as RegisterResult.Success).user
         assertEquals(UserRole.USER, user.role)
         assertEquals(UserLevel.SPECTATOR, user.level)
         assertEquals(user, users.currentUser.value)
+        assertEquals("Parque Bolívar", user.address)
+        assertEquals(location, user.location)
         assertNotNull(users.login("ana@ejemplo.com", "Comunidad1"))
 
-        assertEquals(RegisterResult.EmailInUse, users.register("Otra", DemoCredentials.email.uppercase(), "Armenia, Quindío", "Comunidad1", emptySet()))
+        assertEquals(RegisterResult.EmailInUse, users.register("Otra", DemoCredentials.email.uppercase(), "Armenia, Quindío", "Comunidad1", emptySet(), "Parque Bolívar", location))
     }
 
     @Test

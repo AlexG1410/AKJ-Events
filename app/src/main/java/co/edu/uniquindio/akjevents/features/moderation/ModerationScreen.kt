@@ -464,7 +464,7 @@ private fun RejectionForm(state: ModerationUiState, viewModel: ModerationViewMod
             }
         }
         Text(
-            if (state.rejectionReason == RejectionReason.OTHER) "Describe el motivo *" else "Mensaje orientador para el organizador (opcional)",
+            "Describe el motivo para el organizador *",
             color = MutedText,
             fontSize = 12.sp
         )

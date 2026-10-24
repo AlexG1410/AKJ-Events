@@ -124,6 +124,52 @@ class InMemoryEventRepositoryTest {
     }
 
     @Test
+    fun repeatedVerificationAfterEditingDoesNotRepeatPointsButStillNotifies() {
+        val before = repos.pointsOf(DEMO_USER)
+        assertTrue(repository.verifyEvent("huertos-urbanos", MODERATOR))
+        assertEquals(before + ReputationPoints.EVENT_VERIFIED, repos.pointsOf(DEMO_USER))
+
+        repeat(2) {
+            val event = repository.findEvent("huertos-urbanos")!!
+            assertTrue(repository.updateEvent(event.copy(title = "Huertos corregidos $it"), DEMO_USER))
+            assertTrue(repository.verifyEvent(event.id, MODERATOR))
+        }
+
+        assertEquals(before + ReputationPoints.EVENT_VERIFIED, repos.pointsOf(DEMO_USER))
+        assertEquals(3, repos.notificationsOf(DEMO_USER).count {
+            it.type == NotificationType.EVENT_VERIFIED && it.eventId == "huertos-urbanos"
+        })
+        assertNotNull(repository.findPublicEvent("huertos-urbanos"))
+    }
+
+    @Test
+    fun initiallyVerifiedEventsDoNotReceiveAnotherVerificationReward() {
+        val event = repository.findEvent("cine-foro")!!
+        val before = repos.pointsOf(DEMO_USER)
+
+        assertTrue(repository.updateEvent(event, DEMO_USER))
+        assertFalse(repository.verifyEvent(event.id, DEMO_USER))
+        assertTrue(repository.verifyEvent(event.id, MODERATOR))
+
+        assertEquals(before, repos.pointsOf(DEMO_USER))
+    }
+
+    @Test
+    fun editingCannotReduceCapacityBelowCurrentAttendanceEvenWithAlteredCounter() {
+        val event = repository.findEvent("cine-foro")!!
+        assertTrue(event.attendanceCount > 0)
+
+        assertFalse(repository.updateEvent(event.copy(capacity = event.attendanceCount - 1, attendanceCount = 0), DEMO_USER))
+        assertEquals(event, repository.findEvent(event.id))
+
+        assertTrue(repository.updateEvent(event.copy(capacity = event.attendanceCount), DEMO_USER))
+        assertEquals(event.attendanceCount, repository.findEvent(event.id)!!.capacity)
+        assertTrue(repository.updateEvent(event.copy(capacity = event.attendanceCount + 1), DEMO_USER))
+        assertTrue(repository.updateEvent(event.copy(capacity = null), DEMO_USER))
+        assertNull(repository.findEvent(event.id)!!.capacity)
+    }
+
+    @Test
     fun rejectionRequiresAReasonAndNotifiesTheOrganizer() {
         assertFalse(repository.rejectEvent("huertos-urbanos", MODERATOR, "   "))
 

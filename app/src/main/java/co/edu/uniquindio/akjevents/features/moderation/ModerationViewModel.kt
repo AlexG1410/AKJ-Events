@@ -24,7 +24,7 @@ enum class ModerationTab(val label: String, val status: EventStatus) {
     FINISHED("Finalizados", EventStatus.FINISHED)
 }
 
-/** Causales de rechazo del mockup 17; "Otro motivo" exige escribirlo. */
+/** Causales de rechazo del mockup 17; todas exigen un motivo escrito. */
 enum class RejectionReason(val label: String) {
     PLACE_NOT_AUTHORIZED("Lugar no disponible o no autorizado"),
     MISSING_INFORMATION("Información insuficiente"),
@@ -50,7 +50,7 @@ data class ModerationUiState(
     fun count(tab: ModerationTab): Int = allEvents.count { it.status == tab.status }
 
     val canConfirmRejection: Boolean
-        get() = rejectionReason != null && (rejectionReason != RejectionReason.OTHER || rejectionNote.isNotBlank())
+        get() = rejectionReason != null && rejectionNote.isNotBlank()
 }
 
 /** Mockup 17: cola de moderación para verificar, rechazar (con motivo) o finalizar eventos. */
@@ -102,7 +102,7 @@ class ModerationViewModel(
         val moderator = moderatorId() ?: return
         val reason = state.rejectionReason
         if (reason == null || !state.canConfirmRejection) {
-            showMessage("Elige el motivo del rechazo")
+            showMessage("Elige una causal y escribe el motivo del rechazo")
             return
         }
         val note = state.rejectionNote.trim()

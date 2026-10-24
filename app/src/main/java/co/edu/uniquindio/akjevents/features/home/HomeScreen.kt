@@ -104,6 +104,8 @@ import co.edu.uniquindio.akjevents.core.util.occupancy
 import co.edu.uniquindio.akjevents.core.util.remainingSpots
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
+import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsPreview
+import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsViewModel
 
 private val SearchFieldStyle = FormFieldStyle(
     height = 48.dp,
@@ -128,6 +130,8 @@ fun HomeScreen(
     onOpenProfile: () -> Unit,
     onOpenMyEvents: () -> Unit,
     onChangeCity: () -> Unit,
+    onOpenRecommendations: () -> Unit,
+    recommendationsViewModel: RecommendationsViewModel,
     bottomBar: @Composable () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -247,6 +251,10 @@ fun HomeScreen(
                         }
                     }
                 }
+            }
+
+            item {
+                RecommendationsPreview(recommendationsViewModel, onViewAll = onOpenRecommendations, onOpenEvent = onOpenEvent)
             }
 
             if (state.upcomingEvents.isNotEmpty()) {

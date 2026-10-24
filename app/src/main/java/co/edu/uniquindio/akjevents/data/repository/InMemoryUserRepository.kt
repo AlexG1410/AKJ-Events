@@ -1,9 +1,9 @@
 package co.edu.uniquindio.akjevents.data.repository
 
-import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.data.demo.SampleUsers
 import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
+import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
 import co.edu.uniquindio.akjevents.domain.model.PointsEntry
 import co.edu.uniquindio.akjevents.domain.model.User
@@ -64,20 +64,20 @@ class InMemoryUserRepository(
         email: String,
         city: String,
         password: String,
-        interests: Set<EventCategory>
+        interests: Set<EventCategory>,
+        address: String,
+        location: Location
     ): RegisterResult = synchronized(lock) {
         val normalized = email.trim().lowercase()
         if (_users.value.any { it.email.lowercase() == normalized }) return RegisterResult.EmailInUse
 
-        // Sin mapa en esta fase: la ubicación inicial es el centro de la ciudad elegida
-        val cityLocation = SamplePlaces.cityNamed(city)?.location ?: SamplePlaces.cities.first().location
         val user = User(
             id = "user-${UUID.randomUUID()}",
             name = name.trim(),
             email = email.trim(),
             city = city,
-            address = city,
-            location = cityLocation,
+            address = address.trim(),
+            location = location,
             role = UserRole.USER,
             interests = interests
         )

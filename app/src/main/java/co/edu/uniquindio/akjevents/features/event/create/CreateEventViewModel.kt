@@ -179,6 +179,8 @@ class CreateEventViewModel(
             !startsAt.isAfter(now()) -> "La fecha de inicio debe ser futura"
             !endsAt.isAfter(startsAt) -> "La fecha de fin debe ser posterior al inicio"
             state.limitCapacity && (state.capacity.toIntOrNull() ?: 0) <= 0 -> "El cupo máximo debe ser mayor que 0"
+            state.limitCapacity && state.capacity.toInt() < (eventId?.let(repository::findEvent)?.attendanceCount ?: 0) ->
+                "El cupo máximo no puede ser menor que los asistentes confirmados"
             else -> null
         }
     }

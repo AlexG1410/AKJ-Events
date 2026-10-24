@@ -39,6 +39,12 @@ class InMemoryEventRepository(
 
     private val lock = Any()
 
+    // Una aprobación solo da puntos una vez por evento, aunque se edite y vuelva a revisión.
+    // Los eventos de muestra ya aprobados parten con esa recompensa contabilizada.
+    private val verificationRewardedIds = initialEvents
+        .filter { it.status == EventStatus.VERIFIED || it.status == EventStatus.FINISHED }
+        .map { it.id }.toMutableSet()
+
     // Todos los eventos, incluidos los que no son públicos (pendientes, rechazados...)
     private val _events = MutableStateFlow(initialEvents)
     override val events: StateFlow<List<CommunityEvent>> = _events.asStateFlow()
@@ -74,6 +80,7 @@ class InMemoryEventRepository(
     override fun updateEvent(event: CommunityEvent, actorId: String): Boolean = synchronized(lock) {
         val existing = findEvent(event.id) ?: return false
         if (existing.organizerId != actorId || existing.status == EventStatus.FINISHED) return false
+        if (event.capacity != null && event.capacity < existing.attendanceCount) return false
         // Los cambios se revisan de nuevo; los conteos y el organizador no se pueden alterar
         val updated = event.copy(
             organizerId = existing.organizerId,
@@ -98,12 +105,15 @@ class InMemoryEventRepository(
     }
 
     override fun verifyEvent(eventId: String, moderatorId: String): Boolean {
-        val event = synchronized(lock) {
+        val (event, shouldReward) = synchronized(lock) {
             val event = findEvent(eventId)
             if (event == null || event.status != EventStatus.PENDING || !isModerator(moderatorId)) return false
-            event.copy(status = EventStatus.VERIFIED, rejectionReason = null).also(::replace)
+            event.copy(status = EventStatus.VERIFIED, rejectionReason = null).also(::replace) to
+                verificationRewardedIds.add(event.id)
         }
-        users.addPoints(event.organizerId, ReputationPoints.EVENT_VERIFIED, "«${event.title}» fue verificado")
+        if (shouldReward) {
+            users.addPoints(event.organizerId, ReputationPoints.EVENT_VERIFIED, "«${event.title}» fue verificado")
+        }
         notifications.notify(
             userId = event.organizerId,
             type = NotificationType.EVENT_VERIFIED,

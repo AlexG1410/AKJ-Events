@@ -21,6 +21,8 @@ import co.edu.uniquindio.akjevents.features.checkin.CheckInScreen
 import co.edu.uniquindio.akjevents.features.event.create.CreateEventScreen
 import co.edu.uniquindio.akjevents.features.event.detail.EventDetailScreen
 import co.edu.uniquindio.akjevents.features.home.HomeScreen
+import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsScreen
+import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsViewModel
 import co.edu.uniquindio.akjevents.features.map.explore.MapScreen
 import co.edu.uniquindio.akjevents.features.map.pick.PickLocationScreen
 import co.edu.uniquindio.akjevents.features.moderation.ModerationScreen
@@ -36,6 +38,7 @@ private const val PICKED_LOCATION_KEY = "picked_location"
 
 @Composable
 fun AppNavigation(session: SessionViewModel = viewModel()) {
+    val recommendations: RecommendationsViewModel = viewModel()
     val navController = rememberNavController()
     val sessionState by session.uiState.collectAsState()
 
@@ -71,10 +74,14 @@ fun AppNavigation(session: SessionViewModel = viewModel()) {
             )
         }
         composable<MainRoutes.Register> { entry ->
+            val picked by entry.savedStateHandle.getStateFlow<String?>(PICKED_LOCATION_KEY, null).collectAsState()
             RegisterScreen(
                 onBack = { navController.fromTop(entry) { popBackStack() } },
                 // El registro siempre crea cuentas de Usuario; los moderadores están precargados
-                onRegisterSuccess = { navController.fromTop(entry) { navigateAfterLogin(isModerator = false) } }
+                onRegisterSuccess = { navController.fromTop(entry) { navigateAfterLogin(isModerator = false) } },
+                onPickLocation = { current -> navController.fromTop(entry) { navigate(pickLocationRoute(current, defaultCenter)) } },
+                pickedLocation = picked?.let(::decodePickedLocation),
+                onPickedLocationConsumed = { entry.savedStateHandle.set<String?>(PICKED_LOCATION_KEY, null) }
             )
         }
         composable<MainRoutes.RecoverPassword> { entry ->
@@ -91,7 +98,16 @@ fun AppNavigation(session: SessionViewModel = viewModel()) {
                 onOpenProfile = { navController.openTab(BottomDestination.PROFILE, rootRoute) },
                 onOpenMyEvents = { navController.fromTop(entry) { navigate(MainRoutes.MyEvents) } },
                 onChangeCity = { navController.fromTop(entry) { navigate(MainRoutes.EditProfile) } },
+                onOpenRecommendations = { navController.fromTop(entry) { navigate(MainRoutes.Recommendations) } },
+                recommendationsViewModel = recommendations,
                 bottomBar = { bottomBar(BottomDestination.HOME) }
+            )
+        }
+        composable<MainRoutes.Recommendations> { entry ->
+            RecommendationsScreen(
+                onBack = { navController.fromTop(entry) { popBackStack() } },
+                onOpenEvent = { eventId -> navController.fromTop(entry) { navigate(MainRoutes.EventDetail(eventId)) } },
+                viewModel = recommendations
             )
         }
         composable<MainRoutes.EventDetail> { entry ->

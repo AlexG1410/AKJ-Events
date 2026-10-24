@@ -19,6 +19,9 @@ sealed interface MainRoutes {
     data object Home : MainRoutes
 
     @Serializable
+    data object Recommendations : MainRoutes
+
+    @Serializable
     data class EventDetail(val eventId: String) : MainRoutes
 
     @Serializable

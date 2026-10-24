@@ -17,11 +17,11 @@ Los moderadores están precargados; el Registro siempre crea cuentas de Usuario.
 ## Qué incluye esta entrega
 
 **Autenticación y roles**
-- **Splash**, **Login**, **Registro** (crea la cuenta y abre la sesión; el correo no se puede repetir) y **Recuperar contraseña**.
+- **Splash**, **Login**, **Registro** (crea la cuenta y abre la sesión; el correo no se puede repetir y la dirección se elige obligatoriamente en el mapa simulado) y **Recuperar contraseña**.
 - Al iniciar sesión, el usuario entra al feed y el moderador a su **panel de moderación**. La barra inferior cambia según el rol: el botón central es **Crear** para el usuario y **Moderar** para el moderador.
 
 **Usuario**
-- **Feed (Home):** eventos verificados, búsqueda, filtro por categoría y **filtro por ubicación** (cerca de mí, a 5 km, o en mi ciudad), "Me interesa" y acceso al mapa.
+- **Feed (Home):** eventos verificados, destacados por votos "Me interesa", búsqueda, filtro por categoría y **filtro por ubicación** (cerca de mí, a 5 km, o en mi ciudad), "Me interesa" y acceso al mapa.
 - **Mapa (explorar):** los eventos sobre el mapa, con filtros de cercanía, categoría y "esta semana", tarjeta del evento elegido con distancia y "Cómo llegar".
 - **Detalle de evento:** información completa, **ubicación exacta en el mapa**, organizador, cupos, confirmar o cancelar asistencia, "Me interesa" y **comentarios**. El autor y los moderadores pueden ver eventos pendientes o rechazados (con su estado y el motivo).
 - **Crear y editar evento:** título, categoría, descripción, imagen, fechas, lugar, **punto en el mapa** y cupo opcional. Todo evento nuevo o editado queda pendiente de verificación.
@@ -33,10 +33,11 @@ Los moderadores están precargados; el Registro siempre crea cuentas de Usuario.
 - **Check-in con QR:** el organizador muestra el QR de su evento; el asistente valida el código y suma puntos. También está el QR personal del usuario.
 
 **Moderador**
-- **Panel de moderación:** cola de pendientes por orden de llegada, búsqueda, pestañas por estado, ficha completa del evento, **verificar**, **rechazar con motivo obligatorio** (causales y mensaje) y **marcar cualquier evento como finalizado**. Cada decisión se notifica al organizador.
+- **Panel de moderación:** cola de pendientes por orden de llegada, búsqueda, pestañas por estado, ficha completa del evento, **verificar**, **rechazar con causal y motivo escrito obligatorio** y **marcar cualquier evento como finalizado**. Cada decisión se notifica al organizador.
 
 **Reputación**
 - **Puntos:** crear un evento (+10), evento verificado (+20), evento finalizado (+10), comentar (+5), recibir un "Me interesa" (+2) y asistir con QR (+15).
+- La recompensa por verificación se entrega una sola vez por evento; editarlo y aprobarlo de nuevo no repite esos puntos. El cupo no puede reducirse por debajo de los asistentes confirmados.
 - **Niveles:** Espectador (0), Participante (100), Organizador (250) y Líder Comunitario (500 puntos).
 - **Insignias:** Primer evento, Primer aporte, Primera asistencia, 10 Verificados y Destacado del mes.
 
@@ -44,6 +45,7 @@ Los moderadores están precargados; el Registro siempre crea cuentas de Usuario.
 
 - **Datos y sesión en memoria:** los repositorios `InMemoryUserRepository`, `InMemoryEventRepository` e `InMemoryNotificationRepository` arrancan con los datos de `data/demo/`. Los cambios se comparten entre pantallas, pero se pierden al cerrar la app.
 - **Mapa:** `core/component/SimulatedMap` dibuja un mapa del Eje Cafetero con coordenadas reales: se puede mover, acercar, ubicar eventos y elegir un punto. La búsqueda usa lugares de referencia locales (`SamplePlaces`) en lugar de un servicio de mapas.
+- **Filtros de ubicación y fecha:** "En mi ciudad" usa las coordenadas: respeta el municipio de los lugares conocidos del catálogo local y, para otros puntos, aproxima por el centro más cercano. No depende del texto de la dirección ni usa límites municipales reales. "Esta semana" muestra inicios desde el momento actual hasta antes de siete días después.
 - **QR:** los códigos QR son reales (librería ZXing), pero no se usa la cámara: el escaneo se simula escribiendo el código o eligiendo un evento confirmado.
 - **Imágenes:** las fotos salen de URLs de ejemplo de picsum.photos, con una imagen local de respaldo. La foto de perfil se muestra con las iniciales.
 - **Recuperar contraseña:** valida el correo y simula el envío del enlace.

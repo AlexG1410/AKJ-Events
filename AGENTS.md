@@ -37,6 +37,9 @@ Si una guía contradice un requisito, o dos fuentes indican estructuras incompat
 | [09](https://caflorezvi.github.io/guias-apps-moviles/09.entidades-dominio.html) | Entidades de dominio | Modelos de usuario, evento, ubicación, categorías y estados. |
 | [10](https://caflorezvi.github.io/guias-apps-moviles/10.navegacion-1.html) | Navegación I | Destinos y conexiones entre pantallas. |
 | [11](https://caflorezvi.github.io/guias-apps-moviles/11.navegacion-2.html) | Navegación II | Tabs, barra inferior, dashboard, roles y navegación anidada. |
+| [14](https://caflorezvi.github.io/guias-apps-moviles/14.strings.html) | Cadenas de texto e idiomas | Recursos de textos, `stringResource`, mensajes de ViewModels y traducciones inglés/español. |
+| [15](https://caflorezvi.github.io/guias-apps-moviles/15.manejo-permisos.html) | Permisos e imágenes | Cámara, galería sin permisos amplios, `FileProvider`, foto de perfil/evento y carga remota. |
+| [16](https://caflorezvi.github.io/guias-apps-moviles/16.mapas.html) | Mapas y geolocalización | Mapbox reutilizable, permisos de ubicación, marcadores, selección de coordenadas y geocodificación inversa. |
 
 El repositorio actual incluye los mockups en `mockups/`. Las versiones de texto de las guías **04–08** y el proyecto base `proyecto-guía-moviles-20262-main.zip` no están guardados en este repositorio; si una tarea los requiere, localice su ruta real en el equipo o solicítela antes de atribuirles reglas. El proyecto base usa `demoapp` y reportes; aproveche su estructura sin copiar su funcionalidad ni reemplazar avances de AKJ Events.
 
@@ -67,6 +70,15 @@ app/src/main/java/co/edu/uniquindio/akjevents/
 - Coloque la presentación en `*Screen.kt`. Para formularios y operaciones con estado, use `*ViewModel.kt` y `UiState` siguiendo las guías; la pantalla observa el estado y envía acciones.
 - Ponga entidades compartidas en `domain/model`; deje las fuentes de datos e integraciones externas en `data` cuando se implementen. No concentre interfaz, persistencia y reglas de negocio en un solo composable.
 - Coloque en `core/component` únicamente componentes que se reutilicen; los específicos van en su `feature`. Respete la configuración existente de Gradle y el catálogo de versiones al añadir dependencias.
+
+### Criterios incorporados de las guías 14–16
+
+- Textos de interfaz, accesibilidad y mensajes: usar recursos en `res/values/strings.xml` (inglés) y `res/values-es/strings.xml` (español), con todas las claves en el archivo predeterminado. Resolverlos con `stringResource` en Compose; para ViewModels, la guía propone una interfaz `ResourceProvider`, comprobable con dobles de prueba y sin depender de un contexto de Activity. No traducir contenido introducido por usuarios como si fuera texto fijo de la aplicación.
+- Permisos: solicitarlos desde la UI al usar la función, mantener alternativas cuando se denieguen y explicar cómo habilitarlos desde Ajustes. Elegir una imagen con `GetContent` no requiere permisos de almacenamiento. Para el flujo de cámara de la guía, usar `TakePicture`, URI temporal con `FileProvider` y conservar ese URI frente a recreaciones; no presentar el URI temporal como almacenamiento remoto definitivo.
+- Mapas: adaptar el componente reutilizable de Mapbox a eventos y conservar callbacks y estado en las pantallas/ViewModels. Admitir ubicación aproximada o precisa, volver a comprobar permisos al regresar a primer plano y permitir selección manual sin GPS. Mapbox usa longitud/latitud; el modelo `Location` usa latitud/longitud. La geocodificación inversa debe iniciarse desde el ViewModel, con estados de carga y error, dejando la integración externa en `data`.
+- Configuración: la guía 16 usa Mapbox 11.22.0 con variantes `-ndk27`, repositorio Maven de Mapbox y token público `pk.` desde `local.properties`, generado como recurso mediante Gradle. No subirlo al repositorio: este token público sí termina en el APK y no debe confundirse con una clave secreta de servidor. Mapbox puede funcionar con eventos en memoria, sin esperar un backend.
+- Los ejemplos 14–15 presuponen Hilt, casos de uso y otras piezas que no forman parte de la estructura actual. Las guías 12–13 no se han revisado aquí: antes de introducir esa reorganización, consultar las fuentes correspondientes y proponer la adaptación, sin reemplazar la navegación tipada existente.
+- Estado al revisar las guías 14–16: incorporación documental, no implementación. La app conserva textos en Kotlin, imágenes de evento temporales y mapas simulados; siguen pendientes traducciones, selección real de fotos, carga remota, permisos de cámara/ubicación y Mapbox con geocodificación real.
 
 ## 4. Rutas y navegación
 

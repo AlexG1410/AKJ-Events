@@ -24,7 +24,7 @@ class CreateEventViewModelTest {
     private val repository = repos.events
 
     // Un usuario recién registrado, sin eventos propios, abre la sesión
-    private val currentUserId = (repos.users.register("Ana Gómez", "ana@ejemplo.com", "Armenia, Quindío", "Comunidad1", emptySet()) as RegisterResult.Success).user.id
+    private val currentUserId = (repos.users.register("Ana Gómez", "ana@ejemplo.com", "Armenia, Quindío", "Comunidad1", emptySet(), "Parque de la Vida", Location(4.5511, -75.6598)) as RegisterResult.Success).user.id
     private val viewModel by lazy { CreateEventViewModel(repository, repos.users, now = { now }) }
     private val parqueDeLaVida = PickedLocation("Parque de la Vida, Av. Bolívar", Location(4.5511, -75.6598))
 
@@ -194,5 +194,29 @@ class CreateEventViewModelTest {
         assertTrue(!edit.uiState.value.canSubmit)
         edit.submit()
         assertEquals("Ciclopaseo nocturno por Armenia", demo.events.findEvent("ciclopaseo")!!.title)
+    }
+
+    @Test
+    fun editingRejectsCapacityBelowLatestAttendanceAndAllowsEqualCapacity() {
+        val demo = TestRepositories()
+        val edit = CreateEventViewModel(demo.events, demo.users, eventId = "cine-foro", now = { now })
+        val original = demo.events.findEvent("cine-foro")!!
+        edit.onStartsAtChange(now.plusDays(3))
+        edit.onEndsAtChange(now.plusDays(3).plusHours(2))
+        edit.onLimitCapacityChange(true)
+        edit.onCapacityChange(original.attendanceCount.toString())
+        demo.events.confirmAttendance(original.id, "organizer-1")
+        val latestCount = demo.events.findEvent(original.id)!!.attendanceCount
+        assertEquals(original.attendanceCount + 1, latestCount)
+
+        edit.submit()
+
+        assertEquals("El cupo máximo no puede ser menor que los asistentes confirmados",
+            (edit.uiState.value.result as RequestResult.Failure).errorMessage)
+        assertEquals(EventStatus.VERIFIED, demo.events.findEvent(original.id)!!.status)
+        edit.onCapacityChange(latestCount.toString())
+        edit.submit()
+        assertTrue(edit.uiState.value.result is RequestResult.Success)
+        assertEquals(latestCount, demo.events.findEvent(original.id)!!.capacity)
     }
 }

@@ -44,6 +44,7 @@ import androidx.compose.material.icons.outlined.HowToReg
 import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Mail
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.MilitaryTech
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Person
@@ -106,6 +107,7 @@ import co.edu.uniquindio.akjevents.core.theme.BrandSage
 import co.edu.uniquindio.akjevents.core.theme.BrandTerracotta
 import co.edu.uniquindio.akjevents.core.theme.Honey
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
+import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 
 // Los campos del registro son un poco más bajos que los del login (py-2.5 en el mockup)
@@ -115,11 +117,21 @@ private val RegisterFieldStyle = FormFieldStyles.Brand.copy(height = 40.dp)
 fun RegisterScreen(
     onBack: () -> Unit,
     onRegisterSuccess: () -> Unit,
+    onPickLocation: (PickedLocation) -> Unit,
+    pickedLocation: PickedLocation?,
+    onPickedLocationConsumed: () -> Unit,
     viewModel: RegisterViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val focusManager = LocalFocusManager.current
+
+    LaunchedEffect(pickedLocation) {
+        if (pickedLocation != null) {
+            viewModel.onLocationPicked(pickedLocation)
+            onPickedLocationConsumed()
+        }
+    }
 
     // Mientras se escribe la contraseña, mantiene visible el campo junto con su indicador de seguridad
     val passwordRequester = remember { BringIntoViewRequester() }
@@ -220,6 +232,13 @@ fun RegisterScreen(
                             selectedCity = state.city,
                             cities = viewModel.cities,
                             onCitySelected = viewModel::onCityChange
+                        )
+                        RegistrationLocationRow(
+                            state = state,
+                            onClick = {
+                                focusManager.clearFocus()
+                                onPickLocation(viewModel.locationForPicker())
+                            }
                         )
                     }
 
@@ -394,6 +413,36 @@ private fun LabeledField(
         Text(label, color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         content()
         FormFieldError(error)
+    }
+}
+
+@Composable
+private fun RegistrationLocationRow(state: RegisterUiState, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, BrandBorder),
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(Icons.Outlined.Map, contentDescription = null, tint = BrandTerracotta)
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Seleccionar ubicación en el mapa *", color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    if (state.location == null) "Elige tu dirección para completar el registro" else state.address,
+                    color = BrandMuted,
+                    fontSize = 11.sp
+                )
+                state.location?.let { location ->
+                    Text("${location.latitude}, ${location.longitude}", color = BrandMuted, fontSize = 10.sp)
+                }
+            }
+        }
     }
 }
 

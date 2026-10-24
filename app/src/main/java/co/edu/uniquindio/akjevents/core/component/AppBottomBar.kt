@@ -1,4 +1,4 @@
-package co.edu.uniquindio.akjevents.core.component
+ package co.edu.uniquindio.akjevents.core.component
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement

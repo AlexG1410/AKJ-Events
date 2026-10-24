@@ -43,5 +43,9 @@ object SamplePlaces {
     /** Ciudad más cercana a un punto, para nombrar las ubicaciones elegidas en el mapa. */
     fun nearestCity(location: Location): City = cities.minBy { it.location.distanceKmTo(location) }
 
+    /** Respeta el municipio de los lugares conocidos; para otros puntos usa una aproximación. */
+    fun cityForLocation(location: Location): City =
+        places.find { it.location == location }?.let { cityNamed(it.city) } ?: nearestCity(location)
+
     fun cityNamed(name: String): City? = cities.find { it.name == name }
 }

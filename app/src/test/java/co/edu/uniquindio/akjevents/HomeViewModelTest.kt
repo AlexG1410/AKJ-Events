@@ -2,6 +2,7 @@ package co.edu.uniquindio.akjevents
 
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
+import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.features.home.HomeViewModel
 import co.edu.uniquindio.akjevents.features.home.LocationFilter
 import org.junit.Assert.assertEquals
@@ -90,7 +91,8 @@ class HomeViewModelTest {
 
         viewModel.selectLocationFilter(LocationFilter.CITY)
         assertEquals(6, visibleEvents().size)
-        assertTrue(visibleEvents().all { it.address.contains("Armenia") })
+        assertTrue(visibleEvents().all { SamplePlaces.cityForLocation(it.location).name == "Armenia, Quindío" })
+        assertTrue(visibleEvents().any { it.id == "jornada-verde" })
 
         viewModel.selectLocationFilter(LocationFilter.ALL)
         assertEquals(8, visibleEvents().size)
@@ -100,5 +102,51 @@ class HomeViewModelTest {
     fun greetingUsesTheSessionUser() {
         assertEquals("Camilo", viewModel.uiState.value.userFirstName)
         assertEquals("Armenia, Quindío", viewModel.uiState.value.city)
+    }
+
+    @Test
+    fun featuredEventsFollowInterestVotesInsteadOfAttendance() {
+        val template = repository.findPublicEvent("ciclopaseo")!!
+        repository.createEvent(template.copy(id = "mas-votos", interestCount = 1000, attendanceCount = 0))
+        repository.createEvent(template.copy(id = "mas-asistentes", interestCount = 0, attendanceCount = 100))
+
+        assertEquals("mas-votos", viewModel.uiState.value.featuredEvents.first().id)
+        assertFalse(viewModel.uiState.value.featuredEvents.any { it.id == "mas-asistentes" })
+    }
+
+    @Test
+    fun changingVotesUpdatesFeaturedOrderAndTiesAreDeterministic() {
+        val template = repository.findPublicEvent("ciclopaseo")!!
+        repository.createEvent(template.copy(id = "empate-a", interestCount = 1000))
+        repository.createEvent(template.copy(id = "empate-b", interestCount = 1000))
+        assertEquals(listOf("empate-a", "empate-b"), viewModel.uiState.value.featuredEvents.map { it.id })
+
+        viewModel.toggleInterest("empate-b")
+
+        assertEquals(listOf("empate-b", "empate-a"), viewModel.uiState.value.featuredEvents.map { it.id })
+    }
+
+    @Test
+    fun cityFilterUsesCoordinatesInsteadOfAddressTextAndKeepsOtherFilters() {
+        val template = repository.findPublicEvent("ciclopaseo")!!
+        repository.createEvent(template.copy(
+            id = "sin-ciudad-en-direccion", title = "Encuentro local", address = "Carrera 13 # 20-00",
+            location = SamplePlaces.cityNamed("Armenia, Quindío")!!.location
+        ))
+        repository.createEvent(template.copy(
+            id = "direccion-enganosa", title = "Encuentro visitante", address = "Casa Armenia",
+            location = SamplePlaces.cityNamed("Calarcá, Quindío")!!.location
+        ))
+
+        viewModel.selectLocationFilter(LocationFilter.CITY)
+        assertTrue(visibleEvents().any { it.id == "sin-ciudad-en-direccion" })
+        assertFalse(visibleEvents().any { it.id == "direccion-enganosa" })
+        viewModel.onQueryChange("Encuentro")
+        viewModel.selectCategory(template.category)
+        assertEquals(listOf("sin-ciudad-en-direccion"), visibleEvents().map { it.id })
+
+        val user = repos.users.currentUser.value!!
+        repos.users.updateProfile(user.copy(city = "Calarcá, Quindío"))
+        assertEquals(listOf("direccion-enganosa"), visibleEvents().map { it.id })
     }
 }

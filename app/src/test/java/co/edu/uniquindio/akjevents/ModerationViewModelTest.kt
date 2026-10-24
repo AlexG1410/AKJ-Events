@@ -49,7 +49,7 @@ class ModerationViewModelTest {
         viewModel.confirmRejection()
         assertEquals(EventStatus.PENDING, repos.events.findEvent("huertos-urbanos")!!.status)
 
-        // "Otro motivo" exige escribirlo
+        // Todas las causales exigen escribir un motivo, no solo "Otro motivo".
         viewModel.selectRejectionReason(RejectionReason.OTHER)
         assertFalse(viewModel.uiState.value.canConfirmRejection)
 
@@ -89,5 +89,22 @@ class ModerationViewModelTest {
         userViewModel.verify("huertos-urbanos")
 
         assertEquals(EventStatus.PENDING, asUser.events.findEvent("huertos-urbanos")!!.status)
+    }
+
+    @Test
+    fun everyRejectionCategoryRequiresANonBlankWrittenReason() {
+        RejectionReason.entries.forEach { reason ->
+            viewModel.startRejection("huertos-urbanos")
+            viewModel.selectRejectionReason(reason)
+            listOf("", "   \n").forEach { note ->
+                viewModel.onRejectionNoteChange(note)
+                assertFalse(viewModel.uiState.value.canConfirmRejection)
+                viewModel.confirmRejection()
+                assertEquals(EventStatus.PENDING, repos.events.findEvent("huertos-urbanos")!!.status)
+            }
+            viewModel.onRejectionNoteChange("Describe mejor el lugar del evento")
+            assertTrue(viewModel.uiState.value.canConfirmRejection)
+        }
+        assertTrue(repos.notificationsOf(DEMO_USER).none { it.type == NotificationType.EVENT_REJECTED })
     }
 }
