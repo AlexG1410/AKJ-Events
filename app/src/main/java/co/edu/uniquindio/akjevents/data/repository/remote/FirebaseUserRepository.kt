@@ -1,7 +1,6 @@
 package co.edu.uniquindio.akjevents.data.repository.remote
 
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
-import co.edu.uniquindio.akjevents.data.demo.SampleUsers
 import co.edu.uniquindio.akjevents.data.remote.user.PointsEntryDto
 import co.edu.uniquindio.akjevents.data.remote.user.UserDto
 import co.edu.uniquindio.akjevents.di.ApplicationScope
@@ -84,9 +83,6 @@ class FirebaseUserRepository @Inject constructor(
 
     override suspend fun findById(id: String): User? =
         usersCollection.document(id).get().await().toUser()
-            // Los eventos de muestra aún viven en memoria (pasan a Firestore en el paso 4) y sus
-            // organizadores no tienen cuenta: se muestran con sus datos de ejemplo
-            ?: SampleUsers.findById(id)
 
     override suspend fun login(email: String, password: String): User? {
         val result = try {

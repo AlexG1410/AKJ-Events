@@ -1,0 +1,111 @@
+rules_version = '2';
+
+// Reglas de seguridad de Cloud Firestore para AKJ Events.
+// Aplican los permisos en la base de datos: solo los moderadores verifican o rechazan eventos, solo el
+// organizador edita su evento, nadie puede darse el rol de moderador y cada persona lee solo sus notificaciones.
+// Los moderadores se asignan a mano en la consola (campo `role` = MODERATOR), que no pasa por estas reglas.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMe(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isModerator() {
+      return signedIn()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'MODERATOR';
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    function organizerOf(eventId) {
+      return get(/databases/$(database)/documents/events/$(eventId)).data.organizerId;
+    }
+
+    // Perfiles. Los puntos y las insignias los suman las acciones de otras personas (por ejemplo, un
+    // "Me interesa" en tu evento), por eso cualquiera con sesión puede cambiar solo esos dos campos.
+    match /users/{userId} {
+      allow read: if signedIn();
+      allow create: if isMe(userId) && request.resource.data.role == 'USER';
+      allow update: if (isMe(userId) && request.resource.data.role == resource.data.role)
+        || (signedIn() && changedKeys().hasOnly(['points', 'badges']));
+      allow delete: if isMe(userId);
+    }
+
+    match /pointsHistory/{entryId} {
+      allow read, delete: if isMe(resource.data.userId);
+      allow create: if signedIn();
+    }
+
+    // Eventos. Los verificados y finalizados son públicos; los pendientes y rechazados solo los ven su
+    // organizador y los moderadores.
+    match /events/{eventId} {
+      // Leer un id que aún no existe (al crear un evento) no revela nada
+      allow read: if signedIn() && (
+        resource == null
+        || resource.data.status in ['VERIFIED', 'FINISHED']
+        || resource.data.organizerId == request.auth.uid
+        || isModerator()
+      );
+
+      // Todo evento nuevo queda pendiente, sin asistentes ni interesados
+      allow create: if signedIn()
+        && request.resource.data.organizerId == request.auth.uid
+        && request.resource.data.status == 'PENDING'
+        && request.resource.data.attendanceCount == 0
+        && request.resource.data.interestCount == 0
+        && request.resource.data.verificationRewarded == false;
+
+      allow update: if isModerator()
+        // El organizador edita el contenido, lo reenvía (pendiente) o lo finaliza; no puede verificarlo
+        || (resource.data.organizerId == request.auth.uid
+            && request.resource.data.organizerId == request.auth.uid
+            && request.resource.data.status in ['PENDING', 'FINISHED']
+            && !changedKeys().hasAny(['attendanceCount', 'interestCount', 'verificationRewarded', 'createdAt']))
+        // Confirmar asistencia, hacer check-in o marcar "Me interesa" solo cambia los conteos
+        || (signedIn() && changedKeys().hasOnly(['attendanceCount', 'interestCount']));
+
+      allow delete: if isModerator() || resource.data.organizerId == request.auth.uid;
+    }
+
+    match /comments/{commentId} {
+      allow read: if signedIn();
+      allow create: if isMe(request.resource.data.authorId);
+      allow delete: if isMe(resource.data.authorId)
+        || organizerOf(resource.data.eventId) == request.auth.uid
+        || isModerator();
+    }
+
+    // Asistencias e intereses: uno por persona y evento (id `eventId_userId`)
+    match /attendances/{attendanceId} {
+      allow read: if signedIn();
+      allow create: if isMe(request.resource.data.userId)
+        && attendanceId == request.resource.data.eventId + '_' + request.auth.uid;
+      allow update: if isMe(resource.data.userId) && changedKeys().hasOnly(['checkedIn']);
+      allow delete: if isMe(resource.data.userId)
+        || organizerOf(resource.data.eventId) == request.auth.uid
+        || isModerator();
+    }
+
+    match /interests/{interestId} {
+      allow read: if signedIn();
+      allow create: if isMe(request.resource.data.userId)
+        && interestId == request.resource.data.eventId + '_' + request.auth.uid;
+      allow delete: if isMe(resource.data.userId)
+        || organizerOf(resource.data.eventId) == request.auth.uid
+        || isModerator();
+    }
+
+    // Notificaciones: cualquiera con sesión puede avisarle a otra persona; cada quien lee y marca las suyas
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isMe(resource.data.userId);
+      allow create: if signedIn();
+    }
+  }
+}

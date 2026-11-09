@@ -19,7 +19,10 @@ enum class CheckInRegistration { REGISTERED, ALREADY_CHECKED_IN, FULL, NOT_FOUND
  * Solo los eventos [EventStatus.VERIFIED] son públicos: el feed, la asistencia y el interés trabajan únicamente con ellos.
  */
 interface EventRepository {
-    /** Todos los eventos, en cualquier estado. Úsese solo para el organizador o el moderador. */
+    /**
+     * Los eventos que la sesión puede ver, en cualquier estado: para un moderador, todos; para un usuario, los
+     * verificados y finalizados más los propios. Úsese solo para el organizador o el moderador.
+     */
     val events: StateFlow<List<CommunityEvent>>
 
     /** Eventos verificados, con sus conteos de asistentes e interesados al día. */

@@ -1,11 +1,11 @@
 package co.edu.uniquindio.akjevents.di
 
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryNotificationRepository
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRanker
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRepository
 import co.edu.uniquindio.akjevents.data.repository.local.DataStoreSessionPreferences
 import co.edu.uniquindio.akjevents.data.repository.remote.FirebaseUserRepository
+import co.edu.uniquindio.akjevents.data.repository.remote.FirestoreEventRepository
+import co.edu.uniquindio.akjevents.data.repository.remote.FirestoreNotificationRepository
 import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRanker
@@ -19,8 +19,9 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 /**
- * Le indica a Hilt qué implementación usar para cada interfaz del dominio.
- * En la fase 3 basta con cambiar estas implementaciones en memoria por las remotas.
+ * Le indica a Hilt qué implementación usar para cada interfaz del dominio: Firebase para las cuentas,
+ * los eventos y las notificaciones, y DataStore para la sesión. Las implementaciones en memoria quedan
+ * para las pruebas unitarias.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -28,7 +29,7 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindEventRepository(impl: InMemoryEventRepository): EventRepository
+    abstract fun bindEventRepository(impl: FirestoreEventRepository): EventRepository
 
     @Binds
     @Singleton
@@ -40,7 +41,7 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindNotificationRepository(impl: InMemoryNotificationRepository): NotificationRepository
+    abstract fun bindNotificationRepository(impl: FirestoreNotificationRepository): NotificationRepository
 
     @Binds
     @Singleton
