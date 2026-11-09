@@ -3,6 +3,7 @@ package co.edu.uniquindio.akjevents
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
 import co.edu.uniquindio.akjevents.data.demo.SampleUsers
+import co.edu.uniquindio.akjevents.data.repository.InMemorySessionPreferences
 import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.usecase.auth.LoginUseCase
 import co.edu.uniquindio.akjevents.features.auth.login.LoginViewModel
@@ -16,7 +17,7 @@ class LoginViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val viewModel by lazy { LoginViewModel(LoginUseCase(InMemoryUserRepository()), TestResourceProvider, simulatedRequestMs = 0) }
+    private val viewModel by lazy { LoginViewModel(LoginUseCase(InMemoryUserRepository(), InMemorySessionPreferences()), TestResourceProvider) }
 
     @Test
     fun demoCredentialsBelongToTheDemoUser() = runTest {

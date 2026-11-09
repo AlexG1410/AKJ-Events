@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.devtools.ksp)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -20,6 +21,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Con -PuseFirebaseEmulator=true la versión debug usa el emulador local de Firebase (Auth y Firestore)
+        // en lugar del proyecto real. Por defecto se usa el proyecto real.
+        val useFirebaseEmulator = providers.gradleProperty("useFirebaseEmulator").orNull == "true"
+        buildConfigField("boolean", "USE_FIREBASE_EMULATOR", useFirebaseEmulator.toString())
+        // 10.0.2.2 es el computador visto desde el emulador de Android; con `adb reverse` se usa 127.0.0.1
+        val firebaseEmulatorHost = providers.gradleProperty("firebaseEmulatorHost").orNull ?: "10.0.2.2"
+        buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"$firebaseEmulatorHost\"")
     }
 
     buildTypes {
@@ -35,6 +44,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -66,4 +76,12 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    // Firebase: autenticación y base de datos (guías 19 y 20)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.kotlinx.coroutines.play.services)
+    // Preferencias locales (guía 13)
+    implementation(libs.data.store)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 }

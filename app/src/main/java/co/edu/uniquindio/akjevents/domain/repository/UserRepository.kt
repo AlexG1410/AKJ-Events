@@ -13,7 +13,8 @@ sealed interface RegisterResult {
     data object EmailInUse : RegisterResult
 }
 
-enum class ProfileUpdateResult { UPDATED, EMAIL_IN_USE, NOT_FOUND }
+/** [EMAIL_VERIFICATION_SENT]: los demás datos se guardaron y el nuevo correo espera la confirmación del enlace enviado. */
+enum class ProfileUpdateResult { UPDATED, EMAIL_VERIFICATION_SENT, EMAIL_IN_USE, NOT_FOUND }
 
 /** El usuario antes y después de un cambio de puntos, para saber si subió de nivel. */
 data class PointsChange(val before: User, val after: User)
@@ -23,10 +24,14 @@ data class PointsChange(val before: User, val after: User)
  * Las reglas de la reputación (quién suma puntos, qué se notifica) están en los casos de uso.
  */
 interface UserRepository {
-    val users: StateFlow<List<User>>
-
     /** Usuario con la sesión abierta; null si nadie ha iniciado sesión. */
     val currentUser: StateFlow<User?>
+
+    /**
+     * False mientras se averigua si quedó una sesión abierta (por ejemplo, al abrir la app con Firebase);
+     * así la navegación no muestra el login por un instante antes de entrar.
+     */
+    val isSessionReady: StateFlow<Boolean>
 
     val pointsHistory: StateFlow<List<PointsEntry>>
 
@@ -36,6 +41,9 @@ interface UserRepository {
     suspend fun login(email: String, password: String): User?
 
     suspend fun logout()
+
+    /** Envía al correo un enlace para restablecer la contraseña. No revela si el correo tiene cuenta. */
+    suspend fun sendPasswordReset(email: String)
 
     /** Crea la cuenta como Usuario (nivel Espectador) y abre su sesión. */
     suspend fun register(

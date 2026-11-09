@@ -139,7 +139,8 @@
     <string name="recover_remembered">Remembered your password?</string>
     <string name="recover_sign_in">Sign in</string>
     <string name="recover_error_empty">Enter your email</string>
-    <string name="recover_success">We sent you a recovery link</string>
+    <string name="recover_success">If the email has an account, we sent it a recovery link. Check your inbox and spam folder.</string>
+    <string name="recover_error_generic">Could not send the link. Check the email and your connection</string>
     <string name="register_title">Create your account</string>
     <string name="register_subtitle">Join to organize and take part with your local community.</string>
     <string name="register_full_name">Full name *</string>
@@ -637,6 +638,7 @@
     <string name="edit_profile_delete_account">Delete my account</string>
     <string name="edit_profile_error_location">Choose your main location</string>
     <string name="edit_profile_updated">Profile updated</string>
+    <string name="edit_profile_email_verification">Profile updated. We sent a link to %1$s to confirm the new email</string>
     <string name="edit_profile_error_email_in_use">That email already belongs to another account</string>
     <string name="edit_profile_error_not_found">We couldn\'t find your account</string>
     <string name="edit_profile_error_save">Could not save the profile. Try again</string>

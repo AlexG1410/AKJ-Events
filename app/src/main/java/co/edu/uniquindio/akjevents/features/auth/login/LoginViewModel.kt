@@ -10,7 +10,6 @@ import co.edu.uniquindio.akjevents.core.util.UiText
 import co.edu.uniquindio.akjevents.domain.usecase.auth.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,14 +37,10 @@ data class LoginUiState(
 }
 
 @HiltViewModel
-class LoginViewModel(
+class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
-    private val resources: ResourceProvider,
-    private val simulatedRequestMs: Long
+    private val resources: ResourceProvider
 ) : ViewModel() {
-
-    @Inject
-    constructor(loginUseCase: LoginUseCase, resources: ResourceProvider) : this(loginUseCase, resources, SIMULATED_REQUEST_MS)
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -75,10 +70,9 @@ class LoginViewModel(
 
         _uiState.update { it.copy(result = RequestResult.Loading) }
         viewModelScope.launch {
-            // Las cuentas viven en memoria; con el backend las validará el servicio de autenticación
-            delay(simulatedRequestMs)
+            // Firebase Authentication valida el correo y la contraseña (guía 20)
             // Credenciales incorrectas devuelven null; un error (por ejemplo, sin conexión) lanza una excepción
-            val user = runCatching { loginUseCase(state.email, state.password) }.getOrElse {
+            val user = runCatching { loginUseCase(state.email, state.password, state.rememberDevice) }.getOrElse {
                 _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(R.string.login_error))) }
                 return@launch
             }
@@ -93,9 +87,5 @@ class LoginViewModel(
 
     fun onFailureShown() = _uiState.update {
         if (it.result is RequestResult.Failure) it.copy(result = null) else it
-    }
-
-    companion object {
-        const val SIMULATED_REQUEST_MS = 800L
     }
 }

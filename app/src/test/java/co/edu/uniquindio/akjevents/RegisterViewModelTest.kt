@@ -3,6 +3,7 @@ package co.edu.uniquindio.akjevents
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
+import co.edu.uniquindio.akjevents.data.repository.InMemorySessionPreferences
 import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
@@ -21,7 +22,7 @@ class RegisterViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val users = InMemoryUserRepository()
-    private val viewModel by lazy { RegisterViewModel(RegisterUserUseCase(users), TestResourceProvider, simulatedRequestMs = 0) }
+    private val viewModel by lazy { RegisterViewModel(RegisterUserUseCase(users, InMemorySessionPreferences()), TestResourceProvider) }
     private val picked = PickedLocation("Parque Sucre, Cra. 14 # 13-00", Location(4.5382, -75.6731))
 
     private fun fillForm(password: String, confirmation: String = password) = with(viewModel) {

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.usecase.auth.LogoutUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.auth.RestoreSessionUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.notification.ObserveNotificationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -16,7 +17,9 @@ import kotlinx.coroutines.launch
 
 data class SessionUiState(
     val user: User? = null,
-    val unreadAlerts: Int = 0
+    val unreadAlerts: Int = 0,
+    /** True cuando ya se sabe si hay sesión abierta; antes, el splash no decide a dónde ir. */
+    val isReady: Boolean = false
 ) {
     val isModerator: Boolean get() = user?.isModerator == true
 }
@@ -26,15 +29,27 @@ data class SessionUiState(
 class SessionViewModel @Inject constructor(
     observeCurrentUser: ObserveCurrentUserUseCase,
     observeNotifications: ObserveNotificationsUseCase,
+    restoreSession: RestoreSessionUseCase,
     private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SessionUiState())
     val uiState: StateFlow<SessionUiState> = _uiState.asStateFlow()
 
+    // Se marca al terminar de revisar la sesión guardada (y cerrarla si no se pidió recordar el dispositivo)
+    private val restored = MutableStateFlow(false)
+
     init {
         viewModelScope.launch {
-            combine(observeCurrentUser(), observeNotifications()) { user, all ->
-                SessionUiState(user = user, unreadAlerts = all.count { it.userId == user?.id && !it.isRead })
+            runCatching { restoreSession() }
+            restored.value = true
+        }
+        viewModelScope.launch {
+            combine(observeCurrentUser(), observeNotifications(), restored) { user, all, isRestored ->
+                SessionUiState(
+                    user = user,
+                    unreadAlerts = all.count { it.userId == user?.id && !it.isRead },
+                    isReady = isRestored
+                )
             }.collect { _uiState.value = it }
         }
     }

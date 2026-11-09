@@ -138,7 +138,8 @@
     <string name="recover_remembered">¿Recordaste tu contraseña?</string>
     <string name="recover_sign_in">Iniciar sesión</string>
     <string name="recover_error_empty">Ingresa tu correo electrónico</string>
-    <string name="recover_success">Te enviamos un enlace de recuperación</string>
+    <string name="recover_success">Si el correo tiene una cuenta, le enviamos un enlace de recuperación. Revisa tu bandeja de entrada y el correo no deseado.</string>
+    <string name="recover_error_generic">No se pudo enviar el enlace. Revisa el correo y tu conexión</string>
     <string name="register_title">Crea tu cuenta</string>
     <string name="register_subtitle">Únete para organizar y participar con tu comunidad local.</string>
     <string name="register_full_name">Nombre completo *</string>
@@ -636,6 +637,7 @@
     <string name="edit_profile_delete_account">Eliminar mi cuenta</string>
     <string name="edit_profile_error_location">Elige tu ubicación principal</string>
     <string name="edit_profile_updated">Perfil actualizado</string>
+    <string name="edit_profile_email_verification">Perfil actualizado. Enviamos un enlace a %1$s para confirmar el nuevo correo</string>
     <string name="edit_profile_error_email_in_use">Ese correo ya pertenece a otra cuenta</string>
     <string name="edit_profile_error_not_found">No encontramos tu cuenta</string>
     <string name="edit_profile_error_save">No se pudo guardar el perfil. Intenta de nuevo</string>

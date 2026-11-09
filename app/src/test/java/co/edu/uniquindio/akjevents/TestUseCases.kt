@@ -1,13 +1,17 @@
 package co.edu.uniquindio.akjevents
 
 import co.edu.uniquindio.akjevents.data.repository.InMemoryNotificationRepository
+import co.edu.uniquindio.akjevents.data.repository.InMemorySessionPreferences
 import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
+import co.edu.uniquindio.akjevents.domain.repository.SessionPreferencesRepository
 import co.edu.uniquindio.akjevents.domain.repository.UserRepository
 import co.edu.uniquindio.akjevents.domain.usecase.auth.LoginUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.auth.LogoutUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.auth.RegisterUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.auth.RestoreSessionUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.auth.SendPasswordResetUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.CreateEventUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.DeleteEventUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.FinishEventUseCase
@@ -41,13 +45,16 @@ import co.edu.uniquindio.akjevents.domain.usecase.user.UpdateProfileUseCase
 class TestUseCases(
     events: EventRepository,
     users: UserRepository,
-    notifications: NotificationRepository = InMemoryNotificationRepository(emptyList())
+    notifications: NotificationRepository = InMemoryNotificationRepository(emptyList()),
+    val sessionPreferences: SessionPreferencesRepository = InMemorySessionPreferences()
 ) {
     // Sesión y usuarios
     val observeCurrentUser = ObserveCurrentUserUseCase(users)
-    val login = LoginUseCase(users)
+    val login = LoginUseCase(users, sessionPreferences)
     val logout = LogoutUseCase(users)
-    val registerUser = RegisterUserUseCase(users)
+    val registerUser = RegisterUserUseCase(users, sessionPreferences)
+    val sendPasswordReset = SendPasswordResetUseCase(users)
+    val restoreSession = RestoreSessionUseCase(users, sessionPreferences)
     val getUserById = GetUserByIdUseCase(users)
     val updateProfile = UpdateProfileUseCase(users)
     val deleteAccount = DeleteAccountUseCase(users, events, notifications)

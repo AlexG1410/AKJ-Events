@@ -18,7 +18,6 @@ import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
 import co.edu.uniquindio.akjevents.domain.usecase.auth.RegisterUserUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -94,14 +93,10 @@ data class RegisterUiState(
 }
 
 @HiltViewModel
-class RegisterViewModel(
+class RegisterViewModel @Inject constructor(
     private val registerUser: RegisterUserUseCase,
-    private val resources: ResourceProvider,
-    private val simulatedRequestMs: Long
+    private val resources: ResourceProvider
 ) : ViewModel() {
-
-    @Inject
-    constructor(registerUser: RegisterUserUseCase, resources: ResourceProvider) : this(registerUser, resources, SIMULATED_REQUEST_MS)
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -165,7 +160,6 @@ class RegisterViewModel(
         _uiState.update { it.copy(result = RequestResult.Loading) }
         viewModelScope.launch {
             // La cuenta se guarda en memoria; con el backend la creará el servicio de autenticación
-            delay(simulatedRequestMs)
             val result = runCatching {
                 registerUser(
                     name = state.fullName,
@@ -196,6 +190,5 @@ class RegisterViewModel(
 
     companion object {
         const val MIN_NAME_LENGTH = 3
-        const val SIMULATED_REQUEST_MS = 1_000L
     }
 }

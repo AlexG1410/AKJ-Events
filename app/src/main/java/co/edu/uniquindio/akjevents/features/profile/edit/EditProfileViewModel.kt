@@ -118,6 +118,8 @@ class EditProfileViewModel @Inject constructor(
                 onSuccess = { outcome ->
                     when (outcome) {
                         ProfileUpdateResult.UPDATED -> RequestResult.Success(resources.getString(R.string.edit_profile_updated))
+                        ProfileUpdateResult.EMAIL_VERIFICATION_SENT ->
+                            RequestResult.Success(resources.getString(R.string.edit_profile_email_verification, state.email.trim()))
                         ProfileUpdateResult.EMAIL_IN_USE -> RequestResult.Failure(resources.getString(R.string.edit_profile_error_email_in_use))
                         ProfileUpdateResult.NOT_FOUND -> RequestResult.Failure(resources.getString(R.string.edit_profile_error_not_found))
                     }

@@ -1,8 +1,12 @@
 package co.edu.uniquindio.akjevents.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
@@ -58,14 +62,24 @@ fun AppNavigation(session: SessionViewModel = hiltViewModel()) {
 
     NavHost(navController = navController, startDestination = MainRoutes.Splash) {
         composable<MainRoutes.Splash> { entry ->
-            SplashScreen(onFinished = {
+            var splashFinished by remember { mutableStateOf(false) }
+            SplashScreen(onFinished = { splashFinished = true })
+            // Con una sesión guardada se entra directo; si no, al login (cuando ya se sabe cuál es el caso)
+            LaunchedEffect(splashFinished, sessionState.isReady) {
+                if (!splashFinished || !sessionState.isReady) return@LaunchedEffect
+                val user = sessionState.user
                 navController.fromTop(entry) {
-                    navigate(MainRoutes.Login) {
+                    val destination = when {
+                        user == null -> MainRoutes.Login
+                        user.isModerator -> MainRoutes.Moderation
+                        else -> MainRoutes.Home
+                    }
+                    navigate(destination) {
                         // Saca el splash de la pila para que "atrás" no regrese a él
                         popUpTo<MainRoutes.Splash> { inclusive = true }
                     }
                 }
-            })
+            }
         }
         composable<MainRoutes.Login> { entry ->
             LoginScreen(

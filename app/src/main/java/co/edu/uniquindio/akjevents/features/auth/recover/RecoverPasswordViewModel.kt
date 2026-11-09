@@ -7,9 +7,9 @@ import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.core.util.UiText
+import co.edu.uniquindio.akjevents.domain.usecase.auth.SendPasswordResetUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +30,7 @@ data class RecoverPasswordUiState(
 
 @HiltViewModel
 class RecoverPasswordViewModel @Inject constructor(
+    private val sendPasswordReset: SendPasswordResetUseCase,
     private val resources: ResourceProvider
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecoverPasswordUiState())
@@ -53,17 +54,16 @@ class RecoverPasswordViewModel @Inject constructor(
 
         _uiState.update { it.copy(result = RequestResult.Loading) }
         viewModelScope.launch {
-            // Simulación: todavía no se envían correos reales
-            delay(SIMULATED_REQUEST_MS)
-            _uiState.update { it.copy(result = RequestResult.Success(resources.getString(R.string.recover_success))) }
+            // Firebase envía el enlace; por privacidad no dice si el correo tiene cuenta
+            val result = runCatching { sendPasswordReset(state.email) }.fold(
+                onSuccess = { RequestResult.Success(resources.getString(R.string.recover_success)) },
+                onFailure = { RequestResult.Failure(resources.getString(R.string.recover_error_generic)) }
+            )
+            _uiState.update { it.copy(result = result) }
         }
     }
 
     fun onFailureShown() = _uiState.update {
         if (it.result is RequestResult.Failure) it.copy(result = null) else it
-    }
-
-    companion object {
-        const val SIMULATED_REQUEST_MS = 700L
     }
 }
