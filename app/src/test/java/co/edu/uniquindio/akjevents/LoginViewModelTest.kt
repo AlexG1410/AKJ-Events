@@ -6,6 +6,7 @@ import co.edu.uniquindio.akjevents.data.demo.SampleUsers
 import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.usecase.auth.LoginUseCase
 import co.edu.uniquindio.akjevents.features.auth.login.LoginViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -15,15 +16,15 @@ class LoginViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val viewModel by lazy { LoginViewModel(LoginUseCase(InMemoryUserRepository()), simulatedRequestMs = 0) }
+    private val viewModel by lazy { LoginViewModel(LoginUseCase(InMemoryUserRepository()), TestResourceProvider, simulatedRequestMs = 0) }
 
     @Test
-    fun demoCredentialsBelongToTheDemoUser() {
+    fun demoCredentialsBelongToTheDemoUser() = runTest {
         assertEquals(SampleUsers.demoUser.email, DemoCredentials.email)
     }
 
     @Test
-    fun validDemoCredentialsReturnSuccess() {
+    fun validDemoCredentialsReturnSuccess() = runTest {
         viewModel.onEmailChange("  ${DemoCredentials.email.uppercase()}  ")
         viewModel.onPasswordChange(DemoCredentials.password)
 
@@ -35,7 +36,7 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun moderatorCredentialsAreFlaggedForTheModerationPanel() {
+    fun moderatorCredentialsAreFlaggedForTheModerationPanel() = runTest {
         viewModel.onEmailChange(DemoCredentials.moderatorEmail)
         viewModel.onPasswordChange(DemoCredentials.moderatorPassword)
 
@@ -46,7 +47,7 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun incorrectCredentialsReturnFailure() {
+    fun incorrectCredentialsReturnFailure() = runTest {
         viewModel.onEmailChange(DemoCredentials.email)
         viewModel.onPasswordChange("ClaveIncorrecta123")
 
@@ -59,7 +60,7 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun malformedEmailIsRejectedBeforeAuthentication() {
+    fun malformedEmailIsRejectedBeforeAuthentication() = runTest {
         viewModel.onEmailChange("correo-invalido")
         viewModel.onPasswordChange(DemoCredentials.password)
 

@@ -1,10 +1,15 @@
 package co.edu.uniquindio.akjevents.features.auth.register
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
+import co.edu.uniquindio.akjevents.core.util.UiText
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
@@ -20,11 +25,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class PasswordStrength(val label: String, val filledBars: Int) {
-    NONE("", 0),
-    WEAK("Débil", 1),
-    MEDIUM("Media", 2),
-    STRONG("Segura", 3);
+enum class PasswordStrength(@param:StringRes val label: Int, val filledBars: Int) {
+    // NONE no se muestra: el indicador solo aparece cuando hay contraseña
+    NONE(R.string.password_strength_weak, 0),
+    WEAK(R.string.password_strength_weak, 1),
+    MEDIUM(R.string.password_strength_medium, 2),
+    STRONG(R.string.password_strength_strong, 3);
 
     companion object {
         fun of(password: String): PasswordStrength {
@@ -60,21 +66,21 @@ data class RegisterUiState(
     // Todo usuario nuevo empieza como Espectador (nivel 1)
     val startingLevel: UserLevel get() = UserLevel.SPECTATOR
     val passwordStrength: PasswordStrength get() = PasswordStrength.of(password)
-    val fullNameError: String?
+    val fullNameError: UiText?
         get() = if (fullName.isNotBlank() && fullName.trim().length < RegisterViewModel.MIN_NAME_LENGTH) {
-            "Escribe un nombre de al menos ${RegisterViewModel.MIN_NAME_LENGTH} caracteres"
+            UiText(R.string.error_short_name, RegisterViewModel.MIN_NAME_LENGTH)
         } else null
-    val emailError: String?
+    val emailError: UiText?
         get() = if (email.isNotBlank() && !FormValidation.isValidEmail(email)) {
             FormValidation.INVALID_EMAIL_MESSAGE
         } else null
-    val passwordError: String?
+    val passwordError: UiText?
         get() = if (password.isNotEmpty() && !FormValidation.isStrongPassword(password)) {
             FormValidation.WEAK_PASSWORD_MESSAGE
         } else null
-    val confirmPasswordError: String?
+    val confirmPasswordError: UiText?
         get() = if (confirmPassword.isNotEmpty() && confirmPassword != password) {
-            "Las contraseñas no coinciden"
+            UiText(R.string.error_passwords_mismatch)
         } else null
     val isFormValid: Boolean
         get() = fullName.trim().length >= RegisterViewModel.MIN_NAME_LENGTH &&
@@ -90,11 +96,12 @@ data class RegisterUiState(
 @HiltViewModel
 class RegisterViewModel(
     private val registerUser: RegisterUserUseCase,
+    private val resources: ResourceProvider,
     private val simulatedRequestMs: Long
 ) : ViewModel() {
 
     @Inject
-    constructor(registerUser: RegisterUserUseCase) : this(registerUser, SIMULATED_REQUEST_MS)
+    constructor(registerUser: RegisterUserUseCase, resources: ResourceProvider) : this(registerUser, resources, SIMULATED_REQUEST_MS)
 
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -141,18 +148,17 @@ class RegisterViewModel(
 
         val error = when {
             listOf(state.fullName, state.email, state.city, state.password, state.confirmPassword).any { it.isBlank() } ->
-                "Completa los campos obligatorios (*)"
-            state.fullName.trim().length < MIN_NAME_LENGTH ->
-                "Escribe un nombre de al menos $MIN_NAME_LENGTH caracteres"
+                UiText(R.string.register_error_required)
+            state.fullName.trim().length < MIN_NAME_LENGTH -> UiText(R.string.error_short_name, MIN_NAME_LENGTH)
             !FormValidation.isValidEmail(state.email) -> FormValidation.INVALID_EMAIL_MESSAGE
-            state.location == null || state.address.isBlank() -> "Selecciona tu dirección en el mapa"
+            state.location == null || state.address.isBlank() -> UiText(R.string.register_error_location)
             !FormValidation.isStrongPassword(state.password) -> FormValidation.WEAK_PASSWORD_MESSAGE
-            state.confirmPassword != state.password -> "Las contraseñas no coinciden"
-            !state.acceptedRules -> "Debes aceptar las Normas Comunitarias para continuar"
+            state.confirmPassword != state.password -> UiText(R.string.error_passwords_mismatch)
+            !state.acceptedRules -> UiText(R.string.register_error_rules)
             else -> null
         }
         if (error != null) {
-            _uiState.update { it.copy(result = RequestResult.Failure(error)) }
+            _uiState.update { it.copy(result = RequestResult.Failure(error.asString(resources))) }
             return
         }
 
@@ -160,19 +166,26 @@ class RegisterViewModel(
         viewModelScope.launch {
             // La cuenta se guarda en memoria; con el backend la creará el servicio de autenticación
             delay(simulatedRequestMs)
-            val result = when (registerUser(
-                name = state.fullName,
-                email = state.email,
-                city = state.city,
-                password = state.password,
-                interests = state.interests,
-                address = state.address,
-                location = state.location!!
-            )) {
-                is RegisterResult.Success ->
-                    RequestResult.Success("¡Cuenta creada! Empiezas como ${state.startingLevel.label} (Nivel 1)")
-                RegisterResult.EmailInUse -> RequestResult.Failure("Ya existe una cuenta con ese correo")
-            }
+            val result = runCatching {
+                registerUser(
+                    name = state.fullName,
+                    email = state.email,
+                    city = state.city,
+                    password = state.password,
+                    interests = state.interests,
+                    address = state.address,
+                    location = state.location!!
+                )
+            }.fold(
+                onSuccess = { outcome ->
+                    when (outcome) {
+                        is RegisterResult.Success ->
+                            RequestResult.Success(resources.getString(R.string.register_success, resources.getString(state.startingLevel.labelRes)))
+                        RegisterResult.EmailInUse -> RequestResult.Failure(resources.getString(R.string.register_error_email_in_use))
+                    }
+                },
+                onFailure = { RequestResult.Failure(resources.getString(R.string.register_error_generic)) }
+            )
             _uiState.update { it.copy(result = result) }
         }
     }

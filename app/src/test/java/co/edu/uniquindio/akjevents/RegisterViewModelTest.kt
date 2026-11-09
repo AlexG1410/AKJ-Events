@@ -9,6 +9,7 @@ import co.edu.uniquindio.akjevents.domain.model.UserLevel
 import co.edu.uniquindio.akjevents.domain.usecase.auth.RegisterUserUseCase
 import co.edu.uniquindio.akjevents.features.auth.register.PasswordStrength
 import co.edu.uniquindio.akjevents.features.auth.register.RegisterViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -20,7 +21,7 @@ class RegisterViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val users = InMemoryUserRepository()
-    private val viewModel by lazy { RegisterViewModel(RegisterUserUseCase(users), simulatedRequestMs = 0) }
+    private val viewModel by lazy { RegisterViewModel(RegisterUserUseCase(users), TestResourceProvider, simulatedRequestMs = 0) }
     private val picked = PickedLocation("Parque Sucre, Cra. 14 # 13-00", Location(4.5382, -75.6731))
 
     private fun fillForm(password: String, confirmation: String = password) = with(viewModel) {
@@ -34,7 +35,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun weakPasswordCannotRegister() {
+    fun weakPasswordCannotRegister() = runTest {
         fillForm(password = "comunidad1")
 
         assertTrue(viewModel.uiState.value.passwordStrength != PasswordStrength.STRONG)
@@ -45,7 +46,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun differentPasswordConfirmationCannotRegister() {
+    fun differentPasswordConfirmationCannotRegister() = runTest {
         fillForm(password = "Comunidad1", confirmation = "Comunidad2")
 
         assertFalse(viewModel.uiState.value.isFormValid)
@@ -56,7 +57,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun completeValidFormCanRegister() {
+    fun completeValidFormCanRegister() = runTest {
         fillForm(password = "Comunidad1")
 
         assertTrue(viewModel.uiState.value.isFormValid)
@@ -72,7 +73,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun emailAlreadyInUseCannotRegister() {
+    fun emailAlreadyInUseCannotRegister() = runTest {
         fillForm(password = "Comunidad1")
         viewModel.onEmailChange(DemoCredentials.email)
 
@@ -82,7 +83,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun selectingACityAloneDoesNotReplacePickingAnAddress() {
+    fun selectingACityAloneDoesNotReplacePickingAnAddress() = runTest {
         fillForm("Comunidad1")
         viewModel.onCityChange("Calarcá, Quindío")
 
@@ -95,7 +96,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun mapSelectionUpdatesCityAndCanBeChangedWithoutLosingOtherFields() {
+    fun mapSelectionUpdatesCityAndCanBeChangedWithoutLosingOtherFields() = runTest {
         fillForm("Comunidad1")
         viewModel.onCityChange("Armenia, Quindío")
         assertEquals(picked, viewModel.locationForPicker())

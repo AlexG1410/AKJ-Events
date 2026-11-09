@@ -3,6 +3,7 @@ package co.edu.uniquindio.akjevents.domain.usecase.moderation
 import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
 import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
@@ -19,7 +20,7 @@ class VerifyEventUseCase @Inject constructor(
     private val awardPoints: AwardPointsUseCase,
     private val awardBadge: AwardBadgeUseCase
 ) {
-    operator fun invoke(eventId: String, moderatorId: String): Boolean {
+    suspend operator fun invoke(eventId: String, moderatorId: String): Boolean {
         val event = eventRepository.findEvent(eventId) ?: return false
         val isModerator = userRepository.findById(moderatorId)?.isModerator == true
         if (event.status != EventStatus.PENDING || !isModerator) return false
@@ -27,14 +28,13 @@ class VerifyEventUseCase @Inject constructor(
 
         // Una aprobación solo da puntos una vez por evento, aunque se edite y vuelva a revisión
         if (eventRepository.registerVerificationReward(eventId)) {
-            awardPoints(event.organizerId, ReputationPoints.EVENT_VERIFIED, "«${event.title}» fue verificado")
+            awardPoints(event.organizerId, ReputationPoints.EVENT_VERIFIED, PointsReason.EVENT_VERIFIED, event.title)
         }
         notificationRepository.notify(
             userId = event.organizerId,
             type = NotificationType.EVENT_VERIFIED,
-            title = "¡Tu evento ha sido aprobado y publicado!",
-            message = "«${event.title}» superó la revisión y ya es visible para la comunidad.",
-            eventId = eventId
+            eventId = eventId,
+            eventTitle = event.title
         )
         val verifiedCount = eventRepository.findEventsByOrganizer(event.organizerId).count {
             it.status == EventStatus.VERIFIED || it.status == EventStatus.FINISHED

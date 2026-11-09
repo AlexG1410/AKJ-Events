@@ -48,7 +48,9 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
-    fun logout() = logoutUseCase()
+    fun logout() {
+        viewModelScope.launch { runCatching { logoutUseCase() } }
+    }
 
     private companion object {
         const val RECENT_COUNT = 3

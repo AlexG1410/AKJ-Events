@@ -45,11 +45,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.ContentCard
 import co.edu.uniquindio.akjevents.core.component.EventImage
@@ -73,6 +75,8 @@ import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.labelRes
+import co.edu.uniquindio.akjevents.core.util.reasonRes
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.PointsEntry
 import co.edu.uniquindio.akjevents.domain.model.User
@@ -107,12 +111,12 @@ fun StatsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, viewModel: St
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            ScreenHeader(title = "Mis Estadísticas", subtitle = "Balance cívico y participación activa", onBack = onBack)
+            ScreenHeader(title = stringResource(R.string.stats_title), subtitle = stringResource(R.string.stats_subtitle), onBack = onBack)
 
             ReputationCard(user)
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionTitle("Actividad en convocatorias")
+                SectionTitle(stringResource(R.string.stats_activity))
                 ActivityGrid(state.stats)
             }
 
@@ -124,7 +128,7 @@ fun StatsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, viewModel: St
 
             if (state.finishedEvents.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SectionTitle("Tus huellas en el barrio")
+                    SectionTitle(stringResource(R.string.stats_footprints))
                     Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         state.finishedEvents.forEach { event ->
                             Surface(onClick = { onOpenEvent(event.id) }, shape = RoundedCornerShape(14.dp), modifier = Modifier.size(width = 170.dp, height = 110.dp)) {
@@ -155,25 +159,27 @@ fun StatsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, viewModel: St
                     Icon(Icons.Outlined.Share, contentDescription = null, tint = Terracotta)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Comparte tu impacto", color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                    Text("Incentiva a más vecinos con tu ejemplo", color = MutedText, fontSize = 12.sp)
+                    Text(stringResource(R.string.stats_share_title), color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.stats_share_subtitle), color = MutedText, fontSize = 12.sp)
                 }
-                Surface(onClick = { context.startActivity(shareImpactIntent(user, state.stats)) }, shape = RoundedCornerShape(12.dp), color = Terracotta) {
-                    Text("Compartir", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
+                val shareText = stringResource(
+                    R.string.stats_share_text, stringResource(user.level.labelRes), user.points, state.stats.created, state.stats.checkIns
+                )
+                val shareTitle = stringResource(R.string.stats_share_chooser)
+                Surface(onClick = { context.startActivity(shareImpactIntent(shareText, shareTitle)) }, shape = RoundedCornerShape(12.dp), color = Terracotta) {
+                    Text(stringResource(R.string.stats_share_button), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp, modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp))
                 }
             }
         }
     }
 }
 
-private fun shareImpactIntent(user: User, stats: UserStats): Intent {
-    val text = "En AKJ Events soy ${user.level.label} con ${user.points} puntos cívicos: organicé ${stats.created} eventos " +
-        "y registré ${stats.checkIns} asistencias. ¡Súmate a la comunidad!"
+private fun shareImpactIntent(text: String, title: String): Intent {
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    return Intent.createChooser(send, "Compartir impacto")
+    return Intent.createChooser(send, title)
 }
 
 @Composable
@@ -184,16 +190,16 @@ private fun ReputationCard(user: User) {
                 Icon(Icons.Outlined.WorkspacePremium, contentDescription = null, tint = OnSecondaryFixedVariant, modifier = Modifier.size(28.dp))
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text("REPUTACIÓN CIUDADANA", color = Sage, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                Text(user.level.label, color = WarmText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.stats_reputation), color = Sage, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(stringResource(user.level.labelRes), color = WarmText, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
             }
-            Tag("Nivel ${user.level.number}", container = PrimaryFixed, content = Terracotta)
+            Tag(stringResource(R.string.level_number, user.level.number), container = PrimaryFixed, content = Terracotta)
         }
         LevelProgress(user)
         if (user.badges.isNotEmpty()) {
             Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 user.badges.forEach { badge ->
-                    Tag(badge.label, container = TertiaryFixed, content = OnTertiaryContainer, icon = Icons.Outlined.EmojiEvents)
+                    Tag(stringResource(badge.labelRes), container = TertiaryFixed, content = OnTertiaryContainer, icon = Icons.Outlined.EmojiEvents)
                 }
             }
         }
@@ -204,16 +210,16 @@ private fun ReputationCard(user: User) {
 private fun ActivityGrid(stats: UserStats) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Icons.Outlined.PlayCircle, SecondaryFixed, OnSecondaryFixedVariant, "${stats.active}", "Eventos activos (verificados)", Modifier.weight(1f), caption = "En curso")
-            StatTile(Icons.Outlined.CheckCircle, SurfaceContainerHigh, WarmText, "${stats.finished}", "Eventos concluidos", Modifier.weight(1f), caption = "Histórico")
+            StatTile(Icons.Outlined.PlayCircle, SecondaryFixed, OnSecondaryFixedVariant, "${stats.active}", stringResource(R.string.stats_active_events), Modifier.weight(1f), caption = stringResource(R.string.stats_active_caption))
+            StatTile(Icons.Outlined.CheckCircle, SurfaceContainerHigh, WarmText, "${stats.finished}", stringResource(R.string.stats_finished_events), Modifier.weight(1f), caption = stringResource(R.string.stats_finished_caption))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Icons.Outlined.HourglassTop, TertiaryFixed, OnTertiaryContainer, "${stats.pending}", "Por verificar", Modifier.weight(1f), caption = "Revisión")
-            StatTile(Icons.Outlined.QrCodeScanner, PrimaryFixed, Terracotta, "${stats.checkIns}", "Asistencias con QR", Modifier.weight(1f), caption = "Presencial")
+            StatTile(Icons.Outlined.HourglassTop, TertiaryFixed, OnTertiaryContainer, "${stats.pending}", stringResource(R.string.stats_pending_events), Modifier.weight(1f), caption = stringResource(R.string.stats_pending_caption))
+            StatTile(Icons.Outlined.QrCodeScanner, PrimaryFixed, Terracotta, "${stats.checkIns}", stringResource(R.string.stats_check_ins), Modifier.weight(1f), caption = stringResource(R.string.stats_check_ins_caption))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Icons.AutoMirrored.Outlined.Chat, SurfaceContainerHigh, WarmText, "${stats.comments}", "Comentarios cívicos", Modifier.weight(1f), caption = "Aportes")
-            StatTile(Icons.Outlined.Groups, SecondaryContainer, OnSecondaryContainer, "${stats.interestedNeighbors}", "Vecinos interesados en tus eventos", Modifier.weight(1f), caption = "Alcance")
+            StatTile(Icons.AutoMirrored.Outlined.Chat, SurfaceContainerHigh, WarmText, "${stats.comments}", stringResource(R.string.stats_comments), Modifier.weight(1f), caption = stringResource(R.string.stats_comments_caption))
+            StatTile(Icons.Outlined.Groups, SecondaryContainer, OnSecondaryContainer, "${stats.interestedNeighbors}", stringResource(R.string.stats_interested), Modifier.weight(1f), caption = stringResource(R.string.stats_interested_caption))
         }
     }
 }
@@ -222,23 +228,23 @@ private fun ActivityGrid(stats: UserStats) {
 private fun CommitmentCard(stats: UserStats) {
     ContentCard(spacing = 16.dp) {
         Column {
-            Text("Compromiso Comunitario", color = WarmText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Text("Distribución de tus eventos por categoría", color = MutedText, fontSize = 12.sp)
+            Text(stringResource(R.string.stats_commitment), color = WarmText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.stats_distribution), color = MutedText, fontSize = 12.sp)
         }
         Row(
             modifier = Modifier.fillMaxWidth().background(SurfaceContainerLow, RoundedCornerShape(12.dp)).padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Tasa de cumplimiento", color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-                Text("Asistencias confirmadas que terminaron en check-in", color = MutedText, fontSize = 12.sp)
+                Text(stringResource(R.string.stats_compliance), color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.stats_compliance_hint), color = MutedText, fontSize = 12.sp)
             }
-            Text(stats.complianceRate?.let { "$it%" } ?: "—", color = Sage, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text(stats.complianceRate?.let { stringResource(R.string.stats_percent, it) } ?: "—", color = Sage, fontSize = 26.sp, fontWeight = FontWeight.Bold)
         }
 
         val total = stats.eventsByCategory.values.sum()
         if (total == 0) {
-            Text("Cuando crees eventos verás aquí cómo se reparten por categoría.", color = MutedText, fontSize = 13.sp)
+            Text(stringResource(R.string.stats_no_events), color = MutedText, fontSize = 13.sp)
         } else {
             Box(modifier = Modifier.align(Alignment.CenterHorizontally).size(160.dp), contentAlignment = Alignment.Center) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
@@ -260,7 +266,7 @@ private fun CommitmentCard(stats: UserStats) {
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("$total", color = WarmText, fontSize = 30.sp, fontWeight = FontWeight.Bold)
-                    Text("Total", color = MutedText, fontSize = 12.sp)
+                    Text(stringResource(R.string.stats_total), color = MutedText, fontSize = 12.sp)
                 }
             }
             stats.eventsByCategory.entries.sortedByDescending { it.value }.forEach { (category, count) ->
@@ -268,8 +274,8 @@ private fun CommitmentCard(stats: UserStats) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.size(12.dp).clip(CircleShape).background(category.chartColor))
-                        Text("  ${category.label}", color = WarmText, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                        Text("${(share * 100).roundToInt()}%", color = WarmText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        Text("  " + stringResource(category.labelRes), color = WarmText, fontSize = 13.sp, modifier = Modifier.weight(1f))
+                        Text(stringResource(R.string.stats_percent, (share * 100).roundToInt()), color = WarmText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                     }
                     CapacityBar(progress = share, color = category.chartColor, height = 6.dp)
                 }
@@ -281,15 +287,15 @@ private fun CommitmentCard(stats: UserStats) {
 @Composable
 private fun PointsHistory(history: List<PointsEntry>) {
     ContentCard(spacing = 10.dp) {
-        SectionTitle("Historial de puntos")
+        SectionTitle(stringResource(R.string.stats_points_history))
         history.take(HISTORY_LIMIT).forEach { entry ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(entry.reason, color = WarmText, fontSize = 13.sp)
+                    Text(stringResource(entry.reasonRes, entry.eventTitle.orEmpty()), color = WarmText, fontSize = 13.sp)
                     Text(EventFormat.relative(entry.createdAt), color = MutedText, fontSize = 11.sp)
                 }
                 Text(
-                    if (entry.points >= 0) "+${entry.points} pts" else "${entry.points} pts",
+                    if (entry.points >= 0) stringResource(R.string.stats_points_gained, entry.points) else stringResource(R.string.reputation_points_short, entry.points),
                     color = if (entry.points >= 0) Sage else Terracotta,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,

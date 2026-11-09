@@ -2,8 +2,11 @@ package co.edu.uniquindio.akjevents.features.auth.recover
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
+import co.edu.uniquindio.akjevents.core.util.UiText
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.delay
@@ -17,7 +20,7 @@ data class RecoverPasswordUiState(
     val email: String = "",
     val result: RequestResult? = null
 ) {
-    val emailError: String?
+    val emailError: UiText?
         get() = if (email.isNotBlank() && !FormValidation.isValidEmail(email)) {
             FormValidation.INVALID_EMAIL_MESSAGE
         } else null
@@ -26,7 +29,9 @@ data class RecoverPasswordUiState(
 }
 
 @HiltViewModel
-class RecoverPasswordViewModel @Inject constructor() : ViewModel() {
+class RecoverPasswordViewModel @Inject constructor(
+    private val resources: ResourceProvider
+) : ViewModel() {
     private val _uiState = MutableStateFlow(RecoverPasswordUiState())
     val uiState: StateFlow<RecoverPasswordUiState> = _uiState.asStateFlow()
 
@@ -37,12 +42,12 @@ class RecoverPasswordViewModel @Inject constructor() : ViewModel() {
         if (state.isBusy) return
 
         val error = when {
-            state.email.isBlank() -> "Ingresa tu correo electrónico"
+            state.email.isBlank() -> UiText(R.string.recover_error_empty)
             !FormValidation.isValidEmail(state.email) -> FormValidation.INVALID_EMAIL_MESSAGE
             else -> null
         }
         if (error != null) {
-            _uiState.update { it.copy(result = RequestResult.Failure(error)) }
+            _uiState.update { it.copy(result = RequestResult.Failure(error.asString(resources))) }
             return
         }
 
@@ -50,7 +55,7 @@ class RecoverPasswordViewModel @Inject constructor() : ViewModel() {
         viewModelScope.launch {
             // Simulación: todavía no se envían correos reales
             delay(SIMULATED_REQUEST_MS)
-            _uiState.update { it.copy(result = RequestResult.Success("Te enviamos un enlace de recuperación")) }
+            _uiState.update { it.copy(result = RequestResult.Success(resources.getString(R.string.recover_success))) }
         }
     }
 

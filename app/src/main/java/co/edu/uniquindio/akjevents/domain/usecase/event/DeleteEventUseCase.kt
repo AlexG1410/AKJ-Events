@@ -9,7 +9,7 @@ class DeleteEventUseCase @Inject constructor(
     private val eventRepository: EventRepository,
     private val userRepository: UserRepository
 ) {
-    operator fun invoke(eventId: String, actorId: String): Boolean {
+    suspend operator fun invoke(eventId: String, actorId: String): Boolean {
         val event = eventRepository.findEvent(eventId) ?: return false
         val isModerator = userRepository.findById(actorId)?.isModerator == true
         if (event.organizerId != actorId && !isModerator) return false

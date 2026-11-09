@@ -15,10 +15,24 @@ object ReputationPoints {
     const val VERIFIED_FOR_BADGE = 10
 }
 
-/** Movimiento del historial de puntos de un usuario. */
+/** Por qué se sumaron o restaron puntos; la pantalla arma la frase en el idioma del usuario. */
+enum class PointsReason {
+    /** Puntos con los que arrancan las cuentas de demostración. */
+    ACCUMULATED,
+    CREATE_EVENT,
+    EVENT_VERIFIED,
+    EVENT_FINISHED,
+    COMMENT,
+    INTEREST_RECEIVED,
+    INTEREST_REMOVED,
+    CHECK_IN
+}
+
+/** Movimiento del historial de puntos de un usuario; [eventTitle] es el evento relacionado, si lo hay. */
 data class PointsEntry(
     val userId: String,
     val points: Int,
-    val reason: String,
-    val createdAt: LocalDateTime
+    val reason: PointsReason,
+    val createdAt: LocalDateTime,
+    val eventTitle: String? = null
 )

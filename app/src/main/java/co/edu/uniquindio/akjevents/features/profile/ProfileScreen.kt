@@ -46,11 +46,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.ConfirmDialog
 import co.edu.uniquindio.akjevents.core.component.ContentCard
 import co.edu.uniquindio.akjevents.core.component.MainTopBar
@@ -74,6 +76,7 @@ import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.User
@@ -98,7 +101,7 @@ fun ProfileScreen(
 
     Scaffold(
         containerColor = WarmBackground,
-        topBar = { MainTopBar(title = "Mi Perfil", user = user) },
+        topBar = { MainTopBar(title = stringResource(R.string.profile_title), user = user) },
         bottomBar = bottomBar
     ) { innerPadding ->
         if (user == null) return@Scaffold
@@ -111,11 +114,13 @@ fun ProfileScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Mi Perfil", color = WarmText, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
-                Tag("Activo", container = SecondaryFixed, content = OnSecondaryFixedVariant)
+                Text(stringResource(R.string.profile_title), color = WarmText, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+                Tag(stringResource(R.string.profile_active), container = SecondaryFixed, content = OnSecondaryFixedVariant)
                 Box(Modifier.weight(1f))
-                RoundIconButton(Icons.Outlined.Share, "Compartir perfil", onClick = { context.startActivity(shareProfileIntent(user)) })
-                RoundIconButton(Icons.Outlined.Settings, "Editar perfil", onClick = onEditProfile)
+                val shareText = stringResource(R.string.profile_share_text, user.name, stringResource(user.level.labelRes), user.points)
+                val shareTitle = stringResource(R.string.profile_share)
+                RoundIconButton(Icons.Outlined.Share, shareTitle, onClick = { context.startActivity(shareProfileIntent(shareText, shareTitle)) })
+                RoundIconButton(Icons.Outlined.Settings, stringResource(R.string.profile_edit), onClick = onEditProfile)
             }
 
             ProfileHeaderCard(user)
@@ -127,10 +132,9 @@ fun ProfileScreen(
                             Icon(Icons.Outlined.Shield, contentDescription = null, tint = OnSecondaryFixedVariant)
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Cuenta de moderación", color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.profile_moderator_account), color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                             Text(
-                                "Verificas o rechazas los eventos de la comunidad y puedes marcarlos como finalizados. " +
-                                    "Los moderadores no acumulan puntos de reputación.",
+                                stringResource(R.string.profile_moderator_description),
                                 color = MutedText,
                                 fontSize = 12.sp
                             )
@@ -142,8 +146,8 @@ fun ProfileScreen(
 
                 ContentCard {
                     SectionTitle(
-                        "Insignias y Logros",
-                        action = "${user.badges.size} de ${Badge.entries.size}",
+                        stringResource(R.string.profile_badges),
+                        action = stringResource(R.string.profile_badges_count, user.badges.size, Badge.entries.size),
                         onAction = onOpenStats
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -154,32 +158,32 @@ fun ProfileScreen(
                 }
 
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    SectionTitle("Mis Eventos Creados", action = "Administrar", onAction = onOpenMyEvents)
+                    SectionTitle(stringResource(R.string.profile_my_events), action = stringResource(R.string.profile_manage), onAction = onOpenMyEvents)
                     if (state.recentEvents.isEmpty()) {
-                        Text("Aún no has creado eventos. ¡Propón el primero desde el botón Crear!", color = MutedText, fontSize = 13.sp)
+                        Text(stringResource(R.string.profile_no_events), color = MutedText, fontSize = 13.sp)
                     }
                     state.recentEvents.forEach { event -> RecentEventRow(event, onClick = { onOpenEvent(event.id) }) }
                 }
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionTitle("Gestión y Privacidad")
+                SectionTitle(stringResource(R.string.profile_settings))
                 ContentCard(spacing = 0.dp, padding = 8.dp) {
-                    MenuRow(Icons.Outlined.ManageAccounts, PrimaryFixed, Terracotta, "Editar perfil", "Datos personales, ubicación e intereses", onEditProfile)
+                    MenuRow(Icons.Outlined.ManageAccounts, PrimaryFixed, Terracotta, stringResource(R.string.profile_edit), stringResource(R.string.profile_edit_description), onEditProfile)
                     if (user.isModerator) {
-                        MenuRow(Icons.Outlined.Shield, SecondaryFixed, OnSecondaryFixedVariant, "Panel de moderación", "Eventos pendientes de revisión", onOpenModeration)
+                        MenuRow(Icons.Outlined.Shield, SecondaryFixed, OnSecondaryFixedVariant, stringResource(R.string.profile_moderation_panel), stringResource(R.string.profile_moderation_description), onOpenModeration)
                     } else {
-                        MenuRow(Icons.AutoMirrored.Outlined.ShowChart, SecondaryFixed, OnSecondaryFixedVariant, "Mis estadísticas", "Métricas, asistencias e historial de puntos", onOpenStats)
-                        MenuRow(Icons.Outlined.QrCode2, SurfaceContainerHigh, WarmText, "Código QR personal de asistencia", "Check-in rápido en eventos comunitarios", onOpenMyQr)
-                        MenuRow(Icons.Outlined.EventAvailable, TertiaryFixed, OnTertiaryContainer, "Mis eventos", "Pendientes, verificados, rechazados y finalizados", onOpenMyEvents)
+                        MenuRow(Icons.AutoMirrored.Outlined.ShowChart, SecondaryFixed, OnSecondaryFixedVariant, stringResource(R.string.profile_stats), stringResource(R.string.profile_stats_description), onOpenStats)
+                        MenuRow(Icons.Outlined.QrCode2, SurfaceContainerHigh, WarmText, stringResource(R.string.profile_my_qr), stringResource(R.string.profile_my_qr_description), onOpenMyQr)
+                        MenuRow(Icons.Outlined.EventAvailable, TertiaryFixed, OnTertiaryContainer, stringResource(R.string.profile_my_events_menu), stringResource(R.string.profile_my_events_description), onOpenMyEvents)
                     }
-                    MenuRow(Icons.Outlined.Notifications, SurfaceContainer, WarmText, "Notificaciones", "Comentarios, moderación y logros", onOpenNotifications)
+                    MenuRow(Icons.Outlined.Notifications, SurfaceContainer, WarmText, stringResource(R.string.notifications_title), stringResource(R.string.profile_notifications_description), onOpenNotifications)
                     MenuRow(
                         Icons.AutoMirrored.Outlined.Logout,
                         Color(0xFFFFDAD6),
                         ErrorColor,
-                        "Cerrar sesión",
-                        "Desconectar la cuenta en este dispositivo",
+                        stringResource(R.string.profile_logout),
+                        stringResource(R.string.profile_logout_description),
                         onClick = { confirmLogout = true },
                         titleColor = ErrorColor
                     )
@@ -187,7 +191,7 @@ fun ProfileScreen(
             }
 
             Text(
-                "AKJ Events • Fase 2 • Comunidad del Quindío",
+                stringResource(R.string.profile_footer),
                 color = MutedText,
                 fontSize = 11.sp,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -197,9 +201,9 @@ fun ProfileScreen(
 
     if (confirmLogout) {
         ConfirmDialog(
-            title = "¿Cerrar sesión?",
-            message = "Tendrás que ingresar de nuevo con tu correo y contraseña.",
-            confirmText = "Cerrar sesión",
+            title = stringResource(R.string.profile_logout_title),
+            message = stringResource(R.string.profile_logout_message),
+            confirmText = stringResource(R.string.profile_logout),
             isDestructive = true,
             onConfirm = {
                 confirmLogout = false
@@ -211,13 +215,12 @@ fun ProfileScreen(
     }
 }
 
-private fun shareProfileIntent(user: User): Intent {
-    val text = "Soy ${user.name}, ${user.level.label} en AKJ Events con ${user.points} puntos cívicos. ¡Únete a los eventos de la comunidad!"
+private fun shareProfileIntent(text: String, title: String): Intent {
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    return Intent.createChooser(send, "Compartir perfil")
+    return Intent.createChooser(send, title)
 }
 
 @Composable
@@ -230,7 +233,7 @@ private fun ProfileHeaderCard(user: User) {
                     modifier = Modifier.align(Alignment.BottomEnd).offset(x = 2.dp, y = 2.dp).size(26.dp).background(Sage, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Outlined.Verified, contentDescription = "Cuenta verificada", tint = Color.White, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Outlined.Verified, contentDescription = stringResource(R.string.profile_verified_account), tint = Color.White, modifier = Modifier.size(16.dp))
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -240,7 +243,7 @@ private fun ProfileHeaderCard(user: User) {
                     Text(" ${user.city}", color = MutedText, fontSize = 13.sp)
                 }
                 Tag(
-                    text = if (user.isModerator) "Moderador" else "${user.level.label} • Nivel ${user.level.number}",
+                    text = if (user.isModerator) stringResource(R.string.profile_moderator) else stringResource(R.string.my_events_level, stringResource(user.level.labelRes), user.level.number),
                     icon = if (user.isModerator) Icons.Outlined.Shield else Icons.Outlined.WorkspacePremium,
                     container = TertiaryFixed,
                     content = OnTertiaryContainer
@@ -257,14 +260,14 @@ private fun ProfileHeaderCard(user: User) {
 @Composable
 private fun CommunityStats(stats: UserStats) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        SectionTitle("Estadísticas Comunitarias")
+        SectionTitle(stringResource(R.string.profile_community_stats))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Icons.Outlined.AddCircleOutline, PrimaryFixed, Terracotta, "${stats.created}", "Eventos creados", Modifier.weight(1f))
-            StatTile(Icons.Outlined.CheckCircle, SecondaryFixed, OnSecondaryFixedVariant, "${stats.finished}", "Finalizados con éxito", Modifier.weight(1f))
+            StatTile(Icons.Outlined.AddCircleOutline, PrimaryFixed, Terracotta, "${stats.created}", stringResource(R.string.profile_events_created), Modifier.weight(1f))
+            StatTile(Icons.Outlined.CheckCircle, SecondaryFixed, OnSecondaryFixedVariant, "${stats.finished}", stringResource(R.string.profile_finished_success), Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            StatTile(Icons.Outlined.HourglassTop, TertiaryFixed, OnTertiaryContainer, "${stats.pending}", "En moderación", Modifier.weight(1f))
-            StatTile(Icons.Outlined.EmojiEvents, PrimaryFixed, Terracotta, "${stats.checkIns}", "Asistencias con check-in", Modifier.weight(1f))
+            StatTile(Icons.Outlined.HourglassTop, TertiaryFixed, OnTertiaryContainer, "${stats.pending}", stringResource(R.string.profile_in_moderation), Modifier.weight(1f))
+            StatTile(Icons.Outlined.EmojiEvents, PrimaryFixed, Terracotta, "${stats.checkIns}", stringResource(R.string.profile_checked_in), Modifier.weight(1f))
         }
     }
 }
@@ -279,7 +282,7 @@ private fun RecentEventRow(event: CommunityEvent, onClick: () -> Unit) {
             }
             Text(event.title, color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                "${event.address.substringBefore(",")} • ${EventFormat.shortDateTime(event.startsAt)}",
+                stringResource(R.string.moderation_date_time, event.address.substringBefore(","), EventFormat.shortDateTime(event.startsAt)),
                 color = MutedText,
                 fontSize = 12.sp,
                 maxLines = 1,

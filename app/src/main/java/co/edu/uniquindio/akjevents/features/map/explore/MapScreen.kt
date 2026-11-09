@@ -55,6 +55,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -62,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.CategoryChip
 import co.edu.uniquindio.akjevents.core.component.EmptyState
@@ -85,6 +88,7 @@ import co.edu.uniquindio.akjevents.core.theme.Terracotta
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.core.util.occupancy
 import co.edu.uniquindio.akjevents.core.util.remainingSpots
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
@@ -128,7 +132,7 @@ fun MapScreen(
 
     Scaffold(
         containerColor = WarmBackground,
-        topBar = { MainTopBar(title = "Mapa", user = state.user, onAvatarClick = onOpenProfile) },
+        topBar = { MainTopBar(title = stringResource(R.string.nav_map), user = state.user, onAvatarClick = onOpenProfile) },
         bottomBar = bottomBar
     ) { innerPadding ->
         Column(
@@ -138,7 +142,7 @@ fun MapScreen(
             FormTextField(
                 value = state.query,
                 onValueChange = viewModel::onQueryChange,
-                placeholder = "Buscar en el mapa...",
+                placeholder = stringResource(R.string.map_search_placeholder),
                 leadingIcon = Icons.Outlined.Search,
                 style = MapSearchStyle,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -146,7 +150,7 @@ fun MapScreen(
                 trailingContent = if (state.query.isNotEmpty()) {
                     {
                         IconButton(onClick = { viewModel.onQueryChange("") }) {
-                            Icon(Icons.Outlined.Close, contentDescription = "Borrar búsqueda", tint = MutedText)
+                            Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.home_clear_search), tint = MutedText)
                         }
                     }
                 } else null,
@@ -156,7 +160,7 @@ fun MapScreen(
             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
                     FilterPill(
-                        text = "Cerca de mí (${MapViewModel.NEARBY_RADIUS_KM} km)",
+                        text = stringResource(R.string.location_filter_nearby, MapViewModel.NEARBY_RADIUS_KM),
                         icon = Icons.Outlined.NearMe,
                         isSelected = state.nearbyOnly,
                         onClick = {
@@ -168,19 +172,19 @@ fun MapScreen(
                 item {
                     Box {
                         FilterPill(
-                            text = state.category?.label ?: "Capas",
+                            text = state.category?.let { stringResource(it.labelRes) } ?: stringResource(R.string.map_layers),
                             icon = Icons.Outlined.Layers,
                             isSelected = state.category != null,
                             onClick = { showCategories = true }
                         )
                         DropdownMenu(expanded = showCategories, onDismissRequest = { showCategories = false }) {
-                            DropdownMenuItem(text = { Text("Todas las categorías") }, onClick = {
+                            DropdownMenuItem(text = { Text(stringResource(R.string.map_all_categories)) }, onClick = {
                                 viewModel.selectCategory(null)
                                 showCategories = false
                             })
                             EventCategory.entries.forEach { category ->
                                 DropdownMenuItem(
-                                    text = { Text(category.label) },
+                                    text = { Text(stringResource(category.labelRes)) },
                                     leadingIcon = { Icon(category.style.icon, contentDescription = null) },
                                     onClick = {
                                         viewModel.selectCategory(category)
@@ -193,7 +197,7 @@ fun MapScreen(
                 }
                 item {
                     FilterPill(
-                        text = "Esta semana",
+                        text = stringResource(R.string.map_this_week),
                         icon = Icons.Outlined.CalendarToday,
                         isSelected = state.thisWeekOnly,
                         onClick = viewModel::toggleThisWeek
@@ -225,27 +229,28 @@ fun MapScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(Icons.AutoMirrored.Outlined.List, contentDescription = null, tint = Terracotta, modifier = Modifier.size(20.dp))
-                        Text("Ver lista", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.map_see_list), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
 
             val selected = state.selectedEvent
             if (selected != null) {
+                val directionsTitle = stringResource(R.string.map_directions)
                 SelectedEventCard(
                     event = selected,
                     distanceKm = state.distancesKm[selected.id],
                     onOpen = { onOpenEvent(selected.id) },
                     onDirections = {
                         val uri = Uri.parse("geo:${selected.location.latitude},${selected.location.longitude}?q=${selected.location.latitude},${selected.location.longitude}(${Uri.encode(selected.title)})")
-                        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW, uri), "Cómo llegar"))
+                        context.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW, uri), directionsTitle))
                     }
                 )
             } else {
                 EmptyState(
                     icon = Icons.Outlined.SearchOff,
-                    title = "No hay eventos con estos filtros",
-                    message = "Prueba con otra búsqueda o quita algún filtro.",
+                    title = stringResource(R.string.map_empty_title),
+                    message = stringResource(R.string.map_empty_message),
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
@@ -277,7 +282,7 @@ private fun SelectedEventCard(event: CommunityEvent, distanceKm: Double?, onOpen
                 EventImage(event, Modifier.fillMaxSize())
                 if (isToday) {
                     Text(
-                        "HOY",
+                        stringResource(R.string.map_today),
                         color = Color.White,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -298,25 +303,25 @@ private fun SelectedEventCard(event: CommunityEvent, distanceKm: Double?, onOpen
             modifier = Modifier.fillMaxWidth().background(SurfaceContainerLow, RoundedCornerShape(12.dp)).padding(10.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            InfoItem(Icons.Outlined.Schedule, PrimaryFixed, Terracotta, "Horario", EventFormat.shortDateTime(event.startsAt), Modifier.weight(1f))
+            InfoItem(Icons.Outlined.Schedule, PrimaryFixed, Terracotta, stringResource(R.string.map_schedule), EventFormat.shortDateTime(event.startsAt), Modifier.weight(1f))
             InfoItem(
                 Icons.AutoMirrored.Outlined.DirectionsWalk,
                 SecondaryContainer,
                 OnSecondaryContainer,
-                "Distancia",
-                distanceKm?.let { "A ${EventFormat.distance(it)}" } ?: "—",
+                stringResource(R.string.map_distance),
+                distanceKm?.let { stringResource(R.string.map_distance_value, EventFormat.distance(it)) } ?: "—",
                 Modifier.weight(1f)
             )
         }
         val remaining = event.remainingSpots
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(Icons.Outlined.Groups, contentDescription = null, tint = Terracotta, modifier = Modifier.size(18.dp))
-            Text("${event.attendanceCount} asistentes confirmados", color = WarmText, fontSize = 13.sp, modifier = Modifier.weight(1f))
+            Text(pluralStringResource(R.plurals.attendees_confirmed_long, event.attendanceCount, event.attendanceCount), color = WarmText, fontSize = 13.sp, modifier = Modifier.weight(1f))
             Text(
                 when (remaining) {
-                    null -> "Cupo abierto"
-                    0 -> "Cupo lleno"
-                    else -> "$remaining cupos restantes"
+                    null -> stringResource(R.string.open_capacity)
+                    0 -> stringResource(R.string.capacity_full)
+                    else -> pluralStringResource(R.plurals.spots_remaining, remaining, remaining)
                 },
                 color = Terracotta,
                 fontSize = 13.sp,
@@ -327,14 +332,14 @@ private fun SelectedEventCard(event: CommunityEvent, distanceKm: Double?, onOpen
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Surface(onClick = onOpen, shape = RoundedCornerShape(12.dp), color = Terracotta, modifier = Modifier.weight(1f).height(48.dp)) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Text("Ver evento", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.map_see_event), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = Color.White, modifier = Modifier.padding(start = 8.dp).size(18.dp))
                 }
             }
             Surface(onClick = onDirections, shape = RoundedCornerShape(12.dp), color = SurfaceContainerHigh, modifier = Modifier.weight(1f).height(48.dp)) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Explore, contentDescription = null, tint = OnSecondaryContainer, modifier = Modifier.size(18.dp))
-                    Text("  Cómo llegar", color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text("  " + stringResource(R.string.map_directions), color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

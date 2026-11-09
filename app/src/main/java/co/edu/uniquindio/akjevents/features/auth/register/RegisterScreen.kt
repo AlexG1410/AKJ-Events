@@ -78,6 +78,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -107,6 +109,7 @@ import co.edu.uniquindio.akjevents.core.theme.BrandTerracotta
 import co.edu.uniquindio.akjevents.core.theme.Honey
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import kotlinx.coroutines.flow.collectLatest
 
@@ -180,7 +183,7 @@ fun RegisterScreen(
 
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Crea tu cuenta",
+                    stringResource(R.string.register_title),
                     color = BrandDark,
                     fontSize = 24.sp,
                     lineHeight = 32.sp,
@@ -189,22 +192,22 @@ fun RegisterScreen(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Únete para organizar y participar con tu comunidad local.",
+                    stringResource(R.string.register_subtitle),
                     color = BrandMuted,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
 
                 Spacer(Modifier.height(16.dp))
-                StartingLevelBadge(levelLabel = state.startingLevel.label)
+                StartingLevelBadge(levelLabel = stringResource(state.startingLevel.labelRes))
                 Spacer(Modifier.height(16.dp))
 
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    LabeledField("Nombre completo *", error = state.fullNameError) {
+                    LabeledField(stringResource(R.string.register_full_name), error = state.fullNameError?.asString()) {
                         FormTextField(
                             value = state.fullName,
                             onValueChange = viewModel::onFullNameChange,
-                            placeholder = "Tu nombre y apellido",
+                            placeholder = stringResource(R.string.register_full_name_placeholder),
                             leadingIcon = Icons.Outlined.Person,
                             style = RegisterFieldStyle,
                             isError = state.fullNameError != null,
@@ -215,11 +218,11 @@ fun RegisterScreen(
                         )
                     }
 
-                    LabeledField("Correo electrónico *", error = state.emailError) {
+                    LabeledField(stringResource(R.string.register_email), error = state.emailError?.asString()) {
                         FormTextField(
                             value = state.email,
                             onValueChange = viewModel::onEmailChange,
-                            placeholder = "correo@ejemplo.com",
+                            placeholder = stringResource(R.string.register_email_placeholder),
                             leadingIcon = Icons.Outlined.Mail,
                             style = RegisterFieldStyle,
                             isError = state.emailError != null,
@@ -227,7 +230,7 @@ fun RegisterScreen(
                         )
                     }
 
-                    LabeledField("Ciudad o municipio *") {
+                    LabeledField(stringResource(R.string.register_city)) {
                         CityDropdown(
                             selectedCity = state.city,
                             cities = viewModel.cities,
@@ -243,15 +246,15 @@ fun RegisterScreen(
                     }
 
                     LabeledField(
-                        label = "Contraseña segura *",
-                        error = state.passwordError,
+                        label = stringResource(R.string.register_password),
+                        error = state.passwordError?.asString(),
                         modifier = Modifier.bringIntoViewRequester(passwordRequester)
                     ) {
                         PasswordFormTextField(
                             modifier = Modifier.onFocusChanged { isPasswordFocused = it.hasFocus },
                             value = state.password,
                             onValueChange = viewModel::onPasswordChange,
-                            placeholder = "Mínimo 8 caracteres",
+                            placeholder = stringResource(R.string.register_password_placeholder),
                             leadingIcon = Icons.Outlined.Lock,
                             isPasswordVisible = state.isPasswordVisible,
                             onTogglePasswordVisibility = viewModel::togglePasswordVisibility,
@@ -265,13 +268,13 @@ fun RegisterScreen(
                     }
 
                     LabeledField(
-                        label = "Confirmar contraseña *",
-                        error = state.confirmPasswordError
+                        label = stringResource(R.string.register_confirm_password),
+                        error = state.confirmPasswordError?.asString()
                     ) {
                         PasswordFormTextField(
                             value = state.confirmPassword,
                             onValueChange = viewModel::onConfirmPasswordChange,
-                            placeholder = "Repite tu contraseña",
+                            placeholder = stringResource(R.string.register_confirm_password_placeholder),
                             leadingIcon = Icons.Outlined.Lock,
                             isPasswordVisible = state.isConfirmPasswordVisible,
                             onTogglePasswordVisibility = viewModel::toggleConfirmPasswordVisibility,
@@ -292,11 +295,11 @@ fun RegisterScreen(
                     )
 
                     PrimaryButton(
-                        text = "Crear cuenta y comenzar",
+                        text = stringResource(R.string.register_button),
                         leadingIcon = Icons.Outlined.HowToReg,
                         enabled = state.isFormValid,
                         isLoading = state.isBusy,
-                        loadingText = "Creando cuenta...",
+                        loadingText = stringResource(R.string.register_loading),
                         onClick = {
                             focusManager.clearFocus()
                             viewModel.register()
@@ -313,9 +316,9 @@ fun RegisterScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("¿Ya tienes cuenta comunitaria?", color = BrandMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.register_have_account), color = BrandMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "Iniciar sesión",
+                        stringResource(R.string.recover_sign_in),
                         color = BrandTerracotta,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -342,7 +345,7 @@ private fun RegisterTopBar(onBack: () -> Unit) {
             shadowElevation = 1.dp
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = BrandDark, modifier = Modifier.size(18.dp))
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = BrandDark, modifier = Modifier.size(18.dp))
             }
         }
         Row(
@@ -361,7 +364,7 @@ private fun RegisterTopBar(onBack: () -> Unit) {
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.size(16.dp)
             )
-            Text("AKJ Events", color = BrandTerracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.app_name), color = BrandTerracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -388,13 +391,13 @@ private fun StartingLevelBadge(levelLabel: String) {
         }
         Column {
             Text(
-                "Inicia como: $levelLabel (Nivel 1)",
+                stringResource(R.string.register_starting_level, levelLabel),
                 color = BrandOnPastelYellow,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.ExtraBold
             )
             Text(
-                "Gana +10 pts de bienvenida al completar tu registro hoy.",
+                stringResource(R.string.register_welcome_points),
                 color = BrandMuted,
                 fontSize = 10.sp
             )
@@ -432,9 +435,9 @@ private fun RegistrationLocationRow(state: RegisterUiState, onClick: () -> Unit)
         ) {
             Icon(Icons.Outlined.Map, contentDescription = null, tint = BrandTerracotta)
             Column(modifier = Modifier.weight(1f)) {
-                Text("Seleccionar ubicación en el mapa *", color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.register_pick_location), color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    if (state.location == null) "Elige tu dirección para completar el registro" else state.address,
+                    if (state.location == null) stringResource(R.string.register_pick_location_hint) else state.address,
                     color = BrandMuted,
                     fontSize = 11.sp
                 )
@@ -469,14 +472,14 @@ private fun CityDropdown(
                 onValueChange = {},
                 readOnly = true,
                 enabled = false,
-                placeholder = "Selecciona tu ciudad o municipio",
+                placeholder = stringResource(R.string.register_city_placeholder),
                 leadingIcon = Icons.Outlined.LocationOn,
                 leadingIconTint = BrandTerracotta,
                 style = RegisterFieldStyle,
                 trailingContent = {
                     Icon(
                         Icons.Outlined.ExpandMore,
-                        contentDescription = if (expanded) "Ocultar ciudades" else "Mostrar ciudades",
+                        contentDescription = stringResource(if (expanded) R.string.register_hide_cities else R.string.register_show_cities),
                         tint = BrandMuted,
                         modifier = Modifier.padding(end = 8.dp).size(18.dp)
                     )
@@ -522,7 +525,7 @@ private fun PasswordStrengthIndicator(strength: PasswordStrength) {
                     .background(if (index < strength.filledBars) color else BrandBorder)
             )
         }
-        Text(strength.label, color = color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(strength.label), color = color, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -547,10 +550,10 @@ private fun InterestsSection(selected: Set<EventCategory>, onToggle: (EventCateg
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Intereses comunitarios", color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.register_interests), color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             if (selected.isNotEmpty()) {
                 Text(
-                    if (selected.size == 1) "1 seleccionado" else "${selected.size} seleccionados",
+                    pluralStringResource(R.plurals.interests_selected, selected.size, selected.size),
                     color = BrandSage,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.SemiBold
@@ -594,7 +597,7 @@ private fun InterestChip(category: EventCategory, isSelected: Boolean, onClick: 
                 modifier = Modifier.size(16.dp)
             )
             Text(
-                category.label,
+                stringResource(category.labelRes),
                 color = if (isSelected) Color.White else BrandDark,
                 fontSize = 12.sp,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold
@@ -617,13 +620,16 @@ private fun RulesAgreement(accepted: Boolean, onAcceptedChange: (Boolean) -> Uni
             onCheckedChange = null,
             colors = CheckboxDefaults.colors(checkedColor = BrandTerracotta, uncheckedColor = BrandMuted)
         )
+        val termsPrefix = stringResource(R.string.register_terms_prefix)
+        val termsLink = stringResource(R.string.register_terms_link)
+        val termsSuffix = stringResource(R.string.register_terms_suffix)
         Text(
             buildAnnotatedString {
-                append("Acepto las ")
+                append(termsPrefix)
                 withStyle(
                     SpanStyle(color = BrandTerracotta, fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)
-                ) { append("Normas Comunitarias") }
-                append(" y la política de privacidad de Quindío.")
+                ) { append(termsLink) }
+                append(termsSuffix)
             },
             color = BrandMuted,
             fontSize = 11.sp,

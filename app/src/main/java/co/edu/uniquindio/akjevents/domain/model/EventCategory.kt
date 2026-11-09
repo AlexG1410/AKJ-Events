@@ -1,9 +1,10 @@
 package co.edu.uniquindio.akjevents.domain.model
 
-enum class EventCategory(val label: String) {
-    SPORTS("Deportes"),
-    CULTURE("Cultura"),
-    ACADEMIC("Académico"),
-    VOLUNTEERING("Voluntariado"),
-    SOCIAL("Social")
+/** Categorías de la temática; su nombre visible está en los recursos (`core/util/Labels`). */
+enum class EventCategory {
+    SPORTS,
+    CULTURE,
+    ACADEMIC,
+    VOLUNTEERING,
+    SOCIAL
 }

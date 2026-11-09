@@ -7,10 +7,12 @@ import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
 import co.edu.uniquindio.akjevents.domain.model.UserRole
 import co.edu.uniquindio.akjevents.domain.repository.ProfileUpdateResult
 import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -22,7 +24,7 @@ class InMemoryUserRepositoryTest {
     private val users = repos.users
 
     @Test
-    fun demoCredentialsOpenTheSession() {
+    fun demoCredentialsOpenTheSession() = runTest {
         assertNull(users.login(DemoCredentials.email, "ClaveIncorrecta1"))
         assertNull(users.currentUser.value)
 
@@ -36,7 +38,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun preloadedModeratorHasTheModeratorRole() {
+    fun preloadedModeratorHasTheModeratorRole() = runTest {
         val moderator = users.login(DemoCredentials.moderatorEmail, DemoCredentials.moderatorPassword)
 
         assertEquals(UserRole.MODERATOR, moderator?.role)
@@ -44,7 +46,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun registrationCreatesASpectatorAndRejectsTakenEmails() {
+    fun registrationCreatesASpectatorAndRejectsTakenEmails() = runTest {
         val location = Location(4.5296, -75.6431)
         val result = users.register("Ana Gómez", "ana@ejemplo.com", "Calarcá, Quindío", "Comunidad1", setOf(EventCategory.CULTURE), "Parque Bolívar", location)
 
@@ -60,18 +62,19 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun levelIsDerivedFromPointsAndLevelUpIsNotified() {
+    fun levelIsDerivedFromPointsAndLevelUpIsNotified() = runTest {
         assertEquals(UserLevel.ORGANIZER, users.findById(DEMO_USER)!!.level)
 
-        repos.useCases.awardPoints(DEMO_USER, 20, "Prueba")
+        repos.useCases.awardPoints(DEMO_USER, 20, PointsReason.COMMENT, "Prueba")
 
         assertEquals(UserLevel.COMMUNITY_LEADER, users.findById(DEMO_USER)!!.level)
         assertTrue(repos.notificationsOf(DEMO_USER).any { it.type == NotificationType.LEVEL_UP })
-        assertEquals("Prueba", users.pointsHistory.value.first().reason)
+        assertEquals(PointsReason.COMMENT, users.pointsHistory.value.first().reason)
+        assertEquals("Prueba", users.pointsHistory.value.first().eventTitle)
     }
 
     @Test
-    fun levelThresholds() {
+    fun levelThresholds() = runTest {
         assertEquals(UserLevel.SPECTATOR, UserLevel.forPoints(99))
         assertEquals(UserLevel.PARTICIPANT, UserLevel.forPoints(100))
         assertEquals(UserLevel.ORGANIZER, UserLevel.forPoints(250))
@@ -79,7 +82,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun badgesAreAwardedOnlyOnce() {
+    fun badgesAreAwardedOnlyOnce() = runTest {
         repos.useCases.awardBadge(DEMO_USER, Badge.TEN_VERIFIED)
         repos.useCases.awardBadge(DEMO_USER, Badge.TEN_VERIFIED)
 
@@ -88,14 +91,14 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun moderatorsDoNotEarnPoints() {
-        repos.useCases.awardPoints(MODERATOR, 50, "Prueba")
+    fun moderatorsDoNotEarnPoints() = runTest {
+        repos.useCases.awardPoints(MODERATOR, 50, PointsReason.COMMENT, "Prueba")
 
         assertEquals(0, users.findById(MODERATOR)!!.points)
     }
 
     @Test
-    fun profileUpdateKeepsEmailsUniqueAndMovesTheLogin() {
+    fun profileUpdateKeepsEmailsUniqueAndMovesTheLogin() = runTest {
         val user = users.findById(DEMO_USER)!!
 
         assertEquals(ProfileUpdateResult.EMAIL_IN_USE, users.updateProfile(user.copy(email = DemoCredentials.moderatorEmail)))
@@ -110,7 +113,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun deletingTheAccountClosesTheSession() {
+    fun deletingTheAccountClosesTheSession() = runTest {
         users.login(DemoCredentials.email, DemoCredentials.password)
 
         assertTrue(users.deleteAccount(DEMO_USER))

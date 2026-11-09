@@ -10,7 +10,7 @@ import javax.inject.Inject
 class RegisterUserUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    operator fun invoke(
+    suspend operator fun invoke(
         name: String,
         email: String,
         city: String,

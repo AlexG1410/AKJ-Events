@@ -4,6 +4,7 @@ import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.features.event.detail.EventDetailViewModel
 import co.edu.uniquindio.akjevents.features.home.HomeViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -22,12 +23,12 @@ class EventDetailViewModelTest {
     private fun detail(id: String, viewer: TestRepositories = repos) = viewer.useCases.let {
         EventDetailViewModel(
             id, it.observeCurrentUser, it.observeEvents, it.observeAttendances, it.observeInterests, it.observeComments,
-            it.getUserById, it.toggleInterest, it.confirmAttendance, it.cancelAttendance, it.addComment
+            it.getUserById, it.toggleInterest, it.confirmAttendance, it.cancelAttendance, it.addComment, TestResourceProvider
         )
     }
 
     @Test
-    fun loadsVerifiedEventWithItsOrganizer() {
+    fun loadsVerifiedEventWithItsOrganizer() = runTest {
         val state = detail("ciclopaseo").uiState.value
 
         assertEquals("ciclopaseo", state.event?.id)
@@ -36,14 +37,14 @@ class EventDetailViewModelTest {
     }
 
     @Test
-    fun pendingAndRejectedEventsOfOthersAreNotAvailable() {
+    fun pendingAndRejectedEventsOfOthersAreNotAvailable() = runTest {
         assertNull(detail("pendiente-privado").uiState.value.event)
         assertNull(detail("rechazado-privado").uiState.value.event)
         assertNull(detail("no-existe").uiState.value.event)
     }
 
     @Test
-    fun theOrganizerAndModeratorsCanSeeAPendingEvent() {
+    fun theOrganizerAndModeratorsCanSeeAPendingEvent() = runTest {
         val own = detail("huertos-urbanos").uiState.value
         assertNotNull(own.event)
         assertTrue(own.isOwner)
@@ -56,7 +57,7 @@ class EventDetailViewModelTest {
     }
 
     @Test
-    fun finishedEventsAreVisibleButClosed() {
+    fun finishedEventsAreVisibleButClosed() = runTest {
         val state = detail("reforestacion-rio").uiState.value
 
         assertNotNull(state.event)
@@ -66,7 +67,7 @@ class EventDetailViewModelTest {
     }
 
     @Test
-    fun confirmingAttendanceAddsOneAttendee() {
+    fun confirmingAttendanceAddsOneAttendee() = runTest {
         val viewModel = detail("ciclopaseo")
         val before = viewModel.uiState.value.event!!.attendanceCount
 
@@ -79,7 +80,7 @@ class EventDetailViewModelTest {
     }
 
     @Test
-    fun secondTapCancelsInsteadOfConfirmingTwice() {
+    fun secondTapCancelsInsteadOfConfirmingTwice() = runTest {
         val viewModel = detail("ciclopaseo")
         val before = viewModel.uiState.value.event!!.attendanceCount
 
@@ -92,7 +93,7 @@ class EventDetailViewModelTest {
     }
 
     @Test
-    fun attendanceIsRememberedWhenTheDetailIsOpenedAgain() {
+    fun attendanceIsRememberedWhenTheDetailIsOpenedAgain() = runTest {
         detail("ciclopaseo").toggleAttendance()
         val before = repository.findPublicEvent("ciclopaseo")!!.attendanceCount
 
@@ -105,7 +106,7 @@ class EventDetailViewModelTest {
     }
 
     @Test
-    fun fullEventShowsErrorAndKeepsAttendance() {
+    fun fullEventShowsErrorAndKeepsAttendance() = runTest {
         val viewModel = detail("encuentro-vecinal")
         val event = viewModel.uiState.value.event!!
         assertEquals(event.capacity, event.attendanceCount)
@@ -115,11 +116,11 @@ class EventDetailViewModelTest {
         val state = viewModel.uiState.value
         assertEquals(event.attendanceCount, state.event!!.attendanceCount)
         assertFalse(state.isAttending)
-        assertEquals(EventDetailViewModel.FULL_EVENT_MESSAGE, state.userMessage)
+        assertEquals("No hay cupos disponibles: el evento está lleno", state.userMessage)
     }
 
     @Test
-    fun interestTogglesTheCounter() {
+    fun interestTogglesTheCounter() = runTest {
         val viewModel = detail("feria-cultural")
         val before = viewModel.uiState.value.event!!.interestCount
 
@@ -132,7 +133,7 @@ class EventDetailViewModelTest {
     }
 
     @Test
-    fun sendingACommentPublishesItAndClearsTheDraft() {
+    fun sendingACommentPublishesItAndClearsTheDraft() = runTest {
         val viewModel = detail("ciclopaseo")
         val before = viewModel.uiState.value.comments.size
 
@@ -150,7 +151,7 @@ class EventDetailViewModelTest {
     }
 
     @Test
-    fun changesInTheDetailAreVisibleInTheHome() {
+    fun changesInTheDetailAreVisibleInTheHome() = runTest {
         val home = repos.useCases.let { HomeViewModel(it.observePublicEvents, it.observeInterests, it.observeCurrentUser, it.toggleInterest) }
         val viewModel = detail("ciclopaseo")
         fun homeEvent() = home.uiState.value.let { it.featuredEvents + it.upcomingEvents }.first { it.id == "ciclopaseo" }

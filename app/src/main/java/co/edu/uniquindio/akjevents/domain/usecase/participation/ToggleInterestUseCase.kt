@@ -2,6 +2,7 @@ package co.edu.uniquindio.akjevents.domain.usecase.participation
 
 import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
 import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.usecase.reputation.AwardBadgeUseCase
@@ -18,14 +19,14 @@ class ToggleInterestUseCase @Inject constructor(
     private val awardPoints: AwardPointsUseCase,
     private val awardBadge: AwardBadgeUseCase
 ) {
-    operator fun invoke(eventId: String, userId: String): Boolean? {
+    suspend operator fun invoke(eventId: String, userId: String): Boolean? {
         val interested = eventRepository.toggleInterest(eventId, userId) ?: return null
         val event = eventRepository.findPublicEvent(eventId) ?: return interested
         // Votar por un evento propio no da puntos
         if (event.organizerId != userId) {
             val points = if (interested) ReputationPoints.INTEREST_RECEIVED else -ReputationPoints.INTEREST_RECEIVED
-            val reason = if (interested) "Recibiste un «Me interesa» en «${event.title}»" else "Retiraron un «Me interesa» en «${event.title}»"
-            awardPoints(event.organizerId, points, reason)
+            val reason = if (interested) PointsReason.INTEREST_RECEIVED else PointsReason.INTEREST_REMOVED
+            awardPoints(event.organizerId, points, reason, event.title)
         }
         if (interested && isMostRelevantOfItsMonth(event)) awardBadge(event.organizerId, Badge.FEATURED_OF_MONTH)
         return interested

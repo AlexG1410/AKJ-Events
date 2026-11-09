@@ -60,6 +60,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -67,6 +69,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.ConfirmDialog
 import co.edu.uniquindio.akjevents.core.component.ContentCard
 import co.edu.uniquindio.akjevents.core.component.EmptyState
@@ -92,6 +95,7 @@ import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
@@ -132,7 +136,7 @@ fun MyEventsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                ScreenHeader(title = "Mis Eventos", subtitle = "Gestión de actividades comunitarias", onBack = onBack) {
+                ScreenHeader(title = stringResource(R.string.my_events_title), subtitle = stringResource(R.string.my_events_subtitle), onBack = onBack) {
                     Surface(onClick = onCreateEvent, shape = RoundedCornerShape(12.dp), color = Terracotta) {
                         Row(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
@@ -140,7 +144,7 @@ fun MyEventsScreen(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Icon(Icons.Outlined.Add, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            Text("Crear", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(stringResource(R.string.nav_create), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
                     }
                 }
@@ -152,7 +156,7 @@ fun MyEventsScreen(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(MyEventsTab.entries) { tab ->
                         FilterPill(
-                            text = tab.label,
+                            text = stringResource(tab.label),
                             count = state.count(tab),
                             isSelected = state.tab == tab,
                             onClick = { viewModel.selectTab(tab) }
@@ -165,8 +169,8 @@ fun MyEventsScreen(
                 item {
                     EmptyState(
                         icon = Icons.AutoMirrored.Outlined.EventNote,
-                        title = if (state.tab == MyEventsTab.ALL) "Aún no has creado eventos" else "No hay eventos en esta pestaña",
-                        message = "Propón un evento para tu comunidad; un moderador lo revisará antes de publicarlo."
+                        title = stringResource(if (state.tab == MyEventsTab.ALL) R.string.my_events_empty_all else R.string.my_events_empty_tab),
+                        message = stringResource(R.string.my_events_empty_message)
                     )
                 }
             }
@@ -212,9 +216,9 @@ fun MyEventsScreen(
             onDismiss = { dialog = null }
         )
         is MyEventDialog.Delete -> ConfirmDialog(
-            title = "¿Eliminar este evento?",
-            message = "«${current.event.title}» se borrará junto con sus comentarios e inscripciones. Esta acción no se puede deshacer.",
-            confirmText = "Eliminar",
+            title = stringResource(R.string.my_events_delete_title),
+            message = stringResource(R.string.my_events_delete_message, current.event.title),
+            confirmText = stringResource(R.string.action_delete),
             isDestructive = true,
             onConfirm = {
                 viewModel.deleteEvent(current.event.id)
@@ -233,9 +237,13 @@ private fun SummaryCard(state: MyEventsUiState) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             UserAvatar(user, size = 48.dp, containerColor = SecondaryFixed, contentColor = OnSecondaryFixedVariant)
             Column(modifier = Modifier.weight(1f)) {
-                Text("${user.level.label} • Nivel ${user.level.number}", color = Sage, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.my_events_level, stringResource(user.level.labelRes), user.level.number), color = Sage, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "${state.count(MyEventsTab.ALL)} eventos gestionados • ${user.city.substringBefore(",")}",
+                    stringResource(
+                        R.string.my_events_managed,
+                        pluralStringResource(R.plurals.events_managed, state.count(MyEventsTab.ALL), state.count(MyEventsTab.ALL)),
+                        user.city.substringBefore(",")
+                    ),
                     color = WarmText,
                     fontSize = 14.sp,
                     maxLines = 1,
@@ -244,8 +252,8 @@ private fun SummaryCard(state: MyEventsUiState) {
             }
             state.approvalRate?.let { rate ->
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("$rate%", color = TertiaryColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                    Text("Aprobación", color = MutedText, fontSize = 11.sp)
+                    Text(stringResource(R.string.my_events_rate, rate), color = TertiaryColor, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.my_events_approval), color = MutedText, fontSize = 11.sp)
                 }
             }
         }
@@ -285,7 +293,7 @@ private fun MyEventCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Terracotta, modifier = Modifier.size(14.dp))
                     Text(
-                        " ${event.address.substringBefore(",")} • ${EventFormat.shortDateTime(event.startsAt)}",
+                        stringResource(R.string.my_events_place_time, event.address.substringBefore(","), EventFormat.shortDateTime(event.startsAt)),
                         color = MutedText,
                         fontSize = 12.sp,
                         maxLines = 1,
@@ -295,7 +303,8 @@ private fun MyEventCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.Groups, contentDescription = null, tint = MutedText, modifier = Modifier.size(14.dp))
                     Text(
-                        " ${event.attendanceCount} inscritos" + (event.capacity?.let { " de $it" } ?: " • Cupo abierto"),
+                        pluralStringResource(R.plurals.signed_up_count, event.attendanceCount, event.attendanceCount) +
+                            (event.capacity?.let { stringResource(R.string.my_events_of_capacity, it) } ?: stringResource(R.string.my_events_open_capacity)),
                         color = MutedText,
                         fontSize = 12.sp
                     )
@@ -307,13 +316,13 @@ private fun MyEventCard(
             EventStatus.PENDING -> {
                 InfoBox(
                     icon = Icons.Outlined.Info,
-                    text = "Enviado ${EventFormat.relative(event.createdAt).lowercase()}. Un moderador está revisando que el evento sea real y apropiado para la comunidad.",
+                    text = stringResource(R.string.my_events_pending_info, EventFormat.relative(event.createdAt).lowercase()),
                     container = SurfaceContainerLow,
                     content = MutedText
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SecondaryAction("Editar", Icons.Outlined.Edit, onEdit, Modifier.weight(1f))
-                    SecondaryAction("Detalles", Icons.Outlined.Visibility, onOpen, Modifier.weight(1f))
+                    SecondaryAction(stringResource(R.string.action_edit), Icons.Outlined.Edit, onEdit, Modifier.weight(1f))
+                    SecondaryAction(stringResource(R.string.my_events_details), Icons.Outlined.Visibility, onOpen, Modifier.weight(1f))
                     DeleteButton(onDelete)
                 }
             }
@@ -321,12 +330,12 @@ private fun MyEventCard(
                 Surface(onClick = onShowQr, shape = RoundedCornerShape(14.dp), color = Terracotta, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                     Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.QrCode2, contentDescription = null, tint = Color.White)
-                        Text("  Mostrar QR de Asistencia", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text("  " + stringResource(R.string.my_events_show_qr), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    SecondaryAction("Gestionar inscritos", Icons.Outlined.Groups, onShowAttendees, Modifier.weight(1f))
-                    SecondaryAction("Enviar aviso", Icons.Outlined.Campaign, onSendNotice, Modifier.weight(1f))
+                    SecondaryAction(stringResource(R.string.my_events_manage_attendees), Icons.Outlined.Groups, onShowAttendees, Modifier.weight(1f))
+                    SecondaryAction(stringResource(R.string.my_events_send_notice), Icons.Outlined.Campaign, onSendNotice, Modifier.weight(1f))
                 }
                 if (isConfirmingFinish) {
                     Column(
@@ -336,14 +345,14 @@ private fun MyEventCard(
                         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = null, tint = Terracotta, modifier = Modifier.size(20.dp))
                             Column {
-                                Text("¿Estás seguro de que deseas finalizar este evento?", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                                Text("Esta acción cerrará las confirmaciones de asistencia.", color = MutedText, fontSize = 12.sp)
+                                Text(stringResource(R.string.my_events_finish_confirm), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                Text(stringResource(R.string.my_events_finish_warning), color = MutedText, fontSize = 12.sp)
                             }
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                            TextButton(onClick = onCancelFinish) { Text("Cancelar", color = MutedText) }
+                            TextButton(onClick = onCancelFinish) { Text(stringResource(R.string.action_cancel), color = MutedText) }
                             Surface(onClick = onConfirmFinish, shape = RoundedCornerShape(10.dp), color = Terracotta) {
-                                Text("Confirmar", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                                Text(stringResource(R.string.action_confirm), color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
                             }
                         }
                     }
@@ -357,13 +366,13 @@ private fun MyEventCard(
                     ) {
                         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Sage, modifier = Modifier.size(18.dp))
-                            Text("  Marcar como finalizado", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                            Text("  " + stringResource(R.string.my_events_mark_finished), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    SecondaryAction("Ver evento", Icons.Outlined.Visibility, onOpen, Modifier.weight(1f))
-                    SecondaryAction("Editar", Icons.Outlined.Edit, onEdit, Modifier.weight(1f))
+                    SecondaryAction(stringResource(R.string.map_see_event), Icons.Outlined.Visibility, onOpen, Modifier.weight(1f))
+                    SecondaryAction(stringResource(R.string.action_edit), Icons.Outlined.Edit, onEdit, Modifier.weight(1f))
                     DeleteButton(onDelete)
                 }
             }
@@ -374,7 +383,7 @@ private fun MyEventCard(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = ErrorColor, modifier = Modifier.size(20.dp))
-                        Text("Motivo del rechazo", color = ErrorColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.my_events_rejection_reason), color = ErrorColor, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                     Text(event.rejectionReason.orEmpty(), color = WarmText, fontSize = 13.sp, lineHeight = 18.sp)
                 }
@@ -382,7 +391,7 @@ private fun MyEventCard(
                     Surface(onClick = onEdit, shape = RoundedCornerShape(12.dp), color = Terracotta, modifier = Modifier.weight(1f).height(44.dp)) {
                         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Outlined.Edit, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                            Text("  Modificar y reenviar", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text("  " + stringResource(R.string.my_events_edit_resubmit), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                     DeleteButton(onDelete)
@@ -396,15 +405,15 @@ private fun MyEventCard(
                 ) {
                     Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Sage)
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Finalizado con éxito", color = OnSecondaryFixedVariant, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.my_events_finished_success), color = OnSecondaryFixedVariant, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text(
-                            "$checkIns check-ins con QR • +${ReputationPoints.EVENT_FINISHED} pts de reputación",
+                            stringResource(R.string.my_events_finished_stats, pluralStringResource(R.plurals.check_ins_count, checkIns, checkIns), ReputationPoints.EVENT_FINISHED),
                             color = OnSecondaryFixedVariant,
                             fontSize = 12.sp
                         )
                     }
                 }
-                SecondaryAction("Ver evento y comentarios", Icons.AutoMirrored.Outlined.ArrowForward, onOpen, Modifier.fillMaxWidth())
+                SecondaryAction(stringResource(R.string.my_events_see_event_comments), Icons.AutoMirrored.Outlined.ArrowForward, onOpen, Modifier.fillMaxWidth())
             }
         }
     }
@@ -438,7 +447,7 @@ private fun SecondaryAction(text: String, icon: ImageVector, onClick: () -> Unit
 @Composable
 private fun DeleteButton(onClick: () -> Unit) {
     IconButton(onClick = onClick, modifier = Modifier.size(44.dp).background(Color(0xFFFFDAD6).copy(alpha = 0.5f), CircleShape)) {
-        Icon(Icons.Outlined.DeleteOutline, contentDescription = "Eliminar evento", tint = ErrorColor)
+        Icon(Icons.Outlined.DeleteOutline, contentDescription = stringResource(R.string.my_events_delete_event), tint = ErrorColor)
     }
 }
 
@@ -452,7 +461,7 @@ private fun ProposalTip(onCreate: () -> Unit) {
         ) {
             Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = OnTertiaryContainer)
             Text(
-                "¿Deseas proponer otro evento? Los moderadores suelen revisarlo en menos de 48 horas.",
+                stringResource(R.string.my_events_propose_more),
                 color = OnTertiaryContainer,
                 fontSize = 13.sp,
                 modifier = Modifier.weight(1f)
@@ -467,21 +476,21 @@ private fun QrDialog(event: CommunityEvent, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
-        title = { Text("QR de asistencia", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.my_events_qr_title), fontWeight = FontWeight.Bold) },
         text = {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(event.title, color = MutedText, fontSize = 14.sp, textAlign = TextAlign.Center)
                 QrCode(content = event.checkInCode, modifier = Modifier.size(220.dp))
                 Text(event.checkInCode, color = WarmText, fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
                 Text(
-                    "Los asistentes escanean este código (o lo escriben) en Check-in para registrar su asistencia y ganar puntos.",
+                    stringResource(R.string.my_events_qr_message),
                     color = MutedText,
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cerrar") } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } }
     )
 }
 
@@ -490,25 +499,29 @@ private fun AttendeesDialog(event: CommunityEvent, attendees: List<AttendeeItem>
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
-        title = { Text("Inscritos", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.my_events_attendees_title), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "${event.attendanceCount} personas confirmadas en total. Con cuenta en AKJ Events: ${attendees.size} • " +
-                        "check-in: ${attendees.count { it.checkedIn }}.",
+                    stringResource(
+                        R.string.my_events_attendees_summary,
+                        pluralStringResource(R.plurals.people_confirmed, event.attendanceCount, event.attendanceCount),
+                        attendees.size,
+                        attendees.count { it.checkedIn }
+                    ),
                     color = MutedText,
                     fontSize = 13.sp
                 )
                 HorizontalDivider(color = SurfaceContainerHigh)
                 if (attendees.isEmpty()) {
-                    Text("Aún no hay personas inscritas con cuenta.", color = MutedText, fontSize = 13.sp)
+                    Text(stringResource(R.string.my_events_no_attendees), color = MutedText, fontSize = 13.sp)
                 }
                 attendees.forEach { attendee ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         if (attendee.user != null) UserAvatar(attendee.user, size = 32.dp) else Box(Modifier.size(32.dp).background(SurfaceContainerHigh, CircleShape))
-                        Text(attendee.user?.name ?: "Cuenta eliminada", color = WarmText, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                        Text(attendee.user?.name ?: stringResource(R.string.detail_deleted_account), color = WarmText, fontSize = 14.sp, modifier = Modifier.weight(1f))
                         Text(
-                            if (attendee.checkedIn) "Asistió" else "Confirmado",
+                            stringResource(if (attendee.checkedIn) R.string.my_events_attended else R.string.my_events_confirmed),
                             color = if (attendee.checkedIn) Sage else MutedText,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold
@@ -517,7 +530,7 @@ private fun AttendeesDialog(event: CommunityEvent, attendees: List<AttendeeItem>
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Cerrar") } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) } }
     )
 }
 
@@ -527,14 +540,14 @@ private fun NoticeDialog(event: CommunityEvent, onSend: (String) -> Unit, onDism
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
-        title = { Text("Enviar aviso", fontWeight = FontWeight.Bold) },
+        title = { Text(stringResource(R.string.my_events_send_notice), fontWeight = FontWeight.Bold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Las personas inscritas en «${event.title}» lo verán en sus notificaciones.", color = MutedText, fontSize = 13.sp)
+                Text(stringResource(R.string.my_events_notice_message, event.title), color = MutedText, fontSize = 13.sp)
                 TextField(
                     value = message,
                     onValueChange = { message = it.take(300) },
-                    placeholder = { Text("Ej: El punto de encuentro cambia a la entrada norte") },
+                    placeholder = { Text(stringResource(R.string.my_events_notice_placeholder)) },
                     minLines = 3,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = SurfaceContainerLow,
@@ -548,9 +561,9 @@ private fun NoticeDialog(event: CommunityEvent, onSend: (String) -> Unit, onDism
         confirmButton = {
             TextButton(onClick = { onSend(message) }, enabled = message.isNotBlank()) {
                 Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(" Enviar", fontWeight = FontWeight.Bold)
+                Text(" " + stringResource(R.string.action_send), fontWeight = FontWeight.Bold)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
     )
 }

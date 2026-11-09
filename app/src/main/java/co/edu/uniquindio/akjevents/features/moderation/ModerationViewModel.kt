@@ -1,7 +1,10 @@
 package co.edu.uniquindio.akjevents.features.moderation
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.akjevents.R
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
@@ -21,19 +24,19 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-enum class ModerationTab(val label: String, val status: EventStatus) {
-    PENDING("Pendientes", EventStatus.PENDING),
-    VERIFIED("Verificados", EventStatus.VERIFIED),
-    REJECTED("Rechazados", EventStatus.REJECTED),
-    FINISHED("Finalizados", EventStatus.FINISHED)
+enum class ModerationTab(@param:StringRes val label: Int, val status: EventStatus) {
+    PENDING(R.string.tab_pending, EventStatus.PENDING),
+    VERIFIED(R.string.tab_verified, EventStatus.VERIFIED),
+    REJECTED(R.string.tab_rejected, EventStatus.REJECTED),
+    FINISHED(R.string.tab_finished, EventStatus.FINISHED)
 }
 
 /** Causales de rechazo del mockup 17; todas exigen un motivo escrito. */
-enum class RejectionReason(val label: String) {
-    PLACE_NOT_AUTHORIZED("Lugar no disponible o no autorizado"),
-    MISSING_INFORMATION("Información insuficiente"),
-    INAPPROPRIATE("Contenido duplicado o inadecuado"),
-    OTHER("Otro motivo")
+enum class RejectionReason(@param:StringRes val label: Int) {
+    PLACE_NOT_AUTHORIZED(R.string.rejection_place),
+    MISSING_INFORMATION(R.string.rejection_missing_info),
+    INAPPROPRIATE(R.string.rejection_inappropriate),
+    OTHER(R.string.rejection_other)
 }
 
 data class ModerationItem(val event: CommunityEvent, val organizer: User?, val organizerVerifiedCount: Int)
@@ -65,14 +68,24 @@ class ModerationViewModel @Inject constructor(
     private val getUserById: GetUserByIdUseCase,
     private val verifyEvent: VerifyEventUseCase,
     private val rejectEvent: RejectEventUseCase,
-    private val finishEvent: FinishEventUseCase
+    private val finishEvent: FinishEventUseCase,
+    private val resources: ResourceProvider
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ModerationUiState())
     val uiState: StateFlow<ModerationUiState> = _uiState.asStateFlow()
 
+    // Organizador de cada evento, para mostrarlo y buscar por su nombre sin consultarlo en cada tecla
+    private var organizers: Map<String, User?> = emptyMap()
+
+    // Evita que un doble toque apruebe o rechace dos veces mientras la operación termina
+    private var isBusy = false
+
     init {
         viewModelScope.launch {
             combine(observeCurrentUser(), observeEvents(), ::Pair).collect { (moderator, events) ->
+                organizers = events.map { it.organizerId }.distinct().associateWith { id ->
+                    organizers[id] ?: runCatching { getUserById(id) }.getOrNull()
+                }
                 _uiState.update { it.copy(moderator = moderator, allEvents = events).filtered() }
             }
         }
@@ -88,10 +101,12 @@ class ModerationViewModel @Inject constructor(
 
     fun verify(eventId: String) {
         val moderator = moderatorId() ?: return
-        if (verifyEvent(eventId, moderator)) {
-            _uiState.update { it.copy(expandedEventId = null, userMessage = "Evento verificado y publicado. Se notificó al organizador").filtered() }
-        } else {
-            showMessage("No se pudo verificar el evento")
+        runAction(R.string.moderation_error_verify) {
+            if (verifyEvent(eventId, moderator)) {
+                _uiState.update { it.copy(expandedEventId = null, userMessage = resources.getString(R.string.moderation_verified)).filtered() }
+            } else {
+                showMessage(R.string.moderation_error_verify)
+            }
         }
     }
 
@@ -111,39 +126,54 @@ class ModerationViewModel @Inject constructor(
         val moderator = moderatorId() ?: return
         val reason = state.rejectionReason
         if (reason == null || !state.canConfirmRejection) {
-            showMessage("Elige una causal y escribe el motivo del rechazo")
+            showMessage(R.string.moderation_error_reason)
             return
         }
         val note = state.rejectionNote.trim()
         val text = when {
             reason == RejectionReason.OTHER -> note
-            note.isEmpty() -> reason.label
-            else -> "${reason.label}: $note"
+            // El motivo queda guardado en el idioma del moderador, como el texto que él escribió
+            note.isEmpty() -> resources.getString(reason.label)
+            else -> resources.getString(R.string.rejection_with_note, resources.getString(reason.label), note)
         }
-        if (rejectEvent(eventId, moderator, text)) {
-            _uiState.update { it.copy(rejectingEventId = null, expandedEventId = null, userMessage = "Evento rechazado. El organizador recibió el motivo").filtered() }
-        } else {
-            showMessage("No se pudo rechazar el evento")
+        runAction(R.string.moderation_error_reject) {
+            if (rejectEvent(eventId, moderator, text)) {
+                _uiState.update { it.copy(rejectingEventId = null, expandedEventId = null, userMessage = resources.getString(R.string.moderation_rejected)).filtered() }
+            } else {
+                showMessage(R.string.moderation_error_reject)
+            }
         }
     }
 
     fun finish(eventId: String) {
         val moderator = moderatorId() ?: return
-        showMessage(if (finishEvent(eventId, moderator)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
+        runAction(R.string.error_finish_event) {
+            showMessage(if (finishEvent(eventId, moderator)) R.string.event_marked_finished else R.string.error_finish_event)
+        }
     }
 
     fun onMessageShown() = _uiState.update { it.copy(userMessage = null) }
 
     private fun moderatorId(): String? = observeCurrentUser().value?.takeIf { it.isModerator }?.id
 
-    private fun showMessage(message: String) = _uiState.update { it.copy(userMessage = message) }
+    private fun showMessage(@StringRes message: Int) = _uiState.update { it.copy(userMessage = resources.getString(message)) }
+
+    /** Ejecuta una decisión de moderación; si falla (por ejemplo, sin conexión), muestra [errorMessage]. */
+    private fun runAction(@StringRes errorMessage: Int, action: suspend () -> Unit) {
+        if (isBusy) return
+        isBusy = true
+        viewModelScope.launch {
+            runCatching { action() }.onFailure { showMessage(errorMessage) }
+            isBusy = false
+        }
+    }
 
     private fun ModerationUiState.filtered(): ModerationUiState {
         val search = query.normalizedForSearch()
         val items = allEvents
             .filter { it.status == tab.status }
             .mapNotNull { event ->
-                val organizer = getUserById(event.organizerId)
+                val organizer = organizers[event.organizerId]
                 val matches = search.isEmpty() ||
                     event.title.normalizedForSearch().contains(search) ||
                     event.address.normalizedForSearch().contains(search) ||

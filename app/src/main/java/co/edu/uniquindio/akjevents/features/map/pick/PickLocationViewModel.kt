@@ -3,7 +3,9 @@ package co.edu.uniquindio.akjevents.features.map.pick
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.navigation.toRoute
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
 import co.edu.uniquindio.akjevents.data.demo.Place
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
@@ -31,12 +33,16 @@ data class PickLocationUiState(
  * La búsqueda usa lugares de referencia locales en lugar de un servicio de geocodificación.
  */
 @HiltViewModel
-class PickLocationViewModel(initial: PickedLocation) : ViewModel() {
+class PickLocationViewModel(
+    initial: PickedLocation,
+    private val resources: ResourceProvider
+) : ViewModel() {
 
     /** Hilt lee el punto inicial de la ruta [MainRoutes.PickLocation]. */
     @Inject
-    constructor(savedStateHandle: SavedStateHandle) : this(
-        savedStateHandle.toRoute<MainRoutes.PickLocation>().let { PickedLocation(it.address, Location(it.latitude, it.longitude)) }
+    constructor(savedStateHandle: SavedStateHandle, resources: ResourceProvider) : this(
+        savedStateHandle.toRoute<MainRoutes.PickLocation>().let { PickedLocation(it.address, Location(it.latitude, it.longitude)) },
+        resources
     )
 
     private val _uiState = MutableStateFlow(
@@ -65,7 +71,7 @@ class PickLocationViewModel(initial: PickedLocation) : ViewModel() {
         val city = SamplePlaces.nearestCity(selected).name
         return copy(
             placeName = place?.name,
-            address = initialAddress ?: place?.let { "${it.address}, ${it.city}" } ?: "Punto en el mapa, $city",
+            address = initialAddress ?: place?.let { "${it.address}, ${it.city}" } ?: resources.getString(R.string.pick_point_on_map, city),
             city = place?.city ?: city
         )
     }

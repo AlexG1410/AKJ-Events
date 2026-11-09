@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.data.demo.SampleEvents
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
@@ -24,7 +25,7 @@ class MapViewModelTest {
     )
 
     @Test
-    fun thisWeekIncludesNowButExcludesPastAndSevenDayBoundary() {
+    fun thisWeekIncludesNowButExcludesPastAndSevenDayBoundary() = runTest {
         val events = listOf(
             event("pasado", now.minusSeconds(1)), event("ahora", now),
             event("dentro", now.plusDays(7).minusSeconds(1)),
@@ -40,7 +41,7 @@ class MapViewModelTest {
     }
 
     @Test
-    fun dateFilterCombinesWithSearchCategoryDistanceAndVisibility() {
+    fun dateFilterCombinesWithSearchCategoryDistanceAndVisibility() = runTest {
         val base = event("visible", now.plusDays(1)).copy(title = "Encuentro deportivo")
         val repository = InMemoryEventRepository(initialEvents = listOf(
             base, base.copy(id = "pasado", startsAt = now.minusDays(1)),

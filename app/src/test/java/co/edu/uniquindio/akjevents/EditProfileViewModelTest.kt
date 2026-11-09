@@ -7,6 +7,7 @@ import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.features.profile.edit.EditProfileViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -18,10 +19,10 @@ class EditProfileViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repos = TestRepositories()
-    private val viewModel by lazy { repos.useCases.let { EditProfileViewModel(it.observeCurrentUser, it.updateProfile, it.deleteAccount) } }
+    private val viewModel by lazy { repos.useCases.let { EditProfileViewModel(it.observeCurrentUser, it.updateProfile, it.deleteAccount, TestResourceProvider) } }
 
     @Test
-    fun savesPersonalDataLocationAndInterests() {
+    fun savesPersonalDataLocationAndInterests() = runTest {
         viewModel.onNameChange("Camilo Andrés Rodríguez")
         viewModel.onLocationPicked(PickedLocation("Plaza principal de Calarcá", Location(4.5296, -75.6431)))
         viewModel.toggleInterest(EventCategory.ACADEMIC)
@@ -37,7 +38,7 @@ class EditProfileViewModelTest {
     }
 
     @Test
-    fun invalidOrTakenEmailIsRejected() {
+    fun invalidOrTakenEmailIsRejected() = runTest {
         viewModel.onEmailChange("correo-invalido")
         viewModel.save()
         assertTrue(viewModel.uiState.value.result is RequestResult.Failure)
@@ -49,7 +50,7 @@ class EditProfileViewModelTest {
     }
 
     @Test
-    fun deletingTheAccountRemovesTheUserAndTheirEvents() {
+    fun deletingTheAccountRemovesTheUserAndTheirEvents() = runTest {
         viewModel.deleteAccount()
 
         assertTrue(viewModel.uiState.value.isAccountDeleted)

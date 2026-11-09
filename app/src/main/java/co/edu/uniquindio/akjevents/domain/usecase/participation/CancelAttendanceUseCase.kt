@@ -7,5 +7,5 @@ import javax.inject.Inject
 class CancelAttendanceUseCase @Inject constructor(
     private val eventRepository: EventRepository
 ) {
-    operator fun invoke(eventId: String, userId: String): Boolean = eventRepository.cancelAttendance(eventId, userId)
+    suspend operator fun invoke(eventId: String, userId: String): Boolean = eventRepository.cancelAttendance(eventId, userId)
 }

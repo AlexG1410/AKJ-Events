@@ -4,6 +4,7 @@ import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.Comment
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
 import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
@@ -23,22 +24,23 @@ class AddCommentUseCase @Inject constructor(
     private val awardPoints: AwardPointsUseCase,
     private val awardBadge: AwardBadgeUseCase
 ) {
-    operator fun invoke(eventId: String, authorId: String, text: String): Comment? {
+    suspend operator fun invoke(eventId: String, authorId: String, text: String): Comment? {
         val event = eventRepository.findEvent(eventId) ?: return null
         val canComment = event.status == EventStatus.VERIFIED || event.status == EventStatus.FINISHED
         val author = userRepository.findById(authorId)
         if (!canComment || text.isBlank() || author == null) return null
 
         val comment = eventRepository.addComment(eventId, authorId, text.trim())
-        awardPoints(authorId, ReputationPoints.COMMENT, "Comentaste en «${event.title}»")
+        awardPoints(authorId, ReputationPoints.COMMENT, PointsReason.COMMENT, event.title)
         if (eventRepository.comments.value.count { it.authorId == authorId } == 1) awardBadge(authorId, Badge.FIRST_COMMENT)
         if (authorId != event.organizerId) {
             notificationRepository.notify(
                 userId = event.organizerId,
                 type = NotificationType.NEW_COMMENT,
-                title = "Nuevo comentario en tu evento",
-                message = "${author.name} comentó en «${event.title}»: «${comment.text}»",
-                eventId = eventId
+                eventId = eventId,
+                eventTitle = event.title,
+                actorName = author.name,
+                detail = comment.text
             )
         }
         return comment

@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import co.edu.uniquindio.akjevents.R
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
@@ -35,7 +37,9 @@ data class CheckInUiState(
     /** Puntos y nivel antes del check-in, para mostrar el avance. */
     val pointsBefore: Int = 0,
     val organizer: User? = null,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    /** El código se está validando; evita enviarlo dos veces. */
+    val isValidating: Boolean = false
 )
 
 /**
@@ -49,9 +53,10 @@ class CheckInViewModel(
     private val observeCurrentUser: ObserveCurrentUserUseCase,
     observePublicEvents: ObservePublicEventsUseCase,
     observeAttendances: ObserveAttendancesUseCase,
-    getPublicEventById: GetPublicEventByIdUseCase,
+    private val getPublicEventById: GetPublicEventByIdUseCase,
     private val getUserById: GetUserByIdUseCase,
-    private val checkIn: CheckInUseCase
+    private val checkIn: CheckInUseCase,
+    private val resources: ResourceProvider
 ) : ViewModel() {
 
     /** Hilt lee el evento preseleccionado de la ruta [MainRoutes.CheckIn]. */
@@ -63,23 +68,30 @@ class CheckInViewModel(
         observeAttendances: ObserveAttendancesUseCase,
         getPublicEventById: GetPublicEventByIdUseCase,
         getUserById: GetUserByIdUseCase,
-        checkIn: CheckInUseCase
+        checkIn: CheckInUseCase,
+        resources: ResourceProvider
     ) : this(
         savedStateHandle.toRoute<MainRoutes.CheckIn>().eventId,
         savedStateHandle.toRoute<MainRoutes.CheckIn>().showMyQr,
-        observeCurrentUser, observePublicEvents, observeAttendances, getPublicEventById, getUserById, checkIn
+        observeCurrentUser, observePublicEvents, observeAttendances, getPublicEventById, getUserById, checkIn, resources
     )
 
     private val _uiState = MutableStateFlow(
         CheckInUiState(
             user = observeCurrentUser().value,
-            tab = if (showMyQr) CheckInTab.MY_QR else CheckInTab.SCAN,
-            code = preselectedEventId?.let { getPublicEventById(it)?.checkInCode }.orEmpty()
+            tab = if (showMyQr) CheckInTab.MY_QR else CheckInTab.SCAN
         )
     )
     val uiState: StateFlow<CheckInUiState> = _uiState.asStateFlow()
 
     init {
+        // Al llegar desde el detalle de un evento, su código queda escrito
+        if (preselectedEventId != null) {
+            viewModelScope.launch {
+                val code = runCatching { getPublicEventById(preselectedEventId)?.checkInCode }.getOrNull()
+                if (code != null) _uiState.update { it.copy(code = code) }
+            }
+        }
         viewModelScope.launch {
             combine(observeCurrentUser(), observePublicEvents(), observeAttendances(), ::Triple).collect { (user, events, attendances) ->
                 val pendingIds = attendances.filter { it.userId == user?.id && !it.checkedIn }.map { it.eventId }.toSet()
@@ -102,27 +114,39 @@ class CheckInViewModel(
 
     fun validate() {
         val user = observeCurrentUser().value ?: return
-        val code = _uiState.value.code
+        val state = _uiState.value
+        if (state.isValidating) return
+        val code = state.code
         if (code.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Escribe o escanea el código del evento") }
+            _uiState.update { it.copy(errorMessage = resources.getString(R.string.check_in_error_empty)) }
             return
         }
         val pointsBefore = user.points
-        when (val result = checkIn(code, user.id)) {
-            is CheckInResult.Success -> _uiState.update {
-                it.copy(result = result, pointsBefore = pointsBefore, organizer = getUserById(result.event.organizerId), errorMessage = null)
+        _uiState.update { it.copy(isValidating = true, errorMessage = null) }
+        viewModelScope.launch {
+            val result = runCatching { checkIn(code, user.id) }.getOrElse {
+                showError(resources.getString(R.string.check_in_error_generic))
+                return@launch
             }
-            is CheckInResult.AlreadyCheckedIn -> showError("Ya registraste tu asistencia en «${result.event.title}»")
-            is CheckInResult.Full -> showError("«${result.event.title}» ya no tiene cupos disponibles")
-            is CheckInResult.OwnEvent -> showError("No puedes hacer check-in en tu propio evento")
-            CheckInResult.InvalidCode -> showError("Código no válido o el evento no está activo")
+            when (result) {
+                is CheckInResult.Success -> {
+                    val organizer = runCatching { getUserById(result.event.organizerId) }.getOrNull()
+                    _uiState.update {
+                        it.copy(result = result, pointsBefore = pointsBefore, organizer = organizer, errorMessage = null, isValidating = false)
+                    }
+                }
+                is CheckInResult.AlreadyCheckedIn -> showError(resources.getString(R.string.check_in_error_already, result.event.title))
+                is CheckInResult.Full -> showError(resources.getString(R.string.check_in_error_full, result.event.title))
+                is CheckInResult.OwnEvent -> showError(resources.getString(R.string.check_in_error_own_event))
+                CheckInResult.InvalidCode -> showError(resources.getString(R.string.check_in_error_invalid))
+            }
         }
     }
 
     /** Vuelve a la cámara simulada para otro check-in. */
     fun reset() = _uiState.update { it.copy(result = null, code = "", errorMessage = null) }
 
-    private fun showError(message: String) = _uiState.update { it.copy(errorMessage = message, result = null) }
+    private fun showError(message: String) = _uiState.update { it.copy(errorMessage = message, result = null, isValidating = false) }
 
     private companion object {
         const val MAX_CODE_LENGTH = 12

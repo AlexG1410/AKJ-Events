@@ -18,7 +18,7 @@ class TestRepositories(sessionUserId: String? = SampleUsers.demoUser.id) {
 
     fun notificationsOf(userId: String) = notifications.notifications.value.filter { it.userId == userId }
 
-    fun pointsOf(userId: String) = users.findById(userId)!!.points
+    fun pointsOf(userId: String) = users.users.value.first { it.id == userId }.points
 
     companion object {
         val DEMO_USER = SampleUsers.demoUser.id

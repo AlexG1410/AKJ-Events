@@ -48,6 +48,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -59,6 +60,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.FormFieldError
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
@@ -143,7 +145,7 @@ fun RecoverPasswordScreen(
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Volver a la pantalla anterior",
+                            contentDescription = stringResource(R.string.recover_back),
                             tint = WarmText,
                             modifier = Modifier.size(20.dp)
                         )
@@ -159,7 +161,7 @@ fun RecoverPasswordScreen(
                 ) {
                     Icon(Icons.Rounded.LocalActivity, contentDescription = null, tint = Terracotta, modifier = Modifier.size(16.dp))
                     Text(
-                        "AKJ Events",
+                        stringResource(R.string.app_name),
                         color = OnPrimaryFixed,
                         fontSize = 12.sp,
                         lineHeight = 16.sp,
@@ -177,7 +179,7 @@ fun RecoverPasswordScreen(
                 KeyBadge()
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Recuperar contraseña",
+                        stringResource(R.string.recover_title),
                         color = WarmText,
                         fontSize = 28.sp,
                         lineHeight = 36.sp,
@@ -186,8 +188,7 @@ fun RecoverPasswordScreen(
                         textAlign = TextAlign.Center
                     )
                     Text(
-                        "Ingresa tu correo electrónico registrado. Te enviaremos un enlace seguro para " +
-                            "restablecer tu contraseña. Funciona tanto para cuentas de usuario como de moderador.",
+                        stringResource(R.string.recover_description),
                         color = MutedText,
                         fontSize = 14.sp,
                         lineHeight = 22.sp,
@@ -211,9 +212,10 @@ fun RecoverPasswordScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            val emailLabel = stringResource(R.string.field_email)
                             Text(
                                 buildAnnotatedString {
-                                    append("Correo electrónico ")
+                                    append("$emailLabel ")
                                     withStyle(SpanStyle(color = Terracotta)) { append("*") }
                                 },
                                 color = WarmText,
@@ -222,26 +224,26 @@ fun RecoverPasswordScreen(
                                 fontWeight = FontWeight.SemiBold,
                                 letterSpacing = 0.1.sp
                             )
-                            Text("Requerido", color = MutedText, fontSize = 11.sp, letterSpacing = 0.5.sp)
+                            Text(stringResource(R.string.field_required), color = MutedText, fontSize = 11.sp, letterSpacing = 0.5.sp)
                         }
                         FormTextField(
                             value = state.email,
                             onValueChange = viewModel::onEmailChange,
-                            placeholder = "ejemplo@akjevents.co",
+                            placeholder = stringResource(R.string.recover_email_placeholder),
                             leadingIcon = Icons.Outlined.Mail,
                             isError = state.emailError != null,
                             style = RecoverFieldStyle,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Send),
                             keyboardActions = KeyboardActions(onSend = { send() })
                         )
-                        FormFieldError(state.emailError)
+                        FormFieldError(state.emailError?.asString())
                     }
                     PrimaryButton(
-                        text = "Enviar enlace de recuperación",
+                        text = stringResource(R.string.recover_button),
                         leadingIcon = Icons.AutoMirrored.Outlined.Send,
                         enabled = state.isFormValid,
                         isLoading = state.isBusy,
-                        loadingText = "Enviando...",
+                        loadingText = stringResource(R.string.recover_loading),
                         containerColor = Terracotta,
                         shape = RoundedCornerShape(8.dp),
                         fontWeight = FontWeight.SemiBold,
@@ -255,7 +257,7 @@ fun RecoverPasswordScreen(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("¿Recordaste tu contraseña?", color = MutedText, fontSize = 14.sp, letterSpacing = 0.25.sp)
+                Text(stringResource(R.string.recover_remembered), color = MutedText, fontSize = 14.sp, letterSpacing = 0.25.sp)
                 Row(
                     modifier = Modifier
                         .padding(start = 4.dp)
@@ -264,7 +266,7 @@ fun RecoverPasswordScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text("Iniciar sesión", color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.recover_sign_in), color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = Terracotta, modifier = Modifier.size(16.dp))
                 }
             }

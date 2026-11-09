@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,6 +58,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CenterPin
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
@@ -124,8 +126,8 @@ fun PickLocationScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ScreenHeader(
-                title = "Seleccionar ubicación",
-                kicker = "Mapa",
+                title = stringResource(R.string.pick_title),
+                kicker = stringResource(R.string.nav_map),
                 onBack = onBack,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
@@ -140,7 +142,7 @@ fun PickLocationScreen(
             FormTextField(
                 value = state.query,
                 onValueChange = viewModel::onQueryChange,
-                placeholder = "Buscar parque, plaza o lugar...",
+                placeholder = stringResource(R.string.pick_search_placeholder),
                 leadingIcon = Icons.Outlined.Search,
                 style = SearchStyle,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -151,7 +153,7 @@ fun PickLocationScreen(
                 trailingContent = if (state.query.isNotEmpty()) {
                     {
                         IconButton(onClick = { viewModel.onQueryChange("") }) {
-                            Icon(Icons.Outlined.Close, contentDescription = "Borrar búsqueda", tint = MutedText)
+                            Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.home_clear_search), tint = MutedText)
                         }
                     }
                 } else null,
@@ -197,16 +199,18 @@ fun PickLocationScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(Icons.Outlined.PanTool, contentDescription = null, tint = WarmText, modifier = Modifier.size(16.dp))
-                    Text("Mueve el mapa o toca un punto", color = WarmText, fontSize = 12.sp)
+                    Text(stringResource(R.string.pick_hint), color = WarmText, fontSize = 12.sp)
                 }
             }
 
+            val coordinatesLabel = stringResource(R.string.pick_coordinates)
+            val copiedMessage = stringResource(R.string.pick_coordinates_copied)
             SelectionCard(
                 state = state,
                 onCopy = {
                     scope.launch {
-                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Coordenadas", state.selected.coordinatesText())))
-                        snackbarHostState.showSnackbar("Coordenadas copiadas")
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(coordinatesLabel, state.selected.coordinatesText())))
+                        snackbarHostState.showSnackbar(copiedMessage)
                     }
                 },
                 onConfirm = { onConfirm(viewModel.result()) }
@@ -234,7 +238,7 @@ private fun SelectionCard(state: PickLocationUiState, onCopy: () -> Unit, onConf
                 Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = Terracotta)
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text("PUNTO SELECCIONADO", color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(stringResource(R.string.pick_selected_point), color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 Text(state.placeName ?: state.address, color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 2)
                 Text(state.city, color = MutedText, fontSize = 12.sp)
             }
@@ -244,11 +248,11 @@ private fun SelectionCard(state: PickLocationUiState, onCopy: () -> Unit, onConf
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f).padding(vertical = 8.dp)) {
-                Text("COORDENADAS GPS", color = MutedText, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(stringResource(R.string.pick_gps_coordinates), color = MutedText, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 Text(state.selected.coordinatesText(), color = WarmText, fontSize = 13.sp, fontFamily = FontFamily.Monospace)
             }
             IconButton(onClick = onCopy) {
-                Icon(Icons.Outlined.ContentCopy, contentDescription = "Copiar coordenadas", tint = Terracotta, modifier = Modifier.size(20.dp))
+                Icon(Icons.Outlined.ContentCopy, contentDescription = stringResource(R.string.pick_copy_coordinates), tint = Terracotta, modifier = Modifier.size(20.dp))
             }
         }
         if (state.placeName != null) {
@@ -258,11 +262,11 @@ private fun SelectionCard(state: PickLocationUiState, onCopy: () -> Unit, onConf
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(Icons.Outlined.VerifiedUser, contentDescription = null, tint = OnSecondaryFixedVariant, modifier = Modifier.size(18.dp))
-                Text("Lugar público reconocido, accesible para la comunidad.", color = OnSecondaryFixedVariant, fontSize = 12.sp)
+                Text(stringResource(R.string.pick_public_place), color = OnSecondaryFixedVariant, fontSize = 12.sp)
             }
         }
         PrimaryButton(
-            text = "Confirmar ubicación",
+            text = stringResource(R.string.pick_confirm),
             onClick = onConfirm,
             leadingIcon = Icons.Outlined.CheckCircle,
             containerColor = Terracotta

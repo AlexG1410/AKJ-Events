@@ -2,6 +2,7 @@ package co.edu.uniquindio.akjevents.data.demo
 
 import co.edu.uniquindio.akjevents.domain.model.AppNotification
 import co.edu.uniquindio.akjevents.domain.model.Attendance
+import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.Comment
 import co.edu.uniquindio.akjevents.domain.model.Interest
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
@@ -37,46 +38,44 @@ object SampleParticipation {
             id = "notificacion-1",
             userId = "user-1",
             type = NotificationType.NEW_COMMENT,
-            title = "Nueva pregunta en tu evento",
-            message = "Junta de Acción Comunal Centro comentó en «Cine foro al parque»: «¿Hay que llevar silla o habrá dónde sentarse?»",
             createdAt = now.minusHours(3),
-            eventId = "cine-foro"
+            eventId = "cine-foro",
+            eventTitle = "Cine foro al parque",
+            actorName = "Junta de Acción Comunal Centro",
+            detail = "¿Hay que llevar silla o habrá dónde sentarse?"
         ),
         AppNotification(
             id = "notificacion-2",
             userId = "user-1",
             type = NotificationType.REMINDER,
-            title = "Recordatorio: mañana es el Ciclopaseo nocturno",
-            message = "Recuerda tener a mano tu código QR para el check-in rápido en la Plaza de Bolívar a las 7:00 PM.",
             createdAt = now.minusHours(1),
-            eventId = "ciclopaseo"
+            eventId = "ciclopaseo",
+            eventTitle = "Ciclopaseo nocturno por Armenia"
         ),
         AppNotification(
             id = "notificacion-3",
             userId = "user-1",
             type = NotificationType.EVENT_REJECTED,
-            title = "Revisión requerida: Torneo Nocturno de Voleibol Callejero",
-            message = "Motivo: Lugar no disponible o sin permiso municipal. Ajusta el evento y envíalo de nuevo.",
             createdAt = now.minusDays(1),
-            eventId = "voleibol-callejero"
+            eventId = "voleibol-callejero",
+            eventTitle = "Torneo Nocturno de Voleibol Callejero",
+            detail = "Lugar no disponible o sin permiso municipal. Ajusta el evento y envíalo de nuevo."
         ),
         AppNotification(
             id = "notificacion-4",
             userId = "user-1",
             type = NotificationType.EVENT_VERIFIED,
-            title = "¡Tu evento ha sido aprobado y publicado!",
-            message = "«Cine foro al parque» superó la revisión y ya es visible para la comunidad.",
             createdAt = now.minusDays(2),
             eventId = "cine-foro",
+            eventTitle = "Cine foro al parque",
             isRead = true
         ),
         AppNotification(
             id = "notificacion-5",
             userId = "user-1",
             type = NotificationType.BADGE_UNLOCKED,
-            title = "Nueva insignia: Primer aporte",
-            message = "Comentaste por primera vez en un evento. ¡Sigue participando!",
             createdAt = now.minusDays(9),
+            badge = Badge.FIRST_COMMENT,
             isRead = true
         )
     )

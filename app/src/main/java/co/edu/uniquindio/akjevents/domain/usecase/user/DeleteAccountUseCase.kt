@@ -11,7 +11,7 @@ class DeleteAccountUseCase @Inject constructor(
     private val eventRepository: EventRepository,
     private val notificationRepository: NotificationRepository
 ) {
-    operator fun invoke(userId: String): Boolean {
+    suspend operator fun invoke(userId: String): Boolean {
         if (userRepository.findById(userId) == null) return false
         eventRepository.removeUserData(userId)
         notificationRepository.deleteForUser(userId)

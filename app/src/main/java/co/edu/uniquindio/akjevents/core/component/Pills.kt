@@ -21,9 +21,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.ErrorColor
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.OnSecondaryFixedVariant
@@ -34,6 +36,7 @@ import co.edu.uniquindio.akjevents.core.theme.SurfaceContainer
 import co.edu.uniquindio.akjevents.core.theme.SurfaceContainerHigh
 import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmText
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 
 /** Píldora de filtro (categorías, pestañas de estado...). Con [count] muestra un contador. */
@@ -86,7 +89,7 @@ fun StatusBadge(status: EventStatus, modifier: Modifier = Modifier) {
         EventStatus.REJECTED -> Triple(Icons.Outlined.Cancel, Color(0xFFFFDAD6), ErrorColor)
         EventStatus.FINISHED -> Triple(Icons.Outlined.Flag, SurfaceContainerHigh, MutedText)
     }
-    Tag(text = status.label, icon = icon, container = container, content = content, modifier = modifier)
+    Tag(text = stringResource(status.labelRes), icon = icon, container = container, content = content, modifier = modifier)
 }
 
 /** Etiqueta redondeada pequeña con ícono opcional. */

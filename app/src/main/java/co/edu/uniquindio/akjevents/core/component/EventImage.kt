@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import coil3.compose.AsyncImage
@@ -13,7 +14,7 @@ import coil3.compose.AsyncImage
 fun EventImage(event: CommunityEvent, modifier: Modifier = Modifier) {
     AsyncImage(
         model = event.imageUrls.first(),
-        contentDescription = "Imagen del evento ${event.title}",
+        contentDescription = stringResource(R.string.event_image_description, event.title),
         contentScale = ContentScale.Crop,
         placeholder = painterResource(R.drawable.event_placeholder),
         error = painterResource(R.drawable.event_placeholder),

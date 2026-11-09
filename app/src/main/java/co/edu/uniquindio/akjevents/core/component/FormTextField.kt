@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.BrandBorder
 import co.edu.uniquindio.akjevents.core.theme.BrandDark
 import co.edu.uniquindio.akjevents.core.theme.BrandFieldFill
@@ -184,7 +186,7 @@ fun PasswordFormTextField(
             IconButton(onClick = onTogglePasswordVisibility, modifier = Modifier.size(40.dp)) {
                 Icon(
                     imageVector = if (isPasswordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                    contentDescription = if (isPasswordVisible) "Ocultar contraseña" else "Mostrar contraseña",
+                    contentDescription = stringResource(if (isPasswordVisible) R.string.password_hide else R.string.password_show),
                     tint = style.iconColor,
                     modifier = Modifier.size(style.iconSize)
                 )

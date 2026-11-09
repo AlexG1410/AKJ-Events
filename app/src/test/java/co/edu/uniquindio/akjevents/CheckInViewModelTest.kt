@@ -5,6 +5,7 @@ import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
 import co.edu.uniquindio.akjevents.domain.usecase.participation.CheckInResult
 import co.edu.uniquindio.akjevents.features.checkin.CheckInTab
 import co.edu.uniquindio.akjevents.features.checkin.CheckInViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -19,11 +20,11 @@ class CheckInViewModelTest {
     private val repos = TestRepositories()
 
     private fun checkInViewModel(eventId: String?, showMyQr: Boolean) = repos.useCases.let {
-        CheckInViewModel(eventId, showMyQr, it.observeCurrentUser, it.observePublicEvents, it.observeAttendances, it.getPublicEventById, it.getUserById, it.checkIn)
+        CheckInViewModel(eventId, showMyQr, it.observeCurrentUser, it.observePublicEvents, it.observeAttendances, it.getPublicEventById, it.getUserById, it.checkIn, TestResourceProvider)
     }
 
     @Test
-    fun confirmedEventsWaitForTheirCheckIn() {
+    fun confirmedEventsWaitForTheirCheckIn() = runTest {
         val viewModel = checkInViewModel(null, false)
 
         // El usuario de demostración tiene asistencia confirmada a la feria
@@ -31,7 +32,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun scanningAConfirmedEventRegistersTheAttendance() {
+    fun scanningAConfirmedEventRegistersTheAttendance() = runTest {
         val viewModel = checkInViewModel(null, false)
         val points = repos.pointsOf(DEMO_USER)
 
@@ -45,7 +46,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun invalidCodeShowsAnError() {
+    fun invalidCodeShowsAnError() = runTest {
         val viewModel = checkInViewModel(null, false)
 
         viewModel.validate()
@@ -59,7 +60,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun aPreselectedEventFillsItsCodeAndMyQrCanOpenFirst() {
+    fun aPreselectedEventFillsItsCodeAndMyQrCanOpenFirst() = runTest {
         val code = repos.events.findEvent("ciclopaseo")!!.checkInCode
 
         assertEquals(code, checkInViewModel("ciclopaseo", false).uiState.value.code)

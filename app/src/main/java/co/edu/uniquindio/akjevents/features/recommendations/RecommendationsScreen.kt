@@ -18,8 +18,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.ContentCard
 import co.edu.uniquindio.akjevents.core.component.RecommendedEventCard
 import co.edu.uniquindio.akjevents.core.component.ScreenHeader
@@ -38,7 +40,7 @@ fun RecommendationsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, vie
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item { ScreenHeader(title = "Recomendados para ti", onBack = onBack, subtitle = "Selección local según tus preferencias y actividad") }
+            item { ScreenHeader(title = stringResource(R.string.recommendations_title), onBack = onBack, subtitle = stringResource(R.string.recommendations_subtitle)) }
             when {
                 state.isLoading -> item { CircularProgressIndicator() }
                 feed.items.isEmpty() -> item { RecommendationsEmpty() }
@@ -62,7 +64,7 @@ fun RecommendationsPreview(viewModel: RecommendationsViewModel, onViewAll: () ->
     val feed = viewModel.visibleFeed(state.feed)
     LaunchedEffect(Unit) { viewModel.refresh() }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        SectionTitle("Recomendados para ti", modifier = Modifier.padding(horizontal = 16.dp), action = "Ver todos", onAction = onViewAll)
+        SectionTitle(stringResource(R.string.recommendations_title), modifier = Modifier.padding(horizontal = 16.dp), action = stringResource(R.string.action_see_all), onAction = onViewAll)
         when {
             state.isLoading -> CircularProgressIndicator(modifier = Modifier.padding(horizontal = 16.dp))
             feed.items.isEmpty() -> RecommendationsEmpty(Modifier.padding(horizontal = 16.dp))
@@ -83,13 +85,13 @@ fun RecommendationsPreview(viewModel: RecommendationsViewModel, onViewAll: () ->
 
 @Composable
 private fun DiscoveryHint(modifier: Modifier = Modifier) {
-    Text("Para empezar, te mostramos opciones cercanas y variadas. Elige intereses en tu perfil o marca «Me interesa» para afinar la selección.", modifier = modifier.fillMaxWidth(), color = MutedText, fontSize = 13.sp)
+    Text(stringResource(R.string.recommendations_starter), modifier = modifier.fillMaxWidth(), color = MutedText, fontSize = 13.sp)
 }
 
 @Composable
 private fun RecommendationsEmpty(modifier: Modifier = Modifier) {
     ContentCard(modifier) {
-        SectionTitle("No hay nuevas recomendaciones")
-        Text("Por ahora no hay eventos próximos con cupo que puedas descubrir. Los tuyos y aquellos a los que ya confirmaste asistencia no se incluyen. Vuelve más tarde para ver nuevas publicaciones verificadas.", color = MutedText, fontSize = 13.sp)
+        SectionTitle(stringResource(R.string.recommendations_empty_title))
+        Text(stringResource(R.string.recommendations_empty_message), color = MutedText, fontSize = 13.sp)
     }
 }

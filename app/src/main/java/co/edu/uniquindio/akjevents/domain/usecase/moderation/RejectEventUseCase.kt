@@ -13,7 +13,7 @@ class RejectEventUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val notificationRepository: NotificationRepository
 ) {
-    operator fun invoke(eventId: String, moderatorId: String, reason: String): Boolean {
+    suspend operator fun invoke(eventId: String, moderatorId: String, reason: String): Boolean {
         val event = eventRepository.findEvent(eventId) ?: return false
         val isModerator = userRepository.findById(moderatorId)?.isModerator == true
         if (event.status != EventStatus.PENDING || reason.isBlank() || !isModerator) return false
@@ -21,9 +21,9 @@ class RejectEventUseCase @Inject constructor(
         notificationRepository.notify(
             userId = event.organizerId,
             type = NotificationType.EVENT_REJECTED,
-            title = "Revisión requerida: ${event.title}",
-            message = "Motivo: ${rejected.rejectionReason}",
-            eventId = eventId
+            eventId = eventId,
+            eventTitle = event.title,
+            detail = rejected.rejectionReason
         )
         return true
     }

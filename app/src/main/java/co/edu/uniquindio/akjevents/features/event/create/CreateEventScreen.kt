@@ -92,6 +92,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -125,6 +126,7 @@ import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import coil3.compose.AsyncImage
@@ -219,8 +221,8 @@ fun CreateEventScreen(
         if (!state.canSubmit) {
             EmptyState(
                 icon = Icons.Outlined.EditOff,
-                title = "No puedes editar este evento",
-                message = "Solo su organizador puede editarlo, y los eventos finalizados ya no se modifican.",
+                title = stringResource(R.string.create_cannot_edit_title),
+                message = stringResource(R.string.create_cannot_edit_message),
                 modifier = Modifier.padding(innerPadding)
             )
             return@Scaffold
@@ -263,12 +265,12 @@ fun CreateEventScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 4.dp)) {
                 PrimaryButton(
-                    text = if (state.isEditing) "Guardar cambios" else "Enviar para verificación",
+                    text = stringResource(if (state.isEditing) R.string.create_save_changes else R.string.create_submit),
                     onClick = viewModel::submit,
                     leadingIcon = if (state.isEditing) Icons.Outlined.Save else null,
                     trailingIcon = if (state.isEditing) null else Icons.AutoMirrored.Outlined.Send,
                     isLoading = state.isBusy,
-                    loadingText = if (state.isEditing) "Guardando..." else "Enviando...",
+                    loadingText = stringResource(if (state.isEditing) R.string.create_saving else R.string.recover_loading),
                     containerColor = Terracotta,
                     shape = CircleShape,
                     modifier = Modifier.shadow(8.dp, CircleShape, ambientColor = Terracotta, spotColor = Terracotta)
@@ -282,7 +284,7 @@ fun CreateEventScreen(
                     Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.Close, contentDescription = null, tint = WarmText, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(if (state.isEditing) "Cancelar edición" else "Cancelar", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(if (state.isEditing) R.string.create_cancel_edit else R.string.action_cancel), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -312,7 +314,7 @@ fun CreateEventScreen(
             ?: state.startsAt?.takeIf { field == DateTimeField.END }?.toLocalTime()?.plusHours(2)
             ?: LocalTime.of(9, 0)
         EventTimePickerDialog(
-            title = if (field == DateTimeField.START) "Hora de inicio" else "Hora de fin",
+            title = stringResource(if (field == DateTimeField.START) R.string.create_start_time else R.string.create_end_time),
             initialTime = suggested,
             onDismiss = { timePickerField = null },
             onConfirm = { time ->
@@ -328,18 +330,15 @@ fun CreateEventScreen(
         AlertDialog(
             onDismissRequest = { showHelp = false },
             containerColor = SurfaceContainerLow,
-            title = { Text("Guía para publicar", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.create_help_title), fontWeight = FontWeight.Bold) },
             text = {
                 Text(
-                    "• Usa un título claro y una descripción con lo que deben llevar los asistentes.\n" +
-                        "• Elige el punto exacto en el mapa para que la comunidad llegue sin problema.\n" +
-                        "• Los eventos deben ser reales, gratuitos o de bajo costo y respetar las Normas Comunitarias.\n" +
-                        "• Un moderador revisa cada evento nuevo o editado antes de publicarlo.",
+                    stringResource(R.string.create_help_message),
                     fontSize = 14.sp,
                     lineHeight = 20.sp
                 )
             },
-            confirmButton = { TextButton(onClick = { showHelp = false }) { Text("Entendido") } }
+            confirmButton = { TextButton(onClick = { showHelp = false }) { Text(stringResource(R.string.action_got_it)) } }
         )
     }
 }
@@ -359,7 +358,7 @@ private fun CreateEventTopBar(isEditing: Boolean, onBack: () -> Unit, onHelp: ()
             Box(contentAlignment = Alignment.Center) {
                 Icon(
                     Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = "Volver a la pantalla anterior",
+                    contentDescription = stringResource(R.string.recover_back),
                     tint = WarmText,
                     modifier = Modifier.size(20.dp)
                 )
@@ -367,17 +366,17 @@ private fun CreateEventTopBar(isEditing: Boolean, onBack: () -> Unit, onHelp: ()
         }
         Column(modifier = Modifier.weight(1f)) {
             if (isEditing) {
-                Text("EDICIÓN ACTIVA", color = Terracotta, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(stringResource(R.string.create_editing), color = Terracotta, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
             }
             Text(
-                if (isEditing) "Editar Evento" else "Crear Evento",
+                stringResource(if (isEditing) R.string.create_edit_title else R.string.create_title),
                 color = WarmText,
                 fontSize = 22.sp,
                 lineHeight = 28.sp,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                if (isEditing) "Los cambios pasan de nuevo por moderación" else "Publica para la comunidad local",
+                stringResource(if (isEditing) R.string.create_edit_subtitle else R.string.create_subtitle),
                 color = MutedText,
                 fontSize = 11.sp,
                 lineHeight = 16.sp,
@@ -385,7 +384,7 @@ private fun CreateEventTopBar(isEditing: Boolean, onBack: () -> Unit, onHelp: ()
             )
         }
         IconButton(onClick = onHelp, modifier = Modifier.size(36.dp)) {
-            Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = "Guía y ayuda", tint = MutedText, modifier = Modifier.size(18.dp))
+            Icon(Icons.AutoMirrored.Outlined.HelpOutline, contentDescription = stringResource(R.string.create_help), tint = MutedText, modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -463,9 +462,9 @@ private fun StepIndicator(isInfoComplete: Boolean, isScheduleComplete: Boolean) 
             }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Step(number = 1, label = "Info", icon = Icons.Outlined.EditNote, status = status(0))
-            Step(number = 2, label = "Fecha", icon = Icons.Outlined.Event, status = status(1))
-            Step(number = 3, label = "Cupos", icon = Icons.Outlined.PeopleAlt, status = status(2))
+            Step(number = 1, label = stringResource(R.string.create_step_info), icon = Icons.Outlined.EditNote, status = status(0))
+            Step(number = 2, label = stringResource(R.string.create_step_date), icon = Icons.Outlined.Event, status = status(1))
+            Step(number = 3, label = stringResource(R.string.create_step_capacity), icon = Icons.Outlined.PeopleAlt, status = status(2))
         }
     }
 }
@@ -495,7 +494,7 @@ private fun Step(number: Int, label: String, icon: ImageVector, status: StepStat
             }
         }
         Text(
-            "$number. $label",
+            stringResource(R.string.create_step_label, number, label),
             color = when (status) {
                 StepStatus.DONE -> Sage
                 StepStatus.ACTIVE -> Terracotta
@@ -516,16 +515,16 @@ private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventVi
             icon = Icons.Outlined.EditNote,
             iconContainer = PrimaryFixed,
             iconTint = OnPrimaryFixedVariant,
-            title = "Información Básica",
-            subtitle = "Define el tema y propósito del encuentro"
+            title = stringResource(R.string.create_basic_info),
+            subtitle = stringResource(R.string.create_basic_info_subtitle)
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            FieldLabel("Título del evento *")
+            FieldLabel(stringResource(R.string.create_field_title))
             FormTextField(
                 value = state.title,
                 onValueChange = viewModel::onTitleChange,
-                placeholder = "Escribe un título claro y llamativo",
+                placeholder = stringResource(R.string.create_title_placeholder),
                 leadingIcon = null,
                 style = CreateFieldStyle,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Next),
@@ -543,7 +542,7 @@ private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventVi
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldLabel("Categoría comunitaria *")
+            FieldLabel(stringResource(R.string.create_field_category))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 EventCategory.entries.forEach { category ->
                     CategoryOption(
@@ -557,9 +556,9 @@ private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventVi
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                FieldLabel("Descripción del evento *", modifier = Modifier.weight(1f))
+                FieldLabel(stringResource(R.string.create_field_description), modifier = Modifier.weight(1f))
                 Text(
-                    "${state.description.length} / ${CreateEventViewModel.MAX_DESCRIPTION_LENGTH}",
+                    stringResource(R.string.create_character_count, state.description.length, CreateEventViewModel.MAX_DESCRIPTION_LENGTH),
                     color = OutlineColor,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
@@ -569,7 +568,7 @@ private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventVi
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(Icons.Outlined.Lightbulb, contentDescription = null, tint = Sage, modifier = Modifier.size(14.dp))
                 Text(
-                    "Consejo: Menciona qué deben llevar y el nivel de experiencia requerido.",
+                    stringResource(R.string.create_description_tip),
                     color = Sage,
                     fontSize = 11.sp,
                     lineHeight = 16.sp,
@@ -597,9 +596,9 @@ private fun CategoryOption(category: EventCategory, isSelected: Boolean, onClick
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Icon(category.formIcon, contentDescription = null, tint = contentColor, modifier = Modifier.size(16.dp))
-            Text(category.label, color = contentColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(category.labelRes), color = contentColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             if (isSelected) {
-                Icon(Icons.Outlined.Done, contentDescription = "Seleccionada", tint = contentColor, modifier = Modifier.size(14.dp))
+                Icon(Icons.Outlined.Done, contentDescription = stringResource(R.string.create_selected), tint = contentColor, modifier = Modifier.size(14.dp))
             }
         }
     }
@@ -629,7 +628,7 @@ private fun DescriptionField(value: String, onValueChange: (String) -> Unit) {
                     .padding(12.dp)
             ) {
                 if (value.isEmpty()) {
-                    Text("Explica qué aprenderán o experimentarán las personas...", style = CreateFieldStyle.textStyle.copy(color = OutlineColor))
+                    Text(stringResource(R.string.create_description_placeholder), style = CreateFieldStyle.textStyle.copy(color = OutlineColor))
                 }
                 innerTextField()
             }
@@ -642,8 +641,8 @@ private fun DescriptionField(value: String, onValueChange: (String) -> Unit) {
 private fun EventImagePicker(imageUrl: String, onChangeImage: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            FieldLabel("Fotografía del evento *", modifier = Modifier.weight(1f))
-            Text("Imagen temporal", color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            FieldLabel(stringResource(R.string.create_field_photo), modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.create_temporary_image), color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(
@@ -655,7 +654,7 @@ private fun EventImagePicker(imageUrl: String, onChangeImage: () -> Unit) {
             ) {
                 AsyncImage(
                     model = imageUrl,
-                    contentDescription = "Imagen del evento",
+                    contentDescription = stringResource(R.string.create_event_image),
                     contentScale = ContentScale.Crop,
                     placeholder = painterResource(R.drawable.event_placeholder),
                     error = painterResource(R.drawable.event_placeholder),
@@ -667,7 +666,7 @@ private fun EventImagePicker(imageUrl: String, onChangeImage: () -> Unit) {
                         .background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.5f)))
                 )
                 Text(
-                    "Foto Principal",
+                    stringResource(R.string.create_main_photo),
                     color = Color.White,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
@@ -696,8 +695,8 @@ private fun EventImagePicker(imageUrl: String, onChangeImage: () -> Unit) {
                         Icon(Icons.Outlined.Autorenew, contentDescription = null, tint = OnSecondaryFixedVariant, modifier = Modifier.size(20.dp))
                     }
                     Spacer(Modifier.height(4.dp))
-                    Text("Cambiar imagen", color = WarmText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                    Text("Aleatoria", color = OutlineColor, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.create_change_image), color = WarmText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.create_random), color = OutlineColor, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -717,8 +716,8 @@ private fun ScheduleSection(
             icon = Icons.Outlined.Place,
             iconContainer = SecondaryFixed,
             iconTint = OnSecondaryFixedVariant,
-            title = "Fecha, Hora y Espacio",
-            subtitle = "Cuándo y dónde se reunirán"
+            title = stringResource(R.string.create_schedule),
+            subtitle = stringResource(R.string.create_schedule_subtitle)
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -727,8 +726,8 @@ private fun ScheduleSection(
             DateTimeRow(
                 icon = Icons.Outlined.Schedule,
                 iconTint = Terracotta,
-                label = "Comienza *",
-                date = startsAt?.let(EventFormat::weekdayFullDate),
+                label = stringResource(R.string.create_starts),
+                date = startsAt?.let { EventFormat.weekdayFullDate(it) },
                 time = startsAt?.let(EventFormat::timeOfDay),
                 timeColor = Sage,
                 onChange = onPickStart
@@ -736,8 +735,8 @@ private fun ScheduleSection(
             DateTimeRow(
                 icon = Icons.Outlined.EventAvailable,
                 iconTint = MutedText,
-                label = "Finaliza *",
-                date = endsAt?.let(EventFormat::weekdayFullDate),
+                label = stringResource(R.string.create_ends),
+                date = endsAt?.let { EventFormat.weekdayFullDate(it) },
                 time = endsAt?.let {
                     if (startsAt != null && it.isAfter(startsAt)) EventFormat.timeWithDuration(startsAt, it) else EventFormat.timeOfDay(it)
                 },
@@ -747,11 +746,11 @@ private fun ScheduleSection(
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldLabel("Lugar o punto de encuentro *")
+            FieldLabel(stringResource(R.string.create_field_place))
             FormTextField(
                 value = state.place,
                 onValueChange = onPlaceChange,
-                placeholder = "Ej: Parque de la Vida, Av. Bolívar, Armenia",
+                placeholder = stringResource(R.string.create_place_placeholder),
                 leadingIcon = Icons.Outlined.LocationOn,
                 style = PlaceFieldStyle,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done)
@@ -766,7 +765,7 @@ private fun ScheduleSection(
 @Composable
 private fun LocationPickerRow(location: Location?, onPick: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        FieldLabel("Ubicación en el mapa *")
+        FieldLabel(stringResource(R.string.create_field_map))
         Surface(
             onClick = onPick,
             shape = RoundedCornerShape(8.dp),
@@ -786,20 +785,20 @@ private fun LocationPickerRow(location: Location?, onPick: () -> Unit) {
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        if (location != null) "Coordenadas verificadas" else "Elegir en el mapa",
+                        stringResource(if (location != null) R.string.create_coordinates_verified else R.string.create_choose_on_map),
                         color = if (location != null) OnSecondaryFixedVariant else WarmText,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        location?.let { "Lat ${"%.4f".format(Locale.US, it.latitude)}, Lon ${"%.4f".format(Locale.US, it.longitude)}" }
-                            ?: "Marca el punto exacto del encuentro",
+                        location?.let { stringResource(R.string.detail_coordinates, "%.4f".format(Locale.US, it.latitude), "%.4f".format(Locale.US, it.longitude)) }
+                            ?: stringResource(R.string.create_mark_point),
                         color = MutedText,
                         fontSize = 12.sp
                     )
                 }
                 Text(
-                    if (location != null) "Ajustar pin" else "Abrir mapa",
+                    stringResource(if (location != null) R.string.create_adjust_pin else R.string.create_open_map),
                     color = Terracotta,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
@@ -832,12 +831,12 @@ private fun DateTimeRow(
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(label.uppercase(), color = MutedText, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp)
-            Text(date ?: "Sin definir", color = if (date != null) WarmText else OutlineColor, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold)
-            Text(time ?: "Elige fecha y hora", color = if (time != null) timeColor else OutlineColor, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
+            Text(date ?: stringResource(R.string.create_not_set), color = if (date != null) WarmText else OutlineColor, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold)
+            Text(time ?: stringResource(R.string.create_choose_date_time), color = if (time != null) timeColor else OutlineColor, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
         }
         Surface(onClick = onChange, shape = CircleShape, color = SurfaceContainer) {
             Text(
-                if (date != null) "Cambiar" else "Elegir",
+                stringResource(if (date != null) R.string.home_change else R.string.create_choose),
                 color = WarmText,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -861,8 +860,8 @@ private fun CapacitySection(
             icon = Icons.Outlined.PeopleAlt,
             iconContainer = TertiaryFixed,
             iconTint = Color(0xFF241A00),
-            title = "Participación y Capacidad",
-            subtitle = "Regula el acceso y la convivencia"
+            title = stringResource(R.string.create_capacity_section),
+            subtitle = stringResource(R.string.create_capacity_subtitle)
         )
 
         Row(
@@ -873,8 +872,8 @@ private fun CapacitySection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                Text("Limitar cupo de asistentes", color = WarmText, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold)
-                Text("Cierra inscripciones al completarse", color = MutedText, fontSize = 12.sp, lineHeight = 16.sp)
+                Text(stringResource(R.string.create_limit_capacity), color = WarmText, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.create_limit_capacity_hint), color = MutedText, fontSize = 12.sp, lineHeight = 16.sp)
             }
             Switch(
                 checked = limitCapacity,
@@ -890,7 +889,7 @@ private fun CapacitySection(
 
         AnimatedVisibility(visible = limitCapacity) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                FieldLabel("Cupo máximo disponible *")
+                FieldLabel(stringResource(R.string.create_field_capacity))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     FormTextField(
                         value = capacity,
@@ -900,17 +899,17 @@ private fun CapacitySection(
                         style = CapacityFieldStyle,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                         trailingContent = {
-                            Text("personas", color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(end = 12.dp))
+                            Text(stringResource(R.string.create_people), color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(end = 12.dp))
                         },
                         modifier = Modifier.weight(1f)
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        StepperButton(text = "-", description = "Disminuir cupo", onClick = onDecrease)
-                        StepperButton(text = "+", description = "Aumentar cupo", onClick = onIncrease)
+                        StepperButton(text = "-", description = stringResource(R.string.create_decrease_capacity), onClick = onDecrease)
+                        StepperButton(text = "+", description = stringResource(R.string.create_increase_capacity), onClick = onIncrease)
                     }
                 }
                 Text(
-                    "Cuando se llene el cupo, nadie más podrá confirmar asistencia.",
+                    stringResource(R.string.create_capacity_full_hint),
                     color = OutlineColor,
                     fontSize = 11.sp,
                     lineHeight = 16.sp,
@@ -950,10 +949,9 @@ private fun ModerationNotice() {
             Icon(Icons.Outlined.VerifiedUser, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
         }
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Tu evento será revisado por un moderador", color = OnSecondaryFixed, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.create_review_title), color = OnSecondaryFixed, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold)
             Text(
-                "Garantizamos que todos los encuentros en AKJ Events cumplan las normas comunitarias, sean inclusivos " +
-                    "y ofrezcan seguridad a los asistentes. Será público cuando un moderador lo apruebe.",
+                stringResource(R.string.create_review_message),
                 color = OnSecondaryFixedVariant,
                 fontSize = 12.sp,
                 lineHeight = 18.sp
@@ -992,9 +990,9 @@ private fun EventDatePickerDialog(
                     }
                 },
                 enabled = datePickerState.selectedDateMillis != null
-            ) { Text("Siguiente") }
+            ) { Text(stringResource(R.string.action_next)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } },
         colors = DatePickerDefaults.colors(containerColor = SurfaceContainerLow)
     ) {
         DatePicker(state = datePickerState, colors = DatePickerDefaults.colors(containerColor = SurfaceContainerLow))
@@ -1028,8 +1026,8 @@ private fun EventTimePickerDialog(
         },
         containerColor = SurfaceContainerLow,
         confirmButton = {
-            TextButton(onClick = { onConfirm(LocalTime.of(timePickerState.hour, timePickerState.minute)) }) { Text("Aceptar") }
+            TextButton(onClick = { onConfirm(LocalTime.of(timePickerState.hour, timePickerState.minute)) }) { Text(stringResource(R.string.action_accept)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) } }
     )
 }

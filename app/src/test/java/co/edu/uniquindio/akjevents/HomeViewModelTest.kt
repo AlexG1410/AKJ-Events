@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
@@ -23,7 +24,7 @@ class HomeViewModelTest {
     private fun visibleEvents() = viewModel.uiState.value.let { it.featuredEvents + it.upcomingEvents }
 
     @Test
-    fun feedOnlyShowsVerifiedEvents() {
+    fun feedOnlyShowsVerifiedEvents() = runTest {
         val events = visibleEvents()
 
         assertEquals(8, events.size)
@@ -32,7 +33,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun searchFiltersByTitleIgnoringCaseAndAccents() {
+    fun searchFiltersByTitleIgnoringCaseAndAccents() = runTest {
         viewModel.onQueryChange("CICLOPASEO")
         assertEquals(listOf("ciclopaseo"), visibleEvents().map { it.id })
 
@@ -41,14 +42,14 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun searchDoesNotRevealHiddenEvents() {
+    fun searchDoesNotRevealHiddenEvents() = runTest {
         viewModel.onQueryChange("Evento en revisión")
 
         assertFalse(viewModel.uiState.value.hasResults)
     }
 
     @Test
-    fun categoryAndSearchAreCombined() {
+    fun categoryAndSearchAreCombined() = runTest {
         viewModel.selectCategory(EventCategory.ACADEMIC)
         assertEquals(setOf("taller-kotlin", "hackaton-utp"), visibleEvents().map { it.id }.toSet())
 
@@ -60,7 +61,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun toggleInterestGoesThroughTheRepository() {
+    fun toggleInterestGoesThroughTheRepository() = runTest {
         val before = repository.findPublicEvent("feria-cultural")!!.interestCount
 
         viewModel.toggleInterest("feria-cultural")
@@ -73,7 +74,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun filtersStayAppliedWhenTheRepositoryChanges() {
+    fun filtersStayAppliedWhenTheRepositoryChanges() = runTest {
         viewModel.onQueryChange("kotlin")
 
         repository.confirmAttendance("ciclopaseo", TestRepositories.DEMO_USER)
@@ -82,7 +83,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun locationFilterKeepsOnlyNearbyOrSameCityEvents() {
+    fun locationFilterKeepsOnlyNearbyOrSameCityEvents() = runTest {
         viewModel.selectLocationFilter(LocationFilter.NEARBY)
         val nearby = visibleEvents().map { it.id }.toSet()
         assertFalse("caminata-cocora" in nearby)
@@ -99,13 +100,13 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun greetingUsesTheSessionUser() {
+    fun greetingUsesTheSessionUser() = runTest {
         assertEquals("Camilo", viewModel.uiState.value.userFirstName)
         assertEquals("Armenia, Quindío", viewModel.uiState.value.city)
     }
 
     @Test
-    fun featuredEventsFollowInterestVotesInsteadOfAttendance() {
+    fun featuredEventsFollowInterestVotesInsteadOfAttendance() = runTest {
         val template = repository.findPublicEvent("ciclopaseo")!!
         repository.createEvent(template.copy(id = "mas-votos", interestCount = 1000, attendanceCount = 0))
         repository.createEvent(template.copy(id = "mas-asistentes", interestCount = 0, attendanceCount = 100))
@@ -115,7 +116,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun changingVotesUpdatesFeaturedOrderAndTiesAreDeterministic() {
+    fun changingVotesUpdatesFeaturedOrderAndTiesAreDeterministic() = runTest {
         val template = repository.findPublicEvent("ciclopaseo")!!
         repository.createEvent(template.copy(id = "empate-a", interestCount = 1000))
         repository.createEvent(template.copy(id = "empate-b", interestCount = 1000))
@@ -127,7 +128,7 @@ class HomeViewModelTest {
     }
 
     @Test
-    fun cityFilterUsesCoordinatesInsteadOfAddressTextAndKeepsOtherFilters() {
+    fun cityFilterUsesCoordinatesInsteadOfAddressTextAndKeepsOtherFilters() = runTest {
         val template = repository.findPublicEvent("ciclopaseo")!!
         repository.createEvent(template.copy(
             id = "sin-ciudad-en-direccion", title = "Encuentro local", address = "Carrera 13 # 20-00",

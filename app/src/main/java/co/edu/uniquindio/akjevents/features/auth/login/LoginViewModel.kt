@@ -2,8 +2,11 @@ package co.edu.uniquindio.akjevents.features.auth.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
+import co.edu.uniquindio.akjevents.core.util.UiText
 import co.edu.uniquindio.akjevents.domain.usecase.auth.LoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -24,9 +27,9 @@ data class LoginUiState(
     val isModerator: Boolean = false
 ) {
     val isEmailValid: Boolean get() = FormValidation.isValidEmail(email)
-    val emailError: String?
+    val emailError: UiText?
         get() = if (email.isNotBlank() && !isEmailValid) FormValidation.INVALID_EMAIL_MESSAGE else null
-    val passwordError: String?
+    val passwordError: UiText?
         get() = if (password.isNotEmpty() && !FormValidation.isValidPassword(password)) {
             FormValidation.SHORT_PASSWORD_MESSAGE
         } else null
@@ -37,11 +40,12 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel(
     private val loginUseCase: LoginUseCase,
+    private val resources: ResourceProvider,
     private val simulatedRequestMs: Long
 ) : ViewModel() {
 
     @Inject
-    constructor(loginUseCase: LoginUseCase) : this(loginUseCase, SIMULATED_REQUEST_MS)
+    constructor(loginUseCase: LoginUseCase, resources: ResourceProvider) : this(loginUseCase, resources, SIMULATED_REQUEST_MS)
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -59,13 +63,13 @@ class LoginViewModel(
         if (state.isBusy) return
 
         val error = when {
-            state.email.isBlank() || state.password.isBlank() -> "Completa el correo y la contraseña"
+            state.email.isBlank() || state.password.isBlank() -> UiText(R.string.login_error_empty)
             !state.isEmailValid -> FormValidation.INVALID_EMAIL_MESSAGE
             !FormValidation.isValidPassword(state.password) -> FormValidation.SHORT_PASSWORD_MESSAGE
             else -> null
         }
         if (error != null) {
-            _uiState.update { it.copy(result = RequestResult.Failure(error)) }
+            _uiState.update { it.copy(result = RequestResult.Failure(error.asString(resources))) }
             return
         }
 
@@ -73,11 +77,15 @@ class LoginViewModel(
         viewModelScope.launch {
             // Las cuentas viven en memoria; con el backend las validará el servicio de autenticación
             delay(simulatedRequestMs)
-            val user = loginUseCase(state.email, state.password)
+            // Credenciales incorrectas devuelven null; un error (por ejemplo, sin conexión) lanza una excepción
+            val user = runCatching { loginUseCase(state.email, state.password) }.getOrElse {
+                _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(R.string.login_error))) }
+                return@launch
+            }
             val result = if (user != null) {
-                RequestResult.Success("¡Bienvenido de nuevo, ${user.firstName}!")
+                RequestResult.Success(resources.getString(R.string.login_success, user.firstName))
             } else {
-                RequestResult.Failure("Correo o contraseña incorrectos")
+                RequestResult.Failure(resources.getString(R.string.login_failure))
             }
             _uiState.update { it.copy(result = result, isModerator = user?.isModerator == true) }
         }
