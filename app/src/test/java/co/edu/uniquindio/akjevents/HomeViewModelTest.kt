@@ -1,8 +1,8 @@
 package co.edu.uniquindio.akjevents
 
+import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
-import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.features.home.HomeViewModel
 import co.edu.uniquindio.akjevents.features.home.LocationFilter
 import org.junit.Assert.assertEquals
@@ -18,7 +18,7 @@ class HomeViewModelTest {
     private val repos = TestRepositories()
     private val repository = repos.events
     // Perezoso: se crea dentro de la prueba, cuando MainDispatcherRule ya instaló el dispatcher
-    private val viewModel by lazy { HomeViewModel(repository, repos.users) }
+    private val viewModel by lazy { repos.useCases.let { HomeViewModel(it.observePublicEvents, it.observeInterests, it.observeCurrentUser, it.toggleInterest) } }
 
     private fun visibleEvents() = viewModel.uiState.value.let { it.featuredEvents + it.upcomingEvents }
 

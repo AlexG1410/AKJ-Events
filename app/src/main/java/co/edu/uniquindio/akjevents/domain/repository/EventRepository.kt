@@ -3,24 +3,20 @@ package co.edu.uniquindio.akjevents.domain.repository
 import co.edu.uniquindio.akjevents.domain.model.Attendance
 import co.edu.uniquindio.akjevents.domain.model.Comment
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
+import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.Interest
 import kotlinx.coroutines.flow.StateFlow
 
 enum class AttendanceResult { CONFIRMED, ALREADY_CONFIRMED, FULL, CLOSED, NOT_FOUND }
 
-sealed interface CheckInResult {
-    data class Success(val event: CommunityEvent, val pointsEarned: Int) : CheckInResult
-    data class AlreadyCheckedIn(val event: CommunityEvent) : CheckInResult
-    data class Full(val event: CommunityEvent) : CheckInResult
-    data class OwnEvent(val event: CommunityEvent) : CheckInResult
-    data object InvalidCode : CheckInResult
-}
+/** Resultado de guardar un check-in; los puntos los suma el caso de uso. */
+enum class CheckInRegistration { REGISTERED, ALREADY_CHECKED_IN, FULL, NOT_FOUND }
 
 /**
  * Fuente de los eventos y de la participación de los usuarios (asistencia, interés y comentarios).
- * Solo los eventos [co.edu.uniquindio.akjevents.domain.model.EventStatus.VERIFIED] son públicos:
- * el feed, la asistencia y el interés trabajan únicamente con ellos.
- * Las operaciones de gestión reciben quién las hace ([actorId]) y comprueban sus permisos.
+ * Solo guarda y consulta datos: los permisos, los puntos, las insignias y las notificaciones
+ * los aplican los casos de uso de `domain/usecase`.
+ * Solo los eventos [EventStatus.VERIFIED] son públicos: el feed, la asistencia y el interés trabajan únicamente con ellos.
  */
 interface EventRepository {
     /** Todos los eventos, en cualquier estado. Úsese solo para el organizador o el moderador. */
@@ -39,25 +35,32 @@ interface EventRepository {
 
     fun findPublicEvent(id: String): CommunityEvent?
 
+    /** Evento público cuyo QR de asistencia tiene ese código. */
+    fun findPublicEventByCheckInCode(code: String): CommunityEvent?
+
     /** Eventos creados por un usuario, en cualquier estado (pendientes y rechazados incluidos). */
     fun findEventsByOrganizer(organizerId: String): List<CommunityEvent>
 
     /** Guarda un evento nuevo. Si no está verificado, no aparece en [publicEvents]. */
     fun createEvent(event: CommunityEvent)
 
-    /** Solo el organizador puede editarlo. El evento vuelve a revisión. */
-    fun updateEvent(event: CommunityEvent, actorId: String): Boolean
+    /**
+     * Reemplaza los datos del evento. Conserva el organizador, los conteos y la fecha de creación.
+     * Devuelve el evento guardado, o null si no existe.
+     */
+    fun updateEvent(event: CommunityEvent): CommunityEvent?
 
-    /** Lo puede borrar su organizador o un moderador. */
-    fun deleteEvent(eventId: String, actorId: String): Boolean
+    /** Cambia el estado del evento; [rejectionReason] solo aplica a [EventStatus.REJECTED]. */
+    fun updateStatus(eventId: String, status: EventStatus, rejectionReason: String? = null): CommunityEvent?
 
-    fun verifyEvent(eventId: String, moderatorId: String): Boolean
+    /**
+     * Registra que el evento ya dio los puntos de su verificación. Devuelve false si ya los había dado,
+     * para que editarlo y volverlo a aprobar no los sume otra vez.
+     */
+    fun registerVerificationReward(eventId: String): Boolean
 
-    /** Rechazar exige un motivo, que se le notifica al organizador. */
-    fun rejectEvent(eventId: String, moderatorId: String, reason: String): Boolean
-
-    /** Lo puede finalizar su organizador o cualquier moderador. */
-    fun finishEvent(eventId: String, actorId: String): Boolean
+    /** Borra el evento con sus comentarios, asistencias e intereses. */
+    fun deleteEvent(eventId: String): Boolean
 
     /** Suma un asistente si hay cupo y el usuario no había confirmado antes. */
     fun confirmAttendance(eventId: String, userId: String): AttendanceResult
@@ -65,17 +68,14 @@ interface EventRepository {
     /** Devuelve false si el usuario no tenía asistencia confirmada o ya hizo check-in. */
     fun cancelAttendance(eventId: String, userId: String): Boolean
 
-    /** Valida el código QR de un evento y registra la asistencia presencial. */
-    fun checkIn(code: String, userId: String): CheckInResult
+    /** Registra la asistencia presencial; quien llega sin haber confirmado ocupa un cupo, si queda alguno. */
+    fun registerCheckIn(eventId: String, userId: String): CheckInRegistration
 
     /** Marca o desmarca "Me interesa". Devuelve el nuevo estado, o null si el evento no es público. */
     fun toggleInterest(eventId: String, userId: String): Boolean?
 
-    /** Comentario en un evento verificado o finalizado; avisa al organizador. */
-    fun addComment(eventId: String, authorId: String, text: String): Comment?
-
-    /** Aviso del organizador a sus asistentes. Devuelve a cuántas personas les llegó. */
-    fun sendNotice(eventId: String, organizerId: String, message: String): Int
+    /** Guarda un comentario y le asigna su id y su fecha. */
+    fun addComment(eventId: String, authorId: String, text: String): Comment
 
     /** Borra los eventos, comentarios y participación de un usuario que elimina su cuenta. */
     fun removeUserData(userId: String)

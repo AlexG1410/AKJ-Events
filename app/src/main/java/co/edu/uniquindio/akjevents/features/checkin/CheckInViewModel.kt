@@ -1,14 +1,21 @@
 package co.edu.uniquindio.akjevents.features.checkin
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
+import androidx.navigation.toRoute
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.CheckInResult
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.GetPublicEventByIdUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.ObservePublicEventsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.CheckInResult
+import co.edu.uniquindio.akjevents.domain.usecase.participation.CheckInUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.ObserveAttendancesUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.user.GetUserByIdUseCase
+import co.edu.uniquindio.akjevents.navigation.MainRoutes
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,24 +42,46 @@ data class CheckInUiState(
  * Mockup 16. En esta fase no se usa la cámara (no se piden permisos): el escaneo se simula
  * escribiendo el código que muestra el QR del organizador o eligiendo un evento confirmado.
  */
+@HiltViewModel
 class CheckInViewModel(
-    preselectedEventId: String? = null,
-    showMyQr: Boolean = false,
-    private val repository: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared
+    preselectedEventId: String?,
+    showMyQr: Boolean,
+    private val observeCurrentUser: ObserveCurrentUserUseCase,
+    observePublicEvents: ObservePublicEventsUseCase,
+    observeAttendances: ObserveAttendancesUseCase,
+    getPublicEventById: GetPublicEventByIdUseCase,
+    private val getUserById: GetUserByIdUseCase,
+    private val checkIn: CheckInUseCase
 ) : ViewModel() {
+
+    /** Hilt lee el evento preseleccionado de la ruta [MainRoutes.CheckIn]. */
+    @Inject
+    constructor(
+        savedStateHandle: SavedStateHandle,
+        observeCurrentUser: ObserveCurrentUserUseCase,
+        observePublicEvents: ObservePublicEventsUseCase,
+        observeAttendances: ObserveAttendancesUseCase,
+        getPublicEventById: GetPublicEventByIdUseCase,
+        getUserById: GetUserByIdUseCase,
+        checkIn: CheckInUseCase
+    ) : this(
+        savedStateHandle.toRoute<MainRoutes.CheckIn>().eventId,
+        savedStateHandle.toRoute<MainRoutes.CheckIn>().showMyQr,
+        observeCurrentUser, observePublicEvents, observeAttendances, getPublicEventById, getUserById, checkIn
+    )
+
     private val _uiState = MutableStateFlow(
         CheckInUiState(
-            user = users.currentUser.value,
+            user = observeCurrentUser().value,
             tab = if (showMyQr) CheckInTab.MY_QR else CheckInTab.SCAN,
-            code = preselectedEventId?.let { repository.findPublicEvent(it)?.checkInCode }.orEmpty()
+            code = preselectedEventId?.let { getPublicEventById(it)?.checkInCode }.orEmpty()
         )
     )
     val uiState: StateFlow<CheckInUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(users.currentUser, repository.publicEvents, repository.attendances, ::Triple).collect { (user, events, attendances) ->
+            combine(observeCurrentUser(), observePublicEvents(), observeAttendances(), ::Triple).collect { (user, events, attendances) ->
                 val pendingIds = attendances.filter { it.userId == user?.id && !it.checkedIn }.map { it.eventId }.toSet()
                 _uiState.update { state ->
                     state.copy(user = user, pendingEvents = events.filter { it.id in pendingIds }.sortedBy { it.startsAt })
@@ -72,16 +101,16 @@ class CheckInViewModel(
     }
 
     fun validate() {
-        val user = users.currentUser.value ?: return
+        val user = observeCurrentUser().value ?: return
         val code = _uiState.value.code
         if (code.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Escribe o escanea el código del evento") }
             return
         }
         val pointsBefore = user.points
-        when (val result = repository.checkIn(code, user.id)) {
+        when (val result = checkIn(code, user.id)) {
             is CheckInResult.Success -> _uiState.update {
-                it.copy(result = result, pointsBefore = pointsBefore, organizer = users.findById(result.event.organizerId), errorMessage = null)
+                it.copy(result = result, pointsBefore = pointsBefore, organizer = getUserById(result.event.organizerId), errorMessage = null)
             }
             is CheckInResult.AlreadyCheckedIn -> showError("Ya registraste tu asistencia en «${result.event.title}»")
             is CheckInResult.Full -> showError("«${result.event.title}» ya no tiene cupos disponibles")

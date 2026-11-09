@@ -3,45 +3,19 @@ package co.edu.uniquindio.akjevents.features.event.detail
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.automirrored.outlined.Send
-import androidx.compose.material.icons.outlined.Directions
-import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.QrCodeScanner
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
-import co.edu.uniquindio.akjevents.core.component.FormTextField
-import co.edu.uniquindio.akjevents.core.component.MapMarker
-import co.edu.uniquindio.akjevents.core.component.MessageEffect
-import co.edu.uniquindio.akjevents.core.component.SimulatedMap
-import co.edu.uniquindio.akjevents.core.component.StatusBadge
-import co.edu.uniquindio.akjevents.core.component.UserAvatar
-import co.edu.uniquindio.akjevents.core.component.rememberSimulatedMapState
-import co.edu.uniquindio.akjevents.core.theme.ErrorColor
-import co.edu.uniquindio.akjevents.core.theme.OnSecondaryFixedVariant
-import co.edu.uniquindio.akjevents.core.theme.OnTertiaryContainer
-import co.edu.uniquindio.akjevents.core.theme.SecondaryFixed
-import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
-import co.edu.uniquindio.akjevents.domain.model.EventStatus
-import java.util.Locale
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -49,15 +23,21 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.Directions
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EventBusy
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.HowToReg
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.StarOutline
@@ -81,6 +61,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -88,46 +70,63 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
+import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
+import co.edu.uniquindio.akjevents.core.component.FormTextField
+import co.edu.uniquindio.akjevents.core.component.MapMarker
+import co.edu.uniquindio.akjevents.core.component.MessageEffect
+import co.edu.uniquindio.akjevents.core.component.SimulatedMap
+import co.edu.uniquindio.akjevents.core.component.StatusBadge
+import co.edu.uniquindio.akjevents.core.component.UserAvatar
+import co.edu.uniquindio.akjevents.core.component.rememberSimulatedMapState
 import co.edu.uniquindio.akjevents.core.component.style
+import co.edu.uniquindio.akjevents.core.theme.ErrorColor
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.OnPrimaryFixed
 import co.edu.uniquindio.akjevents.core.theme.OnSecondaryContainer
+import co.edu.uniquindio.akjevents.core.theme.OnSecondaryFixedVariant
+import co.edu.uniquindio.akjevents.core.theme.OnTertiaryContainer
 import co.edu.uniquindio.akjevents.core.theme.PrimaryFixed
 import co.edu.uniquindio.akjevents.core.theme.Sage
 import co.edu.uniquindio.akjevents.core.theme.SecondaryContainer
+import co.edu.uniquindio.akjevents.core.theme.SecondaryFixed
 import co.edu.uniquindio.akjevents.core.theme.SurfaceContainer
 import co.edu.uniquindio.akjevents.core.theme.SurfaceContainerHigh
 import co.edu.uniquindio.akjevents.core.theme.SurfaceContainerLow
 import co.edu.uniquindio.akjevents.core.theme.Terracotta
+import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
 import co.edu.uniquindio.akjevents.core.util.occupancy
 import co.edu.uniquindio.akjevents.core.util.remainingSpots
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
+import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
+import java.util.Locale
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 private val CardShape = RoundedCornerShape(16.dp)
 
 @Composable
 fun EventDetailScreen(
-    eventId: String,
     onBack: () -> Unit,
     onEditEvent: (String) -> Unit,
     onOpenCheckIn: (String) -> Unit,
-    viewModel: EventDetailViewModel = viewModel(key = eventId) { EventDetailViewModel(eventId) }
+    viewModel: EventDetailViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }

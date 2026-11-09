@@ -67,7 +67,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.core.component.CategoryChip
 import co.edu.uniquindio.akjevents.core.component.ConfirmDialog
 import co.edu.uniquindio.akjevents.core.component.ContentCard
@@ -121,7 +121,7 @@ fun ModerationScreen(
     onOpenEvent: (String) -> Unit,
     onOpenProfile: () -> Unit,
     bottomBar: @Composable () -> Unit,
-    viewModel: ModerationViewModel = viewModel()
+    viewModel: ModerationViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }

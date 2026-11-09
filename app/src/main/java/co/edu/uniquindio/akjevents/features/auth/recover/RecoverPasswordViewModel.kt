@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,7 +25,8 @@ data class RecoverPasswordUiState(
     val isBusy: Boolean get() = result is RequestResult.Loading || result is RequestResult.Success
 }
 
-class RecoverPasswordViewModel : ViewModel() {
+@HiltViewModel
+class RecoverPasswordViewModel @Inject constructor() : ViewModel() {
     private val _uiState = MutableStateFlow(RecoverPasswordUiState())
     val uiState: StateFlow<RecoverPasswordUiState> = _uiState.asStateFlow()
 

@@ -2,21 +2,26 @@ package co.edu.uniquindio.akjevents.features.myevents
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.Attendance
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.DeleteEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.FinishEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.ObserveEventsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.SendNoticeUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.ObserveAttendancesUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.user.GetUserByIdUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 /** Pestañas del mockup 11; [status] null muestra todos. */
 enum class MyEventsTab(val label: String, val status: EventStatus?) {
@@ -52,16 +57,22 @@ data class MyEventsUiState(
 }
 
 /** Mockup 11: los eventos que creó el usuario y lo que puede hacer con cada uno según su estado. */
-class MyEventsViewModel(
-    private val repository: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared
+@HiltViewModel
+class MyEventsViewModel @Inject constructor(
+    private val observeCurrentUser: ObserveCurrentUserUseCase,
+    observeEvents: ObserveEventsUseCase,
+    observeAttendances: ObserveAttendancesUseCase,
+    private val getUserById: GetUserByIdUseCase,
+    private val deleteEventUseCase: DeleteEventUseCase,
+    private val finishEventUseCase: FinishEventUseCase,
+    private val sendNoticeUseCase: SendNoticeUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MyEventsUiState())
     val uiState: StateFlow<MyEventsUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(users.currentUser, repository.events, repository.attendances, ::Triple).collect { (user, events, attendances) ->
+            combine(observeCurrentUser(), observeEvents(), observeAttendances(), ::Triple).collect { (user, events, attendances) ->
                 _uiState.update { it.withData(user, events, attendances) }
             }
         }
@@ -70,22 +81,22 @@ class MyEventsViewModel(
     fun selectTab(tab: MyEventsTab) = _uiState.update { it.copy(tab = tab) }
 
     fun deleteEvent(eventId: String) {
-        val user = users.currentUser.value ?: return
-        showMessage(if (repository.deleteEvent(eventId, user.id)) "Evento eliminado" else "No se pudo eliminar el evento")
+        val user = observeCurrentUser().value ?: return
+        showMessage(if (deleteEventUseCase(eventId, user.id)) "Evento eliminado" else "No se pudo eliminar el evento")
     }
 
     fun finishEvent(eventId: String) {
-        val user = users.currentUser.value ?: return
-        showMessage(if (repository.finishEvent(eventId, user.id)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
+        val user = observeCurrentUser().value ?: return
+        showMessage(if (finishEventUseCase(eventId, user.id)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
     }
 
     fun sendNotice(eventId: String, message: String) {
-        val user = users.currentUser.value ?: return
+        val user = observeCurrentUser().value ?: return
         if (message.isBlank()) {
             showMessage("Escribe el aviso antes de enviarlo")
             return
         }
-        val sent = repository.sendNotice(eventId, user.id, message)
+        val sent = sendNoticeUseCase(eventId, user.id, message)
         showMessage(
             when (sent) {
                 0 -> "Aún no hay personas inscritas con cuenta para avisarles"
@@ -107,7 +118,7 @@ class MyEventsViewModel(
             allEvents = own,
             attendees = attendances.filter { it.eventId in ownIds }
                 .groupBy { it.eventId }
-                .mapValues { (_, list) -> list.map { AttendeeItem(users.findById(it.userId), it.checkedIn) } }
+                .mapValues { (_, list) -> list.map { AttendeeItem(getUserById(it.userId), it.checkedIn) } }
         )
     }
 }

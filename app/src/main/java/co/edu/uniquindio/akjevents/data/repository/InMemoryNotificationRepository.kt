@@ -10,12 +10,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.time.LocalDateTime
 import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /** Guarda las notificaciones en memoria: duran mientras la app esté abierta. */
+@Singleton
 class InMemoryNotificationRepository(
-    initialNotifications: List<AppNotification> = SampleParticipation.notifications,
+    initialNotifications: List<AppNotification>,
     private val now: () -> LocalDateTime = LocalDateTime::now
 ) : NotificationRepository {
+
+    @Inject
+    constructor() : this(SampleParticipation.notifications)
 
     private val _notifications = MutableStateFlow(initialNotifications.sortedByDescending { it.createdAt })
     override val notifications: StateFlow<List<AppNotification>> = _notifications.asStateFlow()
@@ -43,9 +49,4 @@ class InMemoryNotificationRepository(
     }
 
     override fun deleteForUser(userId: String) = _notifications.update { list -> list.filterNot { it.userId == userId } }
-
-    companion object {
-        /** Instancia compartida por las pantallas mientras la app esté abierta (aún no hay inyección de dependencias). */
-        val shared: NotificationRepository by lazy { InMemoryNotificationRepository() }
-    }
 }

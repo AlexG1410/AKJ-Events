@@ -15,7 +15,9 @@ class NotificationsViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repos = TestRepositories()
-    private val viewModel by lazy { NotificationsViewModel(repos.notifications, repos.users) }
+    private val viewModel by lazy { repos.useCases.let {
+        NotificationsViewModel(it.observeCurrentUser, it.observeNotifications, it.setNotificationRead, it.markAllNotificationsRead)
+    } }
 
     private fun notify(type: NotificationType, userId: String = DEMO_USER) =
         repos.notifications.notify(userId, type, "Título", "Mensaje", "ciclopaseo")
@@ -57,7 +59,7 @@ class NotificationsViewModelTest {
 
     @Test
     fun aCommentOnMyEventArrivesAsANotification() {
-        repos.events.addComment("cine-foro", "organizer-5", "¿A qué hora empieza?")
+        repos.useCases.addComment("cine-foro", "organizer-5", "¿A qué hora empieza?")
 
         val notification = viewModel.uiState.value.all.single()
         assertEquals(NotificationType.NEW_COMMENT, notification.type)

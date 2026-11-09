@@ -31,10 +31,10 @@ import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.LocationCity
-import androidx.compose.material.icons.outlined.NearMe
-import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.PinDrop
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
@@ -76,14 +76,14 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.CategoryChip
 import co.edu.uniquindio.akjevents.core.component.EventImage
 import co.edu.uniquindio.akjevents.core.component.FilterPill
-import co.edu.uniquindio.akjevents.core.component.MainTopBar
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
+import co.edu.uniquindio.akjevents.core.component.MainTopBar
 import co.edu.uniquindio.akjevents.core.component.VerifiedBadge
 import co.edu.uniquindio.akjevents.core.component.style
 import co.edu.uniquindio.akjevents.core.theme.ErrorColor
@@ -133,7 +133,7 @@ fun HomeScreen(
     onOpenRecommendations: () -> Unit,
     recommendationsViewModel: RecommendationsViewModel,
     bottomBar: @Composable () -> Unit,
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val searchFocus = remember { FocusRequester() }

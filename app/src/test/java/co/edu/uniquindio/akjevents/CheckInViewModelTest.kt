@@ -2,7 +2,7 @@ package co.edu.uniquindio.akjevents
 
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
-import co.edu.uniquindio.akjevents.domain.repository.CheckInResult
+import co.edu.uniquindio.akjevents.domain.usecase.participation.CheckInResult
 import co.edu.uniquindio.akjevents.features.checkin.CheckInTab
 import co.edu.uniquindio.akjevents.features.checkin.CheckInViewModel
 import org.junit.Assert.assertEquals
@@ -18,9 +18,13 @@ class CheckInViewModelTest {
 
     private val repos = TestRepositories()
 
+    private fun checkInViewModel(eventId: String?, showMyQr: Boolean) = repos.useCases.let {
+        CheckInViewModel(eventId, showMyQr, it.observeCurrentUser, it.observePublicEvents, it.observeAttendances, it.getPublicEventById, it.getUserById, it.checkIn)
+    }
+
     @Test
     fun confirmedEventsWaitForTheirCheckIn() {
-        val viewModel = CheckInViewModel(null, false, repos.events, repos.users)
+        val viewModel = checkInViewModel(null, false)
 
         // El usuario de demostración tiene asistencia confirmada a la feria
         assertEquals(listOf("feria-cultural"), viewModel.uiState.value.pendingEvents.map { it.id })
@@ -28,7 +32,7 @@ class CheckInViewModelTest {
 
     @Test
     fun scanningAConfirmedEventRegistersTheAttendance() {
-        val viewModel = CheckInViewModel(null, false, repos.events, repos.users)
+        val viewModel = checkInViewModel(null, false)
         val points = repos.pointsOf(DEMO_USER)
 
         viewModel.scanEvent(viewModel.uiState.value.pendingEvents.single())
@@ -42,7 +46,7 @@ class CheckInViewModelTest {
 
     @Test
     fun invalidCodeShowsAnError() {
-        val viewModel = CheckInViewModel(null, false, repos.events, repos.users)
+        val viewModel = checkInViewModel(null, false)
 
         viewModel.validate()
         assertEquals("Escribe o escanea el código del evento", viewModel.uiState.value.errorMessage)
@@ -58,7 +62,7 @@ class CheckInViewModelTest {
     fun aPreselectedEventFillsItsCodeAndMyQrCanOpenFirst() {
         val code = repos.events.findEvent("ciclopaseo")!!.checkInCode
 
-        assertEquals(code, CheckInViewModel("ciclopaseo", false, repos.events, repos.users).uiState.value.code)
-        assertEquals(CheckInTab.MY_QR, CheckInViewModel(null, true, repos.events, repos.users).uiState.value.tab)
+        assertEquals(code, checkInViewModel("ciclopaseo", false).uiState.value.code)
+        assertEquals(CheckInTab.MY_QR, checkInViewModel(null, true).uiState.value.tab)
     }
 }

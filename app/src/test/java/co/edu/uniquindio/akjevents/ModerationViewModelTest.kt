@@ -19,7 +19,11 @@ class ModerationViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repos = TestRepositories(sessionUserId = MODERATOR)
-    private val viewModel by lazy { ModerationViewModel(repos.events, repos.users) }
+
+    private fun moderationViewModel(from: TestRepositories) = from.useCases.let {
+        ModerationViewModel(it.observeCurrentUser, it.observeEvents, it.getUserById, it.verifyEvent, it.rejectEvent, it.finishEvent)
+    }
+    private val viewModel by lazy { moderationViewModel(repos) }
 
     private fun ids() = viewModel.uiState.value.items.map { it.event.id }
 
@@ -84,7 +88,7 @@ class ModerationViewModelTest {
     @Test
     fun aRegularUserCannotModerate() {
         val asUser = TestRepositories()
-        val userViewModel = ModerationViewModel(asUser.events, asUser.users)
+        val userViewModel = moderationViewModel(asUser)
 
         userViewModel.verify("huertos-urbanos")
 

@@ -49,7 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.ContentCard
 import co.edu.uniquindio.akjevents.core.component.EventImage
@@ -92,7 +92,7 @@ private val EventCategory.chartColor: Color
     }
 
 @Composable
-fun StatsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, viewModel: StatsViewModel = viewModel()) {
+fun StatsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, viewModel: StatsViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val user = state.user

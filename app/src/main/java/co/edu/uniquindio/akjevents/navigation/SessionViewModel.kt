@@ -2,16 +2,17 @@ package co.edu.uniquindio.akjevents.navigation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.edu.uniquindio.akjevents.data.repository.InMemoryNotificationRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.LogoutUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.notification.ObserveNotificationsUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class SessionUiState(
     val user: User? = null,
@@ -21,20 +22,22 @@ data class SessionUiState(
 }
 
 /** Datos de la sesión que necesita la navegación: el rol (barra inferior) y las alertas sin leer. */
-class SessionViewModel(
-    private val users: UserRepository = InMemoryUserRepository.shared,
-    notifications: NotificationRepository = InMemoryNotificationRepository.shared
+@HiltViewModel
+class SessionViewModel @Inject constructor(
+    observeCurrentUser: ObserveCurrentUserUseCase,
+    observeNotifications: ObserveNotificationsUseCase,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SessionUiState())
     val uiState: StateFlow<SessionUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(users.currentUser, notifications.notifications) { user, all ->
+            combine(observeCurrentUser(), observeNotifications()) { user, all ->
                 SessionUiState(user = user, unreadAlerts = all.count { it.userId == user?.id && !it.isRead })
             }.collect { _uiState.value = it }
         }
     }
 
-    fun logout() = users.logout()
+    fun logout() = logoutUseCase()
 }

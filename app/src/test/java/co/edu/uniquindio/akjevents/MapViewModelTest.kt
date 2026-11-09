@@ -6,10 +6,10 @@ import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.features.map.explore.MapViewModel
+import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
-import java.time.LocalDateTime
 
 class MapViewModelTest {
     @get:Rule
@@ -30,8 +30,8 @@ class MapViewModelTest {
             event("dentro", now.plusDays(7).minusSeconds(1)),
             event("limite", now.plusDays(7)), event("despues", now.plusDays(8))
         )
-        val repository = InMemoryEventRepository(initialEvents = events, users = repos.users)
-        val viewModel = MapViewModel(repository, repos.users, now = { now })
+        val repository = InMemoryEventRepository(initialEvents = events)
+        val viewModel = TestUseCases(repository, repos.users).let { MapViewModel(it.observePublicEvents, it.observeCurrentUser, now = { now }) }
 
         viewModel.toggleThisWeek()
         assertEquals(listOf("ahora", "dentro"), viewModel.uiState.value.events.map { it.id })
@@ -48,8 +48,8 @@ class MapViewModelTest {
             base.copy(id = "otra-categoria", category = EventCategory.CULTURE),
             base.copy(id = "otro-titulo", title = "Actividad distinta"),
             base.copy(id = "lejos", location = SamplePlaces.cityNamed("Pereira, Risaralda")!!.location)
-        ), users = repos.users)
-        val viewModel = MapViewModel(repository, repos.users, now = { now })
+        ))
+        val viewModel = TestUseCases(repository, repos.users).let { MapViewModel(it.observePublicEvents, it.observeCurrentUser, now = { now }) }
 
         viewModel.toggleThisWeek()
         viewModel.toggleNearby()

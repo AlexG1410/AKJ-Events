@@ -3,20 +3,20 @@ package co.edu.uniquindio.akjevents.features.map.explore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.ObservePublicEventsUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDateTime
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 
 data class MapUiState(
     val user: User? = null,
@@ -32,18 +32,24 @@ data class MapUiState(
 }
 
 /** Mockup 10: eventos públicos sobre el mapa, con filtros por cercanía, fecha y categoría. */
+@HiltViewModel
 class MapViewModel(
-    private val repository: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared,
-    private val now: () -> LocalDateTime = LocalDateTime::now
+    observePublicEvents: ObservePublicEventsUseCase,
+    observeCurrentUser: ObserveCurrentUserUseCase,
+    private val now: () -> LocalDateTime
 ) : ViewModel() {
-    private var publicEvents = repository.publicEvents.value
-    private val _uiState = MutableStateFlow(MapUiState(user = users.currentUser.value).filtered())
+
+    @Inject
+    constructor(observePublicEvents: ObservePublicEventsUseCase, observeCurrentUser: ObserveCurrentUserUseCase) :
+        this(observePublicEvents, observeCurrentUser, LocalDateTime::now)
+
+    private var publicEvents = observePublicEvents().value
+    private val _uiState = MutableStateFlow(MapUiState(user = observeCurrentUser().value).filtered())
     val uiState: StateFlow<MapUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(repository.publicEvents, users.currentUser, ::Pair).collect { (events, user) ->
+            combine(observePublicEvents(), observeCurrentUser(), ::Pair).collect { (events, user) ->
                 publicEvents = events
                 _uiState.update { it.copy(user = user).filtered() }
             }

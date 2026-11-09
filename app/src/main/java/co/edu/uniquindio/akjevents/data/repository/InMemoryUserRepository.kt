@@ -4,11 +4,10 @@ import co.edu.uniquindio.akjevents.data.demo.SampleUsers
 import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
-import co.edu.uniquindio.akjevents.domain.model.NotificationType
 import co.edu.uniquindio.akjevents.domain.model.PointsEntry
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.model.UserRole
-import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
+import co.edu.uniquindio.akjevents.domain.repository.PointsChange
 import co.edu.uniquindio.akjevents.domain.repository.ProfileUpdateResult
 import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
 import co.edu.uniquindio.akjevents.domain.repository.UserRepository
@@ -18,19 +17,25 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.time.LocalDateTime
 import java.util.UUID
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Cuentas y sesión en memoria. Las contraseñas se guardan en claro solo porque son de demostración:
  * con el backend de la siguiente fase la autenticación la hará el servicio externo.
+ * Hilt crea una sola instancia con los datos de muestra; las pruebas usan el constructor principal.
  */
+@Singleton
 class InMemoryUserRepository(
-    initialUsers: List<User> = SampleUsers.all,
+    initialUsers: List<User>,
     initialPasswords: Map<String, String> = SampleUsers.passwords,
     initialPointsHistory: List<PointsEntry> = SampleUsers.pointsHistory(),
-    private val notifications: NotificationRepository = InMemoryNotificationRepository(emptyList()),
     sessionUserId: String? = null,
     private val now: () -> LocalDateTime = LocalDateTime::now
 ) : UserRepository {
+
+    @Inject
+    constructor() : this(SampleUsers.all)
 
     private val lock = Any()
     // Por correo en minúsculas
@@ -115,53 +120,27 @@ class InMemoryUserRepository(
         _users.update { list -> list.filterNot { it.id == userId } }
         passwords.remove(user.email.lowercase())
         _pointsHistory.update { list -> list.filterNot { it.userId == userId } }
-        notifications.deleteForUser(userId)
         if (_currentUser.value?.id == userId) _currentUser.value = null
         true
     }
 
-    override fun addPoints(userId: String, points: Int, reason: String) {
-        if (points == 0) return
-        val levelUp = synchronized(lock) {
-            val user = findById(userId) ?: return
-            // Los moderadores no participan del sistema de reputación
-            if (user.isModerator) return
-            val updated = user.copy(points = (user.points + points).coerceAtLeast(0))
-            replace(updated)
-            _pointsHistory.update { listOf(PointsEntry(userId, points, reason, now())) + it }
-            updated.level.takeIf { it.ordinal > user.level.ordinal }
-        }
-        if (levelUp != null) {
-            notifications.notify(
-                userId = userId,
-                type = NotificationType.LEVEL_UP,
-                title = "¡Ascendiste a ${levelUp.label}!",
-                message = "Alcanzaste ${levelUp.minPoints} puntos cívicos y ahora eres nivel ${levelUp.number}: ${levelUp.label}."
-            )
-        }
+    override fun addPoints(userId: String, points: Int, reason: String): PointsChange? = synchronized(lock) {
+        val user = findById(userId) ?: return null
+        val updated = user.copy(points = (user.points + points).coerceAtLeast(0))
+        replace(updated)
+        _pointsHistory.update { listOf(PointsEntry(userId, points, reason, now())) + it }
+        PointsChange(before = user, after = updated)
     }
 
-    override fun awardBadge(userId: String, badge: Badge) {
-        synchronized(lock) {
-            val user = findById(userId) ?: return
-            if (user.isModerator || badge in user.badges) return
-            replace(user.copy(badges = user.badges + badge))
-        }
-        notifications.notify(
-            userId = userId,
-            type = NotificationType.BADGE_UNLOCKED,
-            title = "Nueva insignia: ${badge.label}",
-            message = "${badge.description}. ¡Sigue participando!"
-        )
+    override fun addBadge(userId: String, badge: Badge): Boolean = synchronized(lock) {
+        val user = findById(userId) ?: return false
+        if (badge in user.badges) return false
+        replace(user.copy(badges = user.badges + badge))
+        true
     }
 
     private fun replace(user: User) {
         _users.update { list -> list.map { if (it.id == user.id) user else it } }
         if (_currentUser.value?.id == user.id) _currentUser.value = user
-    }
-
-    companion object {
-        /** Instancia compartida por las pantallas mientras la app esté abierta (aún no hay inyección de dependencias). */
-        val shared: UserRepository by lazy { InMemoryUserRepository(notifications = InMemoryNotificationRepository.shared) }
     }
 }

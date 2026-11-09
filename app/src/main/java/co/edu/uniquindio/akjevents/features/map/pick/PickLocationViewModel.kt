@@ -1,11 +1,16 @@
 package co.edu.uniquindio.akjevents.features.map.pick
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.navigation.toRoute
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
 import co.edu.uniquindio.akjevents.data.demo.Place
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.domain.model.Location
+import co.edu.uniquindio.akjevents.navigation.MainRoutes
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +30,15 @@ data class PickLocationUiState(
  * Elige un punto moviendo el mapa simulado: el punto seleccionado es el centro del mapa.
  * La búsqueda usa lugares de referencia locales en lugar de un servicio de geocodificación.
  */
+@HiltViewModel
 class PickLocationViewModel(initial: PickedLocation) : ViewModel() {
+
+    /** Hilt lee el punto inicial de la ruta [MainRoutes.PickLocation]. */
+    @Inject
+    constructor(savedStateHandle: SavedStateHandle) : this(
+        savedStateHandle.toRoute<MainRoutes.PickLocation>().let { PickedLocation(it.address, Location(it.latitude, it.longitude)) }
+    )
+
     private val _uiState = MutableStateFlow(
         PickLocationUiState(selected = initial.location).resolved(initialAddress = initial.address.ifBlank { null })
     )

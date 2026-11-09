@@ -7,9 +7,10 @@ import co.edu.uniquindio.akjevents.domain.model.RecommendationCandidate
 import co.edu.uniquindio.akjevents.domain.model.RecommendationEvent
 import co.edu.uniquindio.akjevents.domain.model.RecommendationRequest
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRanker
+import javax.inject.Inject
 
 /** Reglas locales, no IA: afinidad de categorías/texto, cercanía, cupos y diversidad. */
-class LocalRecommendationRanker : RecommendationRanker {
+class LocalRecommendationRanker @Inject constructor() : RecommendationRanker {
     override suspend fun rank(request: RecommendationRequest): List<RankedRecommendation> {
         val historyCategories = request.interactions.groupBy { it.event.category }
         val historyWords = request.interactions.flatMap { words(it.event) }.toSet()

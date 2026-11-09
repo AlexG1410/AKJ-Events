@@ -53,7 +53,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.ContentCard
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
@@ -81,7 +81,7 @@ import co.edu.uniquindio.akjevents.core.util.EventFormat
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
-import co.edu.uniquindio.akjevents.domain.repository.CheckInResult
+import co.edu.uniquindio.akjevents.domain.usecase.participation.CheckInResult
 
 private val CodeFieldStyle = FormFieldStyle(
     height = 52.dp,
@@ -99,12 +99,10 @@ private val CodeFieldStyle = FormFieldStyle(
 
 @Composable
 fun CheckInScreen(
-    eventId: String?,
-    showMyQr: Boolean,
     onBack: () -> Unit,
     onOpenEvent: (String) -> Unit,
     onOpenProfile: () -> Unit,
-    viewModel: CheckInViewModel = viewModel { CheckInViewModel(eventId, showMyQr) }
+    viewModel: CheckInViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current

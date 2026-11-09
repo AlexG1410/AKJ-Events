@@ -1,19 +1,19 @@
 package co.edu.uniquindio.akjevents
 
-import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
-import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
+import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.Location
+import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
 import co.edu.uniquindio.akjevents.features.event.create.CreateEventViewModel
+import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import java.time.LocalDateTime
 
 class CreateEventViewModelTest {
     @get:Rule
@@ -25,7 +25,10 @@ class CreateEventViewModelTest {
 
     // Un usuario recién registrado, sin eventos propios, abre la sesión
     private val currentUserId = (repos.users.register("Ana Gómez", "ana@ejemplo.com", "Armenia, Quindío", "Comunidad1", emptySet(), "Parque de la Vida", Location(4.5511, -75.6598)) as RegisterResult.Success).user.id
-    private val viewModel by lazy { CreateEventViewModel(repository, repos.users, now = { now }) }
+    private val viewModel by lazy { createViewModel(repos) }
+    private fun createViewModel(from: TestRepositories, eventId: String? = null) = from.useCases.let {
+        CreateEventViewModel(it.getEventById, it.observeCurrentUser, it.createEvent, it.updateEvent, eventId = eventId, now = { now })
+    }
     private val parqueDeLaVida = PickedLocation("Parque de la Vida, Av. Bolívar", Location(4.5511, -75.6598))
 
     private fun fillValidForm() = with(viewModel) {
@@ -170,7 +173,7 @@ class CreateEventViewModelTest {
     @Test
     fun editingARejectedEventResubmitsItForReview() {
         val demo = TestRepositories()
-        val edit = CreateEventViewModel(demo.events, demo.users, eventId = "voleibol-callejero", now = { now })
+        val edit = createViewModel(demo, "voleibol-callejero")
         assertTrue(edit.uiState.value.isEditing)
         assertEquals("Torneo Nocturno de Voleibol Callejero", edit.uiState.value.title)
 
@@ -189,7 +192,7 @@ class CreateEventViewModelTest {
     @Test
     fun othersCannotEditAnEvent() {
         val demo = TestRepositories()
-        val edit = CreateEventViewModel(demo.events, demo.users, eventId = "ciclopaseo", now = { now })
+        val edit = createViewModel(demo, "ciclopaseo")
 
         assertTrue(!edit.uiState.value.canSubmit)
         edit.submit()
@@ -199,7 +202,7 @@ class CreateEventViewModelTest {
     @Test
     fun editingRejectsCapacityBelowLatestAttendanceAndAllowsEqualCapacity() {
         val demo = TestRepositories()
-        val edit = CreateEventViewModel(demo.events, demo.users, eventId = "cine-foro", now = { now })
+        val edit = createViewModel(demo, "cine-foro")
         val original = demo.events.findEvent("cine-foro")!!
         edit.onStartsAtChange(now.plusDays(3))
         edit.onEndsAtChange(now.plusDays(3).plusHours(2))

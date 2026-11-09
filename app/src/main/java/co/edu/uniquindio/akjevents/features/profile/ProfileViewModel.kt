@@ -2,12 +2,15 @@ package co.edu.uniquindio.akjevents.features.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.LogoutUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.ObserveEventsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.ObserveAttendancesUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.ObserveCommentsUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,16 +25,20 @@ data class ProfileUiState(
 )
 
 /** Mockup 12: datos, nivel, puntos, insignias y accesos del usuario de la sesión. */
-class ProfileViewModel(
-    private val repository: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared
+@HiltViewModel
+class ProfileViewModel @Inject constructor(
+    observeCurrentUser: ObserveCurrentUserUseCase,
+    observeEvents: ObserveEventsUseCase,
+    observeAttendances: ObserveAttendancesUseCase,
+    observeComments: ObserveCommentsUseCase,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(ProfileUiState(user = users.currentUser.value))
+    private val _uiState = MutableStateFlow(ProfileUiState(user = observeCurrentUser().value))
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(users.currentUser, repository.events, repository.attendances, repository.comments) { user, events, attendances, comments ->
+            combine(observeCurrentUser(), observeEvents(), observeAttendances(), observeComments()) { user, events, attendances, comments ->
                 ProfileUiState(
                     user = user,
                     stats = user?.let { UserStats.of(it.id, events, attendances, comments) } ?: UserStats(),
@@ -41,7 +48,7 @@ class ProfileViewModel(
         }
     }
 
-    fun logout() = users.logout()
+    fun logout() = logoutUseCase()
 
     private companion object {
         const val RECENT_COUNT = 3

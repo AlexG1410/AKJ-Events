@@ -45,7 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.BrandBorder
 import co.edu.uniquindio.akjevents.core.theme.BrandDark
@@ -64,7 +64,7 @@ private val SeparatorDot = Color(0xFFD4D4D4)
 @Composable
 fun SplashScreen(
     onFinished: () -> Unit,
-    viewModel: SplashViewModel = viewModel()
+    viewModel: SplashViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
 

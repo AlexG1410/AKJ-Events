@@ -2,13 +2,15 @@ package co.edu.uniquindio.akjevents.features.notifications
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.edu.uniquindio.akjevents.data.repository.InMemoryNotificationRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.AppNotification
 import co.edu.uniquindio.akjevents.domain.model.NotificationGroup
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.notification.MarkAllNotificationsReadUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.notification.ObserveNotificationsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.notification.SetNotificationReadUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,16 +31,19 @@ data class NotificationsUiState(
 }
 
 /** Mockup 14: notificaciones del usuario de la sesión, que se pueden marcar como leídas o no leídas. */
-class NotificationsViewModel(
-    private val notifications: NotificationRepository = InMemoryNotificationRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared
+@HiltViewModel
+class NotificationsViewModel @Inject constructor(
+    private val observeCurrentUser: ObserveCurrentUserUseCase,
+    observeNotifications: ObserveNotificationsUseCase,
+    private val setNotificationRead: SetNotificationReadUseCase,
+    private val markAllNotificationsRead: MarkAllNotificationsReadUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(NotificationsUiState())
     val uiState: StateFlow<NotificationsUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(users.currentUser, notifications.notifications) { user, all ->
+            combine(observeCurrentUser(), observeNotifications()) { user, all ->
                 user to all.filter { it.userId == user?.id }.sortedByDescending { it.createdAt }
             }.collect { (user, mine) -> _uiState.update { it.copy(user = user, all = mine) } }
         }
@@ -46,13 +51,13 @@ class NotificationsViewModel(
 
     fun selectFilter(group: NotificationGroup?) = _uiState.update { it.copy(filter = group) }
 
-    fun toggleRead(notification: AppNotification) = notifications.setRead(notification.id, !notification.isRead)
+    fun toggleRead(notification: AppNotification) = setNotificationRead(notification.id, !notification.isRead)
 
     /** Al abrir una notificación se marca como leída. */
-    fun markAsRead(notification: AppNotification) = notifications.setRead(notification.id, true)
+    fun markAsRead(notification: AppNotification) = setNotificationRead(notification.id, true)
 
     fun markAllAsRead() {
-        val user = users.currentUser.value ?: return
-        notifications.markAllAsRead(user.id)
+        val user = observeCurrentUser().value ?: return
+        markAllNotificationsRead(user.id)
     }
 }

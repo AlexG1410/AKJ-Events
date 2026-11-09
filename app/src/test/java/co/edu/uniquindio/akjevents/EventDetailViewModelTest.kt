@@ -19,7 +19,12 @@ class EventDetailViewModelTest {
     private val repos = TestRepositories()
     private val repository = repos.events
 
-    private fun detail(id: String, viewer: TestRepositories = repos) = EventDetailViewModel(id, viewer.events, viewer.users)
+    private fun detail(id: String, viewer: TestRepositories = repos) = viewer.useCases.let {
+        EventDetailViewModel(
+            id, it.observeCurrentUser, it.observeEvents, it.observeAttendances, it.observeInterests, it.observeComments,
+            it.getUserById, it.toggleInterest, it.confirmAttendance, it.cancelAttendance, it.addComment
+        )
+    }
 
     @Test
     fun loadsVerifiedEventWithItsOrganizer() {
@@ -146,7 +151,7 @@ class EventDetailViewModelTest {
 
     @Test
     fun changesInTheDetailAreVisibleInTheHome() {
-        val home = HomeViewModel(repository, repos.users)
+        val home = repos.useCases.let { HomeViewModel(it.observePublicEvents, it.observeInterests, it.observeCurrentUser, it.toggleInterest) }
         val viewModel = detail("ciclopaseo")
         fun homeEvent() = home.uiState.value.let { it.featuredEvents + it.upcomingEvents }.first { it.id == "ciclopaseo" }
         val attendanceBefore = homeEvent().attendanceCount
