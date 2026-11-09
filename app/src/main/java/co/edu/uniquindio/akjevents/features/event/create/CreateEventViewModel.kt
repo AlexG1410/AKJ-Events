@@ -1,22 +1,26 @@
 package co.edu.uniquindio.akjevents.features.event.create
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.Location
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.CreateEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.GetEventByIdUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.UpdateEventUseCase
+import co.edu.uniquindio.akjevents.navigation.MainRoutes
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import java.time.LocalDateTime
 import java.util.UUID
+import javax.inject.Inject
 import kotlin.random.Random
 
 data class CreateEventUiState(
@@ -50,20 +54,37 @@ data class CreateEventUiState(
  * Formulario para crear un evento o, con [eventId], editar uno propio.
  * Todo evento creado o editado queda pendiente de verificación por un moderador.
  */
+@HiltViewModel
 class CreateEventViewModel(
-    private val repository: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared,
+    private val getEventById: GetEventByIdUseCase,
+    private val observeCurrentUser: ObserveCurrentUserUseCase,
+    private val createEvent: CreateEventUseCase,
+    private val updateEvent: UpdateEventUseCase,
     private val eventId: String? = null,
     private val now: () -> LocalDateTime = LocalDateTime::now,
     private val random: Random = Random.Default
 ) : ViewModel() {
+
+    /**
+     * Hilt lee el id de la ruta [MainRoutes.EditEvent]; en [MainRoutes.CreateEvent] no hay id
+     * y el formulario crea un evento nuevo.
+     */
+    @Inject
+    constructor(
+        savedStateHandle: SavedStateHandle,
+        getEventById: GetEventByIdUseCase,
+        observeCurrentUser: ObserveCurrentUserUseCase,
+        createEvent: CreateEventUseCase,
+        updateEvent: UpdateEventUseCase
+    ) : this(getEventById, observeCurrentUser, createEvent, updateEvent, savedStateHandle.get<String>(EVENT_ID_KEY))
+
     private val _uiState = MutableStateFlow(initialState())
     val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
 
     private fun initialState(): CreateEventUiState {
         if (eventId == null) return CreateEventUiState(imageUrl = newImageUrl())
-        val event = repository.findEvent(eventId)
-        val ownerId = users.currentUser.value?.id
+        val event = getEventById(eventId)
+        val ownerId = observeCurrentUser().value?.id
         if (event == null || event.organizerId != ownerId || event.status == EventStatus.FINISHED) {
             return CreateEventUiState(isEditing = true, canSubmit = false, imageUrl = newImageUrl())
         }
@@ -120,7 +141,7 @@ class CreateEventViewModel(
     fun submit() {
         val state = _uiState.value
         if (state.isBusy) return
-        val organizer = users.currentUser.value
+        val organizer = observeCurrentUser().value
         if (organizer == null || !state.canSubmit) {
             _uiState.update { it.copy(result = RequestResult.Failure("No puedes modificar este evento")) }
             return
@@ -150,10 +171,10 @@ class CreateEventViewModel(
             createdAt = now()
         )
         val message = if (eventId == null) {
-            repository.createEvent(event)
+            createEvent(event)
             SUBMITTED_MESSAGE
         } else {
-            if (!repository.updateEvent(event, organizer.id)) {
+            if (!updateEvent(event, organizer.id)) {
                 _uiState.update { it.copy(result = RequestResult.Failure("No se pudieron guardar los cambios")) }
                 return
             }
@@ -179,7 +200,7 @@ class CreateEventViewModel(
             !startsAt.isAfter(now()) -> "La fecha de inicio debe ser futura"
             !endsAt.isAfter(startsAt) -> "La fecha de fin debe ser posterior al inicio"
             state.limitCapacity && (state.capacity.toIntOrNull() ?: 0) <= 0 -> "El cupo máximo debe ser mayor que 0"
-            state.limitCapacity && state.capacity.toInt() < (eventId?.let(repository::findEvent)?.attendanceCount ?: 0) ->
+            state.limitCapacity && state.capacity.toInt() < (eventId?.let { getEventById(it) }?.attendanceCount ?: 0) ->
                 "El cupo máximo no puede ser menor que los asistentes confirmados"
             else -> null
         }
@@ -193,6 +214,8 @@ class CreateEventViewModel(
     private fun newImageUrl(): String = "https://picsum.photos/seed/akj-${random.nextInt(100_000, 1_000_000)}/900/500"
 
     companion object {
+        /** Nombre del argumento de [MainRoutes.EditEvent]. */
+        private const val EVENT_ID_KEY = "eventId"
         const val MAX_TITLE_LENGTH = 80
         const val MAX_DESCRIPTION_LENGTH = 600
         const val DEFAULT_CAPACITY = 30

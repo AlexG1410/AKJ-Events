@@ -57,7 +57,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.core.component.ConfirmDialog
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
@@ -106,7 +106,7 @@ fun EditProfileScreen(
     pickedLocation: PickedLocation?,
     onPickedLocationConsumed: () -> Unit,
     onAccountDeleted: () -> Unit,
-    viewModel: EditProfileViewModel = viewModel()
+    viewModel: EditProfileViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }

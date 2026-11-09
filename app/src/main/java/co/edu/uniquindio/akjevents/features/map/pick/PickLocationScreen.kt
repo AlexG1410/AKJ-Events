@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents.features.map.pick
 
+import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import android.content.ClipData
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFocusManager
@@ -56,7 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.core.component.CenterPin
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
@@ -76,8 +76,8 @@ import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.domain.model.Location
-import kotlinx.coroutines.launch
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 private val SearchStyle = FormFieldStyle(
     height = 52.dp,
@@ -99,7 +99,7 @@ fun PickLocationScreen(
     initial: PickedLocation,
     onBack: () -> Unit,
     onConfirm: (PickedLocation) -> Unit,
-    viewModel: PickLocationViewModel = viewModel { PickLocationViewModel(initial) }
+    viewModel: PickLocationViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val mapState = rememberSimulatedMapState(center = initial.location, latSpan = 0.03)

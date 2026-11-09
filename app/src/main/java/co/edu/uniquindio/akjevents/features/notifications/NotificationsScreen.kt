@@ -45,7 +45,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.core.component.EmptyState
 import co.edu.uniquindio.akjevents.core.component.FilterPill
 import co.edu.uniquindio.akjevents.core.component.MainTopBar
@@ -89,7 +89,7 @@ fun NotificationsScreen(
     onOpenEvent: (String) -> Unit,
     onOpenProfile: () -> Unit,
     bottomBar: @Composable () -> Unit,
-    viewModel: NotificationsViewModel = viewModel()
+    viewModel: NotificationsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val today = LocalDate.now()

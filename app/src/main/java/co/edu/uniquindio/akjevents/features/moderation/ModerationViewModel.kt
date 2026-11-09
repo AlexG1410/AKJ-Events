@@ -3,13 +3,17 @@ package co.edu.uniquindio.akjevents.features.moderation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.FinishEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.ObserveEventsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.moderation.RejectEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.moderation.VerifyEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.user.GetUserByIdUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -54,16 +58,21 @@ data class ModerationUiState(
 }
 
 /** Mockup 17: cola de moderación para verificar, rechazar (con motivo) o finalizar eventos. */
-class ModerationViewModel(
-    private val repository: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared
+@HiltViewModel
+class ModerationViewModel @Inject constructor(
+    private val observeCurrentUser: ObserveCurrentUserUseCase,
+    observeEvents: ObserveEventsUseCase,
+    private val getUserById: GetUserByIdUseCase,
+    private val verifyEvent: VerifyEventUseCase,
+    private val rejectEvent: RejectEventUseCase,
+    private val finishEvent: FinishEventUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ModerationUiState())
     val uiState: StateFlow<ModerationUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            combine(users.currentUser, repository.events, ::Pair).collect { (moderator, events) ->
+            combine(observeCurrentUser(), observeEvents(), ::Pair).collect { (moderator, events) ->
                 _uiState.update { it.copy(moderator = moderator, allEvents = events).filtered() }
             }
         }
@@ -79,7 +88,7 @@ class ModerationViewModel(
 
     fun verify(eventId: String) {
         val moderator = moderatorId() ?: return
-        if (repository.verifyEvent(eventId, moderator)) {
+        if (verifyEvent(eventId, moderator)) {
             _uiState.update { it.copy(expandedEventId = null, userMessage = "Evento verificado y publicado. Se notificó al organizador").filtered() }
         } else {
             showMessage("No se pudo verificar el evento")
@@ -111,7 +120,7 @@ class ModerationViewModel(
             note.isEmpty() -> reason.label
             else -> "${reason.label}: $note"
         }
-        if (repository.rejectEvent(eventId, moderator, text)) {
+        if (rejectEvent(eventId, moderator, text)) {
             _uiState.update { it.copy(rejectingEventId = null, expandedEventId = null, userMessage = "Evento rechazado. El organizador recibió el motivo").filtered() }
         } else {
             showMessage("No se pudo rechazar el evento")
@@ -120,12 +129,12 @@ class ModerationViewModel(
 
     fun finish(eventId: String) {
         val moderator = moderatorId() ?: return
-        showMessage(if (repository.finishEvent(eventId, moderator)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
+        showMessage(if (finishEvent(eventId, moderator)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
     }
 
     fun onMessageShown() = _uiState.update { it.copy(userMessage = null) }
 
-    private fun moderatorId(): String? = users.currentUser.value?.takeIf { it.isModerator }?.id
+    private fun moderatorId(): String? = observeCurrentUser().value?.takeIf { it.isModerator }?.id
 
     private fun showMessage(message: String) = _uiState.update { it.copy(userMessage = message) }
 
@@ -134,7 +143,7 @@ class ModerationViewModel(
         val items = allEvents
             .filter { it.status == tab.status }
             .mapNotNull { event ->
-                val organizer = users.findById(event.organizerId)
+                val organizer = getUserById(event.organizerId)
                 val matches = search.isEmpty() ||
                     event.title.normalizedForSearch().contains(search) ||
                     event.address.normalizedForSearch().contains(search) ||

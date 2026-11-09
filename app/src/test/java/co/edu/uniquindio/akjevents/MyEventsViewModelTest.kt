@@ -15,7 +15,9 @@ class MyEventsViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repos = TestRepositories()
-    private val viewModel by lazy { MyEventsViewModel(repos.events, repos.users) }
+    private val viewModel by lazy { repos.useCases.let {
+        MyEventsViewModel(it.observeCurrentUser, it.observeEvents, it.observeAttendances, it.getUserById, it.deleteEvent, it.finishEvent, it.sendNotice)
+    } }
 
     @Test
     fun listsOnlyTheUsersEventsWithCountsPerStatus() {

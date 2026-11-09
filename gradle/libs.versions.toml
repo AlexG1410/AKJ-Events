@@ -15,6 +15,9 @@ navigationCompose = "2.10.2"
 kotlinxSerialization = "1.11.0"
 kotlinxCoroutines = "1.10.2"
 zxing = "3.5.3"
+hiltAndroid = "2.60.1"
+hiltNavigationCompose = "1.4.0"
+ksp = "2.3.6" # Desde KSP 2.3.0 la versión ya no va atada a la de Kotlin
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,9 +42,13 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref= "kotlinxSerialization" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
+hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroid" }
+androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-
+hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hiltAndroid" }
+devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

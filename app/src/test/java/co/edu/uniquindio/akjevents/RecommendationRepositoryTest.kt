@@ -2,6 +2,7 @@ package co.edu.uniquindio.akjevents
 
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRepository
 import co.edu.uniquindio.akjevents.domain.model.*
+import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRanker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
@@ -122,7 +123,7 @@ class RecommendationRepositoryTest {
     fun publicationReturnedToReviewDuringRankingCannotBeDisplayed() = runTest {
         val fixture = RecommendationFixture(listOf(recommendationEvent("cambia"), recommendationEvent("valido")))
         val repository = LocalRecommendationRepository(fixture.events, fixture.users, RecommendationRanker { request ->
-            fixture.events.updateEvent(fixture.events.findEvent("cambia")!!, "organizador")
+            fixture.events.updateStatus("cambia", EventStatus.PENDING)
             request.candidates.map { RankedRecommendation(it.event.id, "Motivo") }
         }, now = { recommendationNow })
         assertEquals(listOf("valido"), repository.recommend().items.map { it.event.id })

@@ -3,7 +3,7 @@ package co.edu.uniquindio.akjevents.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -21,8 +21,6 @@ import co.edu.uniquindio.akjevents.features.checkin.CheckInScreen
 import co.edu.uniquindio.akjevents.features.event.create.CreateEventScreen
 import co.edu.uniquindio.akjevents.features.event.detail.EventDetailScreen
 import co.edu.uniquindio.akjevents.features.home.HomeScreen
-import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsScreen
-import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsViewModel
 import co.edu.uniquindio.akjevents.features.map.explore.MapScreen
 import co.edu.uniquindio.akjevents.features.map.pick.PickLocationScreen
 import co.edu.uniquindio.akjevents.features.moderation.ModerationScreen
@@ -31,14 +29,17 @@ import co.edu.uniquindio.akjevents.features.notifications.NotificationsScreen
 import co.edu.uniquindio.akjevents.features.profile.ProfileScreen
 import co.edu.uniquindio.akjevents.features.profile.edit.EditProfileScreen
 import co.edu.uniquindio.akjevents.features.profile.stats.StatsScreen
+import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsScreen
+import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsViewModel
 import co.edu.uniquindio.akjevents.features.splash.SplashScreen
 
 /** Clave con la que el selector de ubicación devuelve el punto elegido a la pantalla anterior. */
 private const val PICKED_LOCATION_KEY = "picked_location"
 
 @Composable
-fun AppNavigation(session: SessionViewModel = viewModel()) {
-    val recommendations: RecommendationsViewModel = viewModel()
+fun AppNavigation(session: SessionViewModel = hiltViewModel()) {
+    // Una sola instancia para Inicio y "Recomendados para ti"
+    val recommendations: RecommendationsViewModel = hiltViewModel()
     val navController = rememberNavController()
     val sessionState by session.uiState.collectAsState()
 
@@ -112,7 +113,6 @@ fun AppNavigation(session: SessionViewModel = viewModel()) {
         }
         composable<MainRoutes.EventDetail> { entry ->
             EventDetailScreen(
-                eventId = entry.toRoute<MainRoutes.EventDetail>().eventId,
                 onBack = { navController.fromTop(entry) { popBackStack() } },
                 onEditEvent = { eventId -> navController.fromTop(entry) { navigate(MainRoutes.EditEvent(eventId)) } },
                 onOpenCheckIn = { eventId -> navController.fromTop(entry) { navigate(MainRoutes.CheckIn(eventId = eventId)) } }
@@ -135,10 +135,8 @@ fun AppNavigation(session: SessionViewModel = viewModel()) {
             )
         }
         composable<MainRoutes.EditEvent> { entry ->
-            val eventId = entry.toRoute<MainRoutes.EditEvent>().eventId
             val picked by entry.savedStateHandle.getStateFlow<String?>(PICKED_LOCATION_KEY, null).collectAsState()
             CreateEventScreen(
-                eventId = eventId,
                 onBack = { navController.fromTop(entry) { popBackStack() } },
                 onEventSubmitted = { navController.fromTop(entry) { popBackStack() } },
                 onPickLocation = { current -> navController.fromTop(entry) { navigate(pickLocationRoute(current, defaultCenter)) } },
@@ -215,10 +213,7 @@ fun AppNavigation(session: SessionViewModel = viewModel()) {
             )
         }
         composable<MainRoutes.CheckIn> { entry ->
-            val route = entry.toRoute<MainRoutes.CheckIn>()
             CheckInScreen(
-                eventId = route.eventId,
-                showMyQr = route.showMyQr,
                 onBack = { navController.fromTop(entry) { popBackStack() } },
                 onOpenEvent = { eventId -> navController.fromTop(entry) { navigate(MainRoutes.EventDetail(eventId)) } },
                 onOpenProfile = { navController.openTab(BottomDestination.PROFILE, rootRoute) }

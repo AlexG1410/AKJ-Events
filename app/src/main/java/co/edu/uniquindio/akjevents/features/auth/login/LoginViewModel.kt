@@ -4,8 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.LoginUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,10 +34,15 @@ data class LoginUiState(
     val isBusy: Boolean get() = result is RequestResult.Loading || result is RequestResult.Success
 }
 
+@HiltViewModel
 class LoginViewModel(
-    private val users: UserRepository = InMemoryUserRepository.shared,
-    private val simulatedRequestMs: Long = SIMULATED_REQUEST_MS
+    private val loginUseCase: LoginUseCase,
+    private val simulatedRequestMs: Long
 ) : ViewModel() {
+
+    @Inject
+    constructor(loginUseCase: LoginUseCase) : this(loginUseCase, SIMULATED_REQUEST_MS)
+
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
@@ -67,7 +73,7 @@ class LoginViewModel(
         viewModelScope.launch {
             // Las cuentas viven en memoria; con el backend las validará el servicio de autenticación
             delay(simulatedRequestMs)
-            val user = users.login(state.email, state.password)
+            val user = loginUseCase(state.email, state.password)
             val result = if (user != null) {
                 RequestResult.Success("¡Bienvenido de nuevo, ${user.firstName}!")
             } else {

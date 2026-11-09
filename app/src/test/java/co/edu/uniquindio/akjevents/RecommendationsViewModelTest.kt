@@ -2,7 +2,12 @@ package co.edu.uniquindio.akjevents
 
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRepository
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
+import co.edu.uniquindio.akjevents.domain.repository.RecommendationRepository
+import co.edu.uniquindio.akjevents.domain.usecase.recommendation.GetRecommendationsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.recommendation.ObserveRecommendationChangesUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.recommendation.RevalidateRecommendationsUseCase
 import co.edu.uniquindio.akjevents.features.recommendations.RecommendationsViewModel
+import java.time.LocalDateTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -21,7 +26,7 @@ class RecommendationsViewModelTest {
             recommendationEvent("deportes"), recommendationEvent("cultura", category = EventCategory.CULTURE)
         ))
         val repository = LocalRecommendationRepository(fixture.events, fixture.users, now = { recommendationNow })
-        val viewModel = RecommendationsViewModel(repository, now = { recommendationNow })
+        val viewModel = recommendationsViewModel(repository) { recommendationNow }
         assertFalse(viewModel.uiState.value.isLoading)
         assertEquals(2, viewModel.uiState.value.feed.items.size)
 
@@ -43,7 +48,7 @@ class RecommendationsViewModelTest {
         var clock = recommendationNow
         val fixture = RecommendationFixture(listOf(recommendationEvent("vence", start = clock.plusSeconds(1))))
         val repository = LocalRecommendationRepository(fixture.events, fixture.users, now = { clock })
-        val viewModel = RecommendationsViewModel(repository, now = { clock })
+        val viewModel = recommendationsViewModel(repository) { clock }
         assertEquals(1, viewModel.uiState.value.feed.items.size)
 
         clock = clock.plusSeconds(1)
@@ -54,3 +59,10 @@ class RecommendationsViewModelTest {
         assertTrue(viewModel.uiState.value.feed.items.isEmpty())
     }
 }
+
+private fun recommendationsViewModel(repository: RecommendationRepository, now: () -> LocalDateTime) = RecommendationsViewModel(
+    ObserveRecommendationChangesUseCase(repository),
+    GetRecommendationsUseCase(repository),
+    RevalidateRecommendationsUseCase(repository),
+    now
+)

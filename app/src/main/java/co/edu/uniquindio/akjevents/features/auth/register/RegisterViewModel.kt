@@ -6,12 +6,13 @@ import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
 import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.RegisterUserUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -86,10 +87,15 @@ data class RegisterUiState(
     val isBusy: Boolean get() = result is RequestResult.Loading || result is RequestResult.Success
 }
 
+@HiltViewModel
 class RegisterViewModel(
-    private val users: UserRepository = InMemoryUserRepository.shared,
-    private val simulatedRequestMs: Long = SIMULATED_REQUEST_MS
+    private val registerUser: RegisterUserUseCase,
+    private val simulatedRequestMs: Long
 ) : ViewModel() {
+
+    @Inject
+    constructor(registerUser: RegisterUserUseCase) : this(registerUser, SIMULATED_REQUEST_MS)
+
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
@@ -154,7 +160,7 @@ class RegisterViewModel(
         viewModelScope.launch {
             // La cuenta se guarda en memoria; con el backend la creará el servicio de autenticación
             delay(simulatedRequestMs)
-            val result = when (users.register(
+            val result = when (registerUser(
                 name = state.fullName,
                 email = state.email,
                 city = state.city,

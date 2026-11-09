@@ -38,14 +38,14 @@ import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Done
-import androidx.compose.material.icons.outlined.EditOff
-import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.EditOff
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.LocationOn
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.NaturePeople
 import androidx.compose.material.icons.outlined.PeopleAlt
 import androidx.compose.material.icons.outlined.Place
@@ -101,7 +101,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.EmptyState
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
@@ -125,8 +125,8 @@ import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
-import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
+import co.edu.uniquindio.akjevents.domain.model.Location
 import coil3.compose.AsyncImage
 import java.time.Instant
 import java.time.LocalDate
@@ -173,7 +173,7 @@ private val EventCategory.formIcon: ImageVector
 private enum class DateTimeField { START, END }
 
 /**
- * Formulario de los mockups 07 (crear) y 08 (editar, cuando llega [eventId]).
+ * Formulario de los mockups 07 (crear) y 08 (editar, cuando la ruta trae el id del evento).
  * La ubicación se elige en el mapa con [onPickLocation] y regresa en [pickedLocation].
  */
 @Composable
@@ -184,8 +184,7 @@ fun CreateEventScreen(
     pickedLocation: PickedLocation?,
     onPickedLocationConsumed: () -> Unit,
     bottomBar: @Composable () -> Unit,
-    eventId: String? = null,
-    viewModel: CreateEventViewModel = viewModel(key = eventId ?: "nuevo-evento") { CreateEventViewModel(eventId = eventId) }
+    viewModel: CreateEventViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }

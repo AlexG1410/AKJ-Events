@@ -2,15 +2,18 @@ package co.edu.uniquindio.akjevents.features.profile.stats
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.PointsEntry
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.ObserveEventsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.ObserveAttendancesUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.ObserveCommentsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.user.ObservePointsHistoryUseCase
 import co.edu.uniquindio.akjevents.features.profile.UserStats
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,20 +30,24 @@ data class StatsUiState(
 )
 
 /** Mockup 15: dashboard de métricas personales y reputación. */
-class StatsViewModel(
-    private val repository: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared
+@HiltViewModel
+class StatsViewModel @Inject constructor(
+    observeCurrentUser: ObserveCurrentUserUseCase,
+    observePointsHistory: ObservePointsHistoryUseCase,
+    observeEvents: ObserveEventsUseCase,
+    observeAttendances: ObserveAttendancesUseCase,
+    observeComments: ObserveCommentsUseCase
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(StatsUiState(user = users.currentUser.value))
+    private val _uiState = MutableStateFlow(StatsUiState(user = observeCurrentUser().value))
     val uiState: StateFlow<StatsUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
             combine(
-                combine(users.currentUser, users.pointsHistory, ::Pair),
-                repository.events,
-                repository.attendances,
-                repository.comments
+                combine(observeCurrentUser(), observePointsHistory(), ::Pair),
+                observeEvents(),
+                observeAttendances(),
+                observeComments()
             ) { (user, history), events, attendances, comments ->
                 StatsUiState(
                     user = user,

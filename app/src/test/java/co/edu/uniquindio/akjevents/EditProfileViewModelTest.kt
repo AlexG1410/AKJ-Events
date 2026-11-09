@@ -18,7 +18,7 @@ class EditProfileViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repos = TestRepositories()
-    private val viewModel by lazy { EditProfileViewModel(repos.users, repos.events) }
+    private val viewModel by lazy { repos.useCases.let { EditProfileViewModel(it.observeCurrentUser, it.updateProfile, it.deleteAccount) } }
 
     @Test
     fun savesPersonalDataLocationAndInterests() {

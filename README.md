@@ -73,10 +73,13 @@ Desde la terminal, en la raíz del proyecto (`.\gradlew.bat` en PowerShell):
 Dentro de `app/src/main/java/co/edu/uniquindio/akjevents/`:
 
 - `core/`: tema, componentes compartidos (barras, tarjetas, mapa simulado, QR) y utilidades (`RequestResult`, validación, formatos, búsqueda).
-- `domain/`: modelos (`CommunityEvent`, `User`, `Comment`, `AppNotification`, insignias, niveles, puntos...) y las interfaces de los repositorios.
-- `data/`: los repositorios en memoria, que también aplican las reglas (puntos, insignias, notificaciones y permisos), y los datos de demostración.
-- `features/`: una carpeta por pantalla, cada una con su `Screen` y su `ViewModel` con su `UiState`.
+- `domain/`: modelos (`CommunityEvent`, `User`, `Comment`, `AppNotification`, insignias, niveles, puntos...), las interfaces de los repositorios y los casos de uso (`domain/usecase/`), que aplican las reglas: permisos, puntos, insignias y notificaciones.
+- `data/`: los repositorios en memoria, que solo guardan y consultan datos, y los datos de demostración.
+- `di/`: el módulo de Hilt (`RepositoryModule`) que indica qué implementación usar para cada repositorio.
+- `features/`: una carpeta por pantalla, cada una con su `Screen` y su `ViewModel` (`@HiltViewModel`) con su `UiState`. Los ViewModels solo usan casos de uso, nunca los repositorios directamente.
 - `navigation/`: navegación principal, rutas tipadas y el `SessionViewModel` (rol y alertas sin leer).
+
+Las dependencias las crea Hilt: pantalla (`hiltViewModel()`) → ViewModel → casos de uso → interfaz del repositorio → implementación en memoria.
 
 ## Siguientes etapas
 

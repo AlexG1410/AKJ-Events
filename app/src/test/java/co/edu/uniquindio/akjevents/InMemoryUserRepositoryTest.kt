@@ -63,7 +63,7 @@ class InMemoryUserRepositoryTest {
     fun levelIsDerivedFromPointsAndLevelUpIsNotified() {
         assertEquals(UserLevel.ORGANIZER, users.findById(DEMO_USER)!!.level)
 
-        users.addPoints(DEMO_USER, 20, "Prueba")
+        repos.useCases.awardPoints(DEMO_USER, 20, "Prueba")
 
         assertEquals(UserLevel.COMMUNITY_LEADER, users.findById(DEMO_USER)!!.level)
         assertTrue(repos.notificationsOf(DEMO_USER).any { it.type == NotificationType.LEVEL_UP })
@@ -80,8 +80,8 @@ class InMemoryUserRepositoryTest {
 
     @Test
     fun badgesAreAwardedOnlyOnce() {
-        users.awardBadge(DEMO_USER, Badge.TEN_VERIFIED)
-        users.awardBadge(DEMO_USER, Badge.TEN_VERIFIED)
+        repos.useCases.awardBadge(DEMO_USER, Badge.TEN_VERIFIED)
+        repos.useCases.awardBadge(DEMO_USER, Badge.TEN_VERIFIED)
 
         assertTrue(Badge.TEN_VERIFIED in users.findById(DEMO_USER)!!.badges)
         assertEquals(1, repos.notificationsOf(DEMO_USER).count { it.type == NotificationType.BADGE_UNLOCKED })
@@ -89,7 +89,7 @@ class InMemoryUserRepositoryTest {
 
     @Test
     fun moderatorsDoNotEarnPoints() {
-        users.addPoints(MODERATOR, 50, "Prueba")
+        repos.useCases.awardPoints(MODERATOR, 50, "Prueba")
 
         assertEquals(0, users.findById(MODERATOR)!!.points)
     }

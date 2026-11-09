@@ -4,14 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Interest
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.ObservePublicEventsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.ObserveInterestsUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.participation.ToggleInterestUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,17 +44,20 @@ data class HomeUiState(
     val hasResults: Boolean get() = featuredEvents.isNotEmpty() || upcomingEvents.isNotEmpty()
 }
 
-class HomeViewModel(
-    private val repository: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    observePublicEvents: ObservePublicEventsUseCase,
+    observeInterests: ObserveInterestsUseCase,
+    private val observeCurrentUser: ObserveCurrentUserUseCase,
+    private val toggleInterestUseCase: ToggleInterestUseCase
 ) : ViewModel() {
-    // El repositorio solo entrega eventos verificados (públicos)
-    private var publicEvents: List<CommunityEvent> = repository.publicEvents.value
+    // Solo los eventos verificados (públicos)
+    private var publicEvents: List<CommunityEvent> = observePublicEvents().value
 
     private val _uiState = MutableStateFlow(
         HomeUiState(
-            user = users.currentUser.value,
-            interestedEventIds = repository.interests.value.idsOf(users.currentUser.value)
+            user = observeCurrentUser().value,
+            interestedEventIds = observeInterests().value.idsOf(observeCurrentUser().value)
         ).filtered(publicEvents)
     )
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -60,7 +65,7 @@ class HomeViewModel(
     init {
         // Refleja los cambios hechos desde otras pantallas (asistencia, "Me interesa", perfil)
         viewModelScope.launch {
-            combine(repository.publicEvents, repository.interests, users.currentUser, ::Triple).collect { (events, interests, user) ->
+            combine(observePublicEvents(), observeInterests(), observeCurrentUser(), ::Triple).collect { (events, interests, user) ->
                 publicEvents = events
                 _uiState.update { it.copy(user = user, interestedEventIds = interests.idsOf(user)).filtered(events) }
             }
@@ -75,8 +80,8 @@ class HomeViewModel(
     fun selectLocationFilter(filter: LocationFilter) = _uiState.update { it.copy(locationFilter = filter).filtered(publicEvents) }
 
     fun toggleInterest(eventId: String) {
-        val user = users.currentUser.value ?: return
-        repository.toggleInterest(eventId, user.id)
+        val user = observeCurrentUser().value ?: return
+        toggleInterestUseCase(eventId, user.id)
     }
 
     companion object {

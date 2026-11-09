@@ -39,6 +39,6 @@ internal class RecommendationFixture(
     )
     val events = InMemoryEventRepository(
         initialEvents = initialEvents, initialComments = emptyList(), initialAttendances = attendances,
-        initialInterests = liked, users = users
+        initialInterests = liked
     )
 }

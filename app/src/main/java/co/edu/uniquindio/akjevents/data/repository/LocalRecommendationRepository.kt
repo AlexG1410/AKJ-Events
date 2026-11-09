@@ -18,14 +18,21 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import java.time.LocalDateTime
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /** Filtra antes de clasificar y valida de nuevo usando los datos actuales al recibir la respuesta. */
+@Singleton
 class LocalRecommendationRepository(
-    private val events: EventRepository = InMemoryEventRepository.shared,
-    private val users: UserRepository = InMemoryUserRepository.shared,
+    private val events: EventRepository,
+    private val users: UserRepository,
     private val ranker: RecommendationRanker = LocalRecommendationRanker(),
     private val now: () -> LocalDateTime = LocalDateTime::now
 ) : RecommendationRepository {
+
+    @Inject
+    constructor(events: EventRepository, users: UserRepository, ranker: RecommendationRanker) :
+        this(events, users, ranker, LocalDateTime::now)
     private val fallback = LocalRecommendationRanker()
 
     override val changes: Flow<Unit> = combine(

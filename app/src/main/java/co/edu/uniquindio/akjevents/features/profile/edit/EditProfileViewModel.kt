@@ -5,14 +5,15 @@ import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
-import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.User
-import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.repository.ProfileUpdateResult
-import co.edu.uniquindio.akjevents.domain.repository.UserRepository
+import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.user.DeleteAccountUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.user.UpdateProfileUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,14 +43,16 @@ data class EditProfileUiState(
 }
 
 /** Mockup 13: datos personales, ubicación en el mapa, intereses y eliminación de la cuenta. */
-class EditProfileViewModel(
-    private val users: UserRepository = InMemoryUserRepository.shared,
-    private val events: EventRepository = InMemoryEventRepository.shared
+@HiltViewModel
+class EditProfileViewModel @Inject constructor(
+    observeCurrentUser: ObserveCurrentUserUseCase,
+    private val updateProfile: UpdateProfileUseCase,
+    private val deleteAccountUseCase: DeleteAccountUseCase
 ) : ViewModel() {
     val cities: List<String> = SamplePlaces.cities.map { it.name }
 
     private val _uiState = MutableStateFlow(
-        users.currentUser.value?.let { user ->
+        observeCurrentUser().value?.let { user ->
             EditProfileUiState(
                 user = user,
                 name = user.name,
@@ -103,7 +106,7 @@ class EditProfileViewModel(
             location = state.location!!,
             interests = state.interests
         )
-        val result = when (users.updateProfile(updated)) {
+        val result = when (updateProfile(updated)) {
             ProfileUpdateResult.UPDATED -> RequestResult.Success("Perfil actualizado")
             ProfileUpdateResult.EMAIL_IN_USE -> RequestResult.Failure("Ese correo ya pertenece a otra cuenta")
             ProfileUpdateResult.NOT_FOUND -> RequestResult.Failure("No encontramos tu cuenta")
@@ -114,8 +117,7 @@ class EditProfileViewModel(
     /** Borra la cuenta junto con sus eventos, comentarios y participación, y cierra la sesión. */
     fun deleteAccount() {
         val user = _uiState.value.user ?: return
-        events.removeUserData(user.id)
-        if (users.deleteAccount(user.id)) {
+        if (deleteAccountUseCase(user.id)) {
             _uiState.update { it.copy(isAccountDeleted = true) }
         } else {
             _uiState.update { it.copy(result = RequestResult.Failure("No se pudo eliminar la cuenta")) }
