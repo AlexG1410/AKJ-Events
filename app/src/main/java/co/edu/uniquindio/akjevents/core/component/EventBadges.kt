@@ -19,13 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.OnSecondaryFixedVariant
 import co.edu.uniquindio.akjevents.core.theme.SecondaryFixed
 import co.edu.uniquindio.akjevents.core.theme.SurfaceContainerHighest
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 
 /** Insignia "Verificado" de las tarjetas de evento. */
@@ -39,7 +42,7 @@ fun VerifiedBadge(modifier: Modifier = Modifier, iconSize: Dp = 14.dp) {
         horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Icon(Icons.Outlined.Verified, contentDescription = null, tint = OnSecondaryFixedVariant, modifier = Modifier.size(iconSize))
-        Text("Verificado", color = OnSecondaryFixedVariant, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.status_verified), color = OnSecondaryFixedVariant, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.Bold)
     }
 }
 
@@ -57,7 +60,7 @@ fun CategoryChip(category: EventCategory, modifier: Modifier = Modifier, showIco
         if (showIcon) {
             Icon(style.icon, contentDescription = null, tint = style.contentColor, modifier = Modifier.size(14.dp))
         }
-        Text(category.label, color = style.contentColor, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(category.labelRes), color = style.contentColor, fontSize = 11.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 

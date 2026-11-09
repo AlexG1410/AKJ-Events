@@ -42,10 +42,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.EmptyState
 import co.edu.uniquindio.akjevents.core.component.FilterPill
 import co.edu.uniquindio.akjevents.core.component.MainTopBar
@@ -65,6 +68,8 @@ import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.descriptionRes
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.AppNotification
 import co.edu.uniquindio.akjevents.domain.model.NotificationGroup
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
@@ -78,11 +83,52 @@ private val NotificationType.style: TypeStyle
         NotificationType.EVENT_REJECTED -> TypeStyle(Icons.Outlined.Cancel, Color(0xFFFFDAD6), ErrorColor)
         NotificationType.NEW_COMMENT -> TypeStyle(Icons.AutoMirrored.Outlined.Chat, SurfaceContainerHigh, WarmText)
         NotificationType.ORGANIZER_NOTICE -> TypeStyle(Icons.Outlined.Campaign, PrimaryFixed, Terracotta)
-        NotificationType.EVENT_FINISHED -> TypeStyle(Icons.Outlined.Flag, SurfaceContainerHigh, MutedText)
+        NotificationType.EVENT_FINISHED, NotificationType.EVENT_FINISHED_BY_MODERATOR -> TypeStyle(Icons.Outlined.Flag, SurfaceContainerHigh, MutedText)
         NotificationType.REMINDER -> TypeStyle(Icons.Outlined.Schedule, PrimaryFixed, Terracotta)
         NotificationType.BADGE_UNLOCKED -> TypeStyle(Icons.Outlined.MilitaryTech, TertiaryFixed, OnTertiaryContainer)
         NotificationType.LEVEL_UP -> TypeStyle(Icons.Outlined.EmojiEvents, TertiaryFixed, OnTertiaryContainer)
     }
+
+/** Título de la notificación en el idioma del usuario, armado con los datos que guarda. */
+@Composable
+private fun notificationTitle(notification: AppNotification): String {
+    val event = notification.eventTitle ?: stringResource(R.string.notification_unknown_event)
+    return when (notification.type) {
+        NotificationType.NEW_COMMENT -> stringResource(R.string.notification_new_comment_title)
+        NotificationType.ORGANIZER_NOTICE -> stringResource(R.string.notification_organizer_notice_title, event)
+        NotificationType.EVENT_FINISHED -> stringResource(R.string.notification_event_finished_title)
+        NotificationType.EVENT_FINISHED_BY_MODERATOR -> stringResource(R.string.notification_finished_by_moderator_title)
+        NotificationType.REMINDER -> stringResource(R.string.notification_reminder_title, event)
+        NotificationType.EVENT_VERIFIED -> stringResource(R.string.notification_event_verified_title)
+        NotificationType.EVENT_REJECTED -> stringResource(R.string.notification_event_rejected_title, event)
+        NotificationType.BADGE_UNLOCKED ->
+            stringResource(R.string.notification_badge_title, notification.badge?.let { stringResource(it.labelRes) }.orEmpty())
+        NotificationType.LEVEL_UP ->
+            stringResource(R.string.notification_level_up_title, notification.level?.let { stringResource(it.labelRes) }.orEmpty())
+    }
+}
+
+/** Mensaje de la notificación; el texto escrito por personas (comentario, motivo, aviso) se muestra tal cual. */
+@Composable
+private fun notificationMessage(notification: AppNotification): String {
+    val event = notification.eventTitle ?: stringResource(R.string.notification_unknown_event)
+    val detail = notification.detail.orEmpty()
+    return when (notification.type) {
+        NotificationType.NEW_COMMENT ->
+            stringResource(R.string.notification_new_comment_message, notification.actorName.orEmpty(), event, detail)
+        NotificationType.ORGANIZER_NOTICE -> detail
+        NotificationType.EVENT_FINISHED -> stringResource(R.string.notification_event_finished_message, event)
+        NotificationType.EVENT_FINISHED_BY_MODERATOR -> stringResource(R.string.notification_finished_by_moderator_message, event)
+        NotificationType.REMINDER -> stringResource(R.string.notification_reminder_message)
+        NotificationType.EVENT_VERIFIED -> stringResource(R.string.notification_event_verified_message, event)
+        NotificationType.EVENT_REJECTED -> stringResource(R.string.notification_event_rejected_message, detail)
+        NotificationType.BADGE_UNLOCKED ->
+            stringResource(R.string.notification_badge_message, notification.badge?.let { stringResource(it.descriptionRes) }.orEmpty())
+        NotificationType.LEVEL_UP -> notification.level?.let {
+            stringResource(R.string.notification_level_up_message, it.minPoints, it.number, stringResource(it.labelRes))
+        }.orEmpty()
+    }
+}
 
 @Composable
 fun NotificationsScreen(
@@ -95,9 +141,9 @@ fun NotificationsScreen(
     val today = LocalDate.now()
     val visible = state.visible
     val sections = listOf(
-        "Hoy" to visible.filter { it.createdAt.toLocalDate() == today },
-        "Esta semana" to visible.filter { it.createdAt.toLocalDate().isBefore(today) && it.createdAt.toLocalDate().isAfter(today.minusDays(7)) },
-        "Anteriores" to visible.filter { !it.createdAt.toLocalDate().isAfter(today.minusDays(7)) }
+        stringResource(R.string.notifications_today) to visible.filter { it.createdAt.toLocalDate() == today },
+        stringResource(R.string.notifications_this_week) to visible.filter { it.createdAt.toLocalDate().isBefore(today) && it.createdAt.toLocalDate().isAfter(today.minusDays(7)) },
+        stringResource(R.string.notifications_earlier) to visible.filter { !it.createdAt.toLocalDate().isAfter(today.minusDays(7)) }
     ).filter { it.second.isNotEmpty() }
 
     val open: (AppNotification) -> Unit = { notification ->
@@ -110,7 +156,7 @@ fun NotificationsScreen(
 
     Scaffold(
         containerColor = WarmBackground,
-        topBar = { MainTopBar(title = "Notificaciones", user = state.user, onAvatarClick = onOpenProfile) },
+        topBar = { MainTopBar(title = stringResource(R.string.notifications_title), user = state.user, onAvatarClick = onOpenProfile) },
         bottomBar = bottomBar
     ) { innerPadding ->
         LazyColumn(
@@ -120,9 +166,9 @@ fun NotificationsScreen(
         ) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Alertas", color = WarmText, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.nav_alerts), color = WarmText, fontSize = 26.sp, fontWeight = FontWeight.SemiBold)
                     if (state.unreadCount > 0) {
-                        Tag("${state.unreadCount} nuevas", container = PrimaryFixed, content = Terracotta)
+                        Tag(pluralStringResource(R.plurals.notifications_new, state.unreadCount, state.unreadCount), container = PrimaryFixed, content = Terracotta)
                     }
                     Box(Modifier.weight(1f))
                     IconButton(
@@ -130,18 +176,18 @@ fun NotificationsScreen(
                         enabled = state.unreadCount > 0,
                         modifier = Modifier.background(SurfaceContainer, CircleShape)
                     ) {
-                        Icon(Icons.Outlined.DoneAll, contentDescription = "Marcar todas como leídas", tint = if (state.unreadCount > 0) Sage else MutedText)
+                        Icon(Icons.Outlined.DoneAll, contentDescription = stringResource(R.string.notifications_mark_all_read), tint = if (state.unreadCount > 0) Sage else MutedText)
                     }
                 }
             }
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
-                        FilterPill(text = "Todas", count = state.count(null), isSelected = state.filter == null, onClick = { viewModel.selectFilter(null) })
+                        FilterPill(text = stringResource(R.string.location_filter_all), count = state.count(null), isSelected = state.filter == null, onClick = { viewModel.selectFilter(null) })
                     }
                     items(NotificationGroup.entries) { group ->
                         FilterPill(
-                            text = group.label,
+                            text = stringResource(group.labelRes),
                             count = state.count(group),
                             isSelected = state.filter == group,
                             onClick = { viewModel.selectFilter(group) }
@@ -154,8 +200,8 @@ fun NotificationsScreen(
                 item {
                     EmptyState(
                         icon = Icons.Outlined.NotificationsNone,
-                        title = "Sin notificaciones",
-                        message = "Aquí verás los comentarios en tus eventos, las decisiones de moderación y tus nuevos logros."
+                        title = stringResource(R.string.notifications_empty_title),
+                        message = stringResource(R.string.notifications_empty_message)
                     )
                 }
             }
@@ -165,7 +211,7 @@ fun NotificationsScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(title, color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                         val unread = notifications.count { !it.isRead }
-                        if (unread > 0) Text("$unread pendientes", color = Terracotta, fontSize = 12.sp)
+                        if (unread > 0) Text(pluralStringResource(R.plurals.pending_count, unread, unread), color = Terracotta, fontSize = 12.sp)
                     }
                 }
                 items(notifications, key = { it.id }) { notification ->
@@ -187,12 +233,12 @@ fun NotificationsScreen(
                         Icon(Icons.Outlined.VerifiedUser, contentDescription = null, tint = Sage)
                         Column {
                             Text(
-                                if (state.unreadCount == 0) "Estás al día en AKJ Events" else "Tienes ${state.unreadCount} sin leer",
+                                if (state.unreadCount == 0) stringResource(R.string.notifications_up_to_date) else pluralStringResource(R.plurals.notifications_unread, state.unreadCount, state.unreadCount),
                                 color = WarmText,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
-                            Text("Las alertas se actualizan cada vez que entras a este apartado.", color = MutedText, fontSize = 12.sp)
+                            Text(stringResource(R.string.notifications_refresh_hint), color = MutedText, fontSize = 12.sp)
                         }
                     }
                 }
@@ -217,13 +263,13 @@ private fun NotificationCard(notification: AppNotification, onOpen: () -> Unit, 
                 }
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        notification.title,
+                        notificationTitle(notification),
                         color = WarmText,
                         fontSize = 15.sp,
                         lineHeight = 20.sp,
                         fontWeight = if (notification.isRead) FontWeight.SemiBold else FontWeight.Bold
                     )
-                    Text(notification.message, color = MutedText, fontSize = 13.sp, lineHeight = 18.sp)
+                    Text(notificationMessage(notification), color = MutedText, fontSize = 13.sp, lineHeight = 18.sp)
                     Text(EventFormat.relative(notification.createdAt), color = MutedText.copy(alpha = 0.8f), fontSize = 11.sp)
                 }
                 if (!notification.isRead) {
@@ -243,12 +289,12 @@ private fun NotificationCard(notification: AppNotification, onOpen: () -> Unit, 
                             tint = MutedText,
                             modifier = Modifier.size(16.dp)
                         )
-                        Text(if (notification.isRead) "Marcar no leída" else "Marcar leída", color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(if (notification.isRead) R.string.notifications_mark_unread else R.string.notifications_mark_read), color = MutedText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
                 val action = when {
-                    notification.eventId != null -> "Ver evento"
-                    notification.type.group == NotificationGroup.ACHIEVEMENTS -> "Ver mis insignias"
+                    notification.eventId != null -> stringResource(R.string.map_see_event)
+                    notification.type.group == NotificationGroup.ACHIEVEMENTS -> stringResource(R.string.notifications_see_badges)
                     else -> null
                 }
                 if (action != null) {

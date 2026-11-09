@@ -1,10 +1,10 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
 import co.edu.uniquindio.akjevents.features.myevents.MyEventsTab
 import co.edu.uniquindio.akjevents.features.myevents.MyEventsViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -17,7 +17,7 @@ class MyEventsViewModelTest {
 
     private val repos = TestRepositories()
     private val viewModel by lazy { repos.useCases.let {
-        MyEventsViewModel(it.observeCurrentUser, it.observeEvents, it.observeAttendances, it.getUserById, it.deleteEvent, it.finishEvent, it.sendNotice)
+        MyEventsViewModel(it.observeCurrentUser, it.observeEvents, it.observeAttendances, it.getUserById, it.deleteEvent, it.finishEvent, it.sendNotice, TestResourceProvider)
     } }
 
     @Test

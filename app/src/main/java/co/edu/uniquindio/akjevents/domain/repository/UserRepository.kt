@@ -4,6 +4,7 @@ import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.PointsEntry
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.User
 import kotlinx.coroutines.flow.StateFlow
 
@@ -54,7 +55,7 @@ interface UserRepository {
     suspend fun deleteAccount(userId: String): Boolean
 
     /** Suma (o resta) puntos, sin bajar de 0, y guarda el movimiento. Devuelve null si el usuario no existe. */
-    suspend fun addPoints(userId: String, points: Int, reason: String): PointsChange?
+    suspend fun addPoints(userId: String, points: Int, reason: PointsReason, eventTitle: String? = null): PointsChange?
 
     /** Agrega la insignia. Devuelve false si el usuario ya la tenía o no existe. */
     suspend fun addBadge(userId: String, badge: Badge): Boolean

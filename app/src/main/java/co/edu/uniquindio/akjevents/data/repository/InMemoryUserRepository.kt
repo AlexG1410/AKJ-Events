@@ -5,20 +5,21 @@ import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.PointsEntry
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.model.UserRole
 import co.edu.uniquindio.akjevents.domain.repository.PointsChange
 import co.edu.uniquindio.akjevents.domain.repository.ProfileUpdateResult
 import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
 import co.edu.uniquindio.akjevents.domain.repository.UserRepository
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Cuentas y sesión en memoria. Las contraseñas se guardan en claro solo porque son de demostración:
@@ -124,11 +125,11 @@ class InMemoryUserRepository(
         true
     }
 
-    override suspend fun addPoints(userId: String, points: Int, reason: String): PointsChange? = synchronized(lock) {
+    override suspend fun addPoints(userId: String, points: Int, reason: PointsReason, eventTitle: String?): PointsChange? = synchronized(lock) {
         val user = userById(userId) ?: return null
         val updated = user.copy(points = (user.points + points).coerceAtLeast(0))
         replace(updated)
-        _pointsHistory.update { listOf(PointsEntry(userId, points, reason, now())) + it }
+        _pointsHistory.update { listOf(PointsEntry(userId, points, reason, now(), eventTitle)) + it }
         PointsChange(before = user, after = updated)
     }
 

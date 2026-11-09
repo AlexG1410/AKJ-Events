@@ -1,6 +1,5 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
@@ -8,10 +7,12 @@ import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
 import co.edu.uniquindio.akjevents.domain.model.UserRole
 import co.edu.uniquindio.akjevents.domain.repository.ProfileUpdateResult
 import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -64,11 +65,12 @@ class InMemoryUserRepositoryTest {
     fun levelIsDerivedFromPointsAndLevelUpIsNotified() = runTest {
         assertEquals(UserLevel.ORGANIZER, users.findById(DEMO_USER)!!.level)
 
-        repos.useCases.awardPoints(DEMO_USER, 20, "Prueba")
+        repos.useCases.awardPoints(DEMO_USER, 20, PointsReason.COMMENT, "Prueba")
 
         assertEquals(UserLevel.COMMUNITY_LEADER, users.findById(DEMO_USER)!!.level)
         assertTrue(repos.notificationsOf(DEMO_USER).any { it.type == NotificationType.LEVEL_UP })
-        assertEquals("Prueba", users.pointsHistory.value.first().reason)
+        assertEquals(PointsReason.COMMENT, users.pointsHistory.value.first().reason)
+        assertEquals("Prueba", users.pointsHistory.value.first().eventTitle)
     }
 
     @Test
@@ -90,7 +92,7 @@ class InMemoryUserRepositoryTest {
 
     @Test
     fun moderatorsDoNotEarnPoints() = runTest {
-        repos.useCases.awardPoints(MODERATOR, 50, "Prueba")
+        repos.useCases.awardPoints(MODERATOR, 50, PointsReason.COMMENT, "Prueba")
 
         assertEquals(0, users.findById(MODERATOR)!!.points)
     }

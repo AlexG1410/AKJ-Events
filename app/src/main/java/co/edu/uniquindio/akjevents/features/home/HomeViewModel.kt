@@ -1,7 +1,9 @@
 package co.edu.uniquindio.akjevents.features.home
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
@@ -22,10 +24,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Filtro del feed por ubicación respecto al usuario. */
-enum class LocationFilter(val label: String) {
-    ALL("Todas"),
-    NEARBY("Cerca de mí (${HomeViewModel.NEARBY_RADIUS_KM} km)"),
-    CITY("En mi ciudad")
+enum class LocationFilter(@param:StringRes val label: Int) {
+    ALL(R.string.location_filter_all),
+    // Recibe HomeViewModel.NEARBY_RADIUS_KM como argumento
+    NEARBY(R.string.location_filter_nearby),
+    CITY(R.string.location_filter_city)
 }
 
 data class HomeUiState(

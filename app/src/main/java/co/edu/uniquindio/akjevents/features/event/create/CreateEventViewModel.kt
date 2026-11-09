@@ -1,10 +1,13 @@
 package co.edu.uniquindio.akjevents.features.event.create
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
@@ -15,15 +18,15 @@ import co.edu.uniquindio.akjevents.domain.usecase.event.GetEventByIdUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.UpdateEventUseCase
 import co.edu.uniquindio.akjevents.navigation.MainRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDateTime
+import java.util.UUID
+import javax.inject.Inject
+import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.util.UUID
-import javax.inject.Inject
-import kotlin.random.Random
 
 data class CreateEventUiState(
     val title: String = "",
@@ -62,6 +65,7 @@ class CreateEventViewModel(
     private val observeCurrentUser: ObserveCurrentUserUseCase,
     private val createEvent: CreateEventUseCase,
     private val updateEvent: UpdateEventUseCase,
+    private val resources: ResourceProvider,
     private val eventId: String? = null,
     private val now: () -> LocalDateTime = LocalDateTime::now,
     private val random: Random = Random.Default
@@ -77,8 +81,9 @@ class CreateEventViewModel(
         getEventById: GetEventByIdUseCase,
         observeCurrentUser: ObserveCurrentUserUseCase,
         createEvent: CreateEventUseCase,
-        updateEvent: UpdateEventUseCase
-    ) : this(getEventById, observeCurrentUser, createEvent, updateEvent, savedStateHandle.get<String>(EVENT_ID_KEY))
+        updateEvent: UpdateEventUseCase,
+        resources: ResourceProvider
+    ) : this(getEventById, observeCurrentUser, createEvent, updateEvent, resources, savedStateHandle.get<String>(EVENT_ID_KEY))
 
     // Al editar, el formulario no se puede enviar hasta cargar el evento
     private val _uiState = MutableStateFlow(
@@ -156,14 +161,14 @@ class CreateEventViewModel(
         if (state.isBusy) return
         val organizer = observeCurrentUser().value
         if (organizer == null || !state.canSubmit) {
-            _uiState.update { it.copy(result = RequestResult.Failure("No puedes modificar este evento")) }
+            _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(R.string.create_error_not_allowed))) }
             return
         }
 
         // Se valida aquí para que el constructor de CommunityEvent nunca falle por sus require
         val error = validate(state)
         if (error != null) {
-            _uiState.update { it.copy(result = RequestResult.Failure(error)) }
+            _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(error))) }
             return
         }
 
@@ -188,18 +193,18 @@ class CreateEventViewModel(
             val result = runCatching {
                 if (eventId == null) {
                     createEvent(event)
-                    RequestResult.Success(SUBMITTED_MESSAGE)
+                    RequestResult.Success(resources.getString(R.string.create_submitted))
                 } else {
                     // El cupo se compara con los asistentes que haya justo ahora, no con los de al abrir el formulario
                     val attendees = getEventById(eventId)?.attendanceCount ?: 0
                     when {
-                        event.capacity != null && event.capacity < attendees -> RequestResult.Failure(CAPACITY_BELOW_ATTENDANCE_MESSAGE)
-                        !updateEvent(event, organizer.id) -> RequestResult.Failure("No se pudieron guardar los cambios")
-                        state.originalStatus == EventStatus.REJECTED -> RequestResult.Success(RESUBMITTED_MESSAGE)
-                        else -> RequestResult.Success(UPDATED_MESSAGE)
+                        event.capacity != null && event.capacity < attendees -> RequestResult.Failure(resources.getString(R.string.create_error_capacity_below_attendance))
+                        !updateEvent(event, organizer.id) -> RequestResult.Failure(resources.getString(R.string.create_error_save))
+                        state.originalStatus == EventStatus.REJECTED -> RequestResult.Success(resources.getString(R.string.create_resubmitted))
+                        else -> RequestResult.Success(resources.getString(R.string.create_updated))
                     }
                 }
-            }.getOrElse { RequestResult.Failure("No se pudo enviar el evento. Revisa tu conexión e intenta de nuevo") }
+            }.getOrElse { RequestResult.Failure(resources.getString(R.string.create_error_network)) }
             _uiState.update { it.copy(result = result) }
         }
     }
@@ -208,19 +213,21 @@ class CreateEventViewModel(
         if (it.result is RequestResult.Failure) it.copy(result = null) else it
     }
 
-    private fun validate(state: CreateEventUiState): String? {
+    /** Devuelve el mensaje de error (recurso de texto) o null si el formulario es válido. */
+    @StringRes
+    private fun validate(state: CreateEventUiState): Int? {
         val startsAt = state.startsAt
         val endsAt = state.endsAt
         return when {
-            state.title.isBlank() -> "Escribe el título del evento"
-            state.category == null -> "Elige una categoría"
-            state.description.isBlank() -> "Escribe la descripción del evento"
-            state.place.isBlank() -> "Indica el lugar o punto de encuentro"
-            state.location == null -> "Elige la ubicación del evento en el mapa"
-            startsAt == null || endsAt == null -> "Elige la fecha y hora de inicio y de fin"
-            !startsAt.isAfter(now()) -> "La fecha de inicio debe ser futura"
-            !endsAt.isAfter(startsAt) -> "La fecha de fin debe ser posterior al inicio"
-            state.limitCapacity && (state.capacity.toIntOrNull() ?: 0) <= 0 -> "El cupo máximo debe ser mayor que 0"
+            state.title.isBlank() -> R.string.create_error_title
+            state.category == null -> R.string.create_error_category
+            state.description.isBlank() -> R.string.create_error_description
+            state.place.isBlank() -> R.string.create_error_place
+            state.location == null -> R.string.create_error_location
+            startsAt == null || endsAt == null -> R.string.create_error_dates
+            !startsAt.isAfter(now()) -> R.string.create_error_past_start
+            !endsAt.isAfter(startsAt) -> R.string.create_error_end_before_start
+            state.limitCapacity && (state.capacity.toIntOrNull() ?: 0) <= 0 -> R.string.create_error_capacity
             else -> null
         }
     }
@@ -240,9 +247,5 @@ class CreateEventViewModel(
         const val DEFAULT_CAPACITY = 30
         private const val MAX_CAPACITY_DIGITS = 5
         private const val MAX_CAPACITY = 99_999
-        const val SUBMITTED_MESSAGE = "Tu evento fue enviado a verificación"
-        const val UPDATED_MESSAGE = "Cambios guardados: el evento vuelve a revisión"
-        const val RESUBMITTED_MESSAGE = "Evento corregido y reenviado a verificación"
-        const val CAPACITY_BELOW_ATTENDANCE_MESSAGE = "El cupo máximo no puede ser menor que los asistentes confirmados"
     }
 }

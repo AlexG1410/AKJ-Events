@@ -4,6 +4,7 @@ import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.PointsEntry
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.model.UserRole
 import java.time.LocalDateTime
@@ -67,18 +68,19 @@ object SampleUsers {
 
     /** Movimientos que explican los 480 puntos iniciales del usuario de demostración. */
     fun pointsHistory(now: LocalDateTime = LocalDateTime.now()): List<PointsEntry> = listOf(
-        entry(385, "Reputación acumulada en la comunidad", now.minusDays(40)),
-        entry(10, "Creaste «Jornada de Reforestación Río Quindío»", now.minusDays(25)),
-        entry(20, "«Jornada de Reforestación Río Quindío» fue verificado", now.minusDays(24)),
-        entry(10, "«Jornada de Reforestación Río Quindío» finalizó con éxito", now.minusDays(12)),
-        entry(10, "Creaste «Cine foro al parque»", now.minusDays(6)),
-        entry(20, "«Cine foro al parque» fue verificado", now.minusDays(2)),
-        entry(5, "Comentaste en «Ciclopaseo nocturno por Armenia»", now.minusDays(1)),
-        entry(10, "Creaste «Torneo Nocturno de Voleibol Callejero»", now.minusDays(3)),
-        entry(10, "Creaste «Taller de Huertos Urbanos y Compostaje»", now.minusHours(2))
+        entry(385, PointsReason.ACCUMULATED, null, now.minusDays(40)),
+        entry(10, PointsReason.CREATE_EVENT, "Jornada de Reforestación Río Quindío", now.minusDays(25)),
+        entry(20, PointsReason.EVENT_VERIFIED, "Jornada de Reforestación Río Quindío", now.minusDays(24)),
+        entry(10, PointsReason.EVENT_FINISHED, "Jornada de Reforestación Río Quindío", now.minusDays(12)),
+        entry(10, PointsReason.CREATE_EVENT, "Cine foro al parque", now.minusDays(6)),
+        entry(20, PointsReason.EVENT_VERIFIED, "Cine foro al parque", now.minusDays(2)),
+        entry(5, PointsReason.COMMENT, "Ciclopaseo nocturno por Armenia", now.minusDays(1)),
+        entry(10, PointsReason.CREATE_EVENT, "Torneo Nocturno de Voleibol Callejero", now.minusDays(3)),
+        entry(10, PointsReason.CREATE_EVENT, "Taller de Huertos Urbanos y Compostaje", now.minusHours(2))
     ).sortedByDescending { it.createdAt }
 
-    private fun entry(points: Int, reason: String, at: LocalDateTime) = PointsEntry(demoUser.id, points, reason, at)
+    private fun entry(points: Int, reason: PointsReason, eventTitle: String?, at: LocalDateTime) =
+        PointsEntry(demoUser.id, points, reason, at, eventTitle)
 
     private fun organizer(id: String, name: String, points: Int) = User(
         id = id,

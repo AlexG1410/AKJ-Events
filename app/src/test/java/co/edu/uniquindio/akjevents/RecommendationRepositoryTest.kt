@@ -29,7 +29,7 @@ class RecommendationRepositoryTest {
             received = request
             request.candidates.map { RankedRecommendation(it.event.id, "Opción disponible") }
         }
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, ranker, now = { recommendationNow })
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, ranker, now = { recommendationNow })
 
         val result = repository.recommend()
 
@@ -50,7 +50,7 @@ class RecommendationRepositoryTest {
             Interest("rechazado", "lector"), Interest("otro-usuario", "otro")
         ), attendances = listOf(Attendance("historia", "lector", true), Attendance("solo-confirmado", "lector")))
         var received: RecommendationRequest? = null
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, RecommendationRanker { request ->
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, RecommendationRanker { request ->
             received = request
             request.candidates.map { RankedRecommendation(it.event.id, "Por tus preferencias") }
         }, now = { recommendationNow })
@@ -66,7 +66,7 @@ class RecommendationRepositoryTest {
     @Test
     fun inventedRepeatedEmptyOrInvalidExplanationsFallBackToLocalRanking() = runTest {
         val fixture = RecommendationFixture(listOf(recommendationEvent("a"), recommendationEvent("b")))
-        val local = LocalRecommendationRepository(fixture.events, fixture.users, now = { recommendationNow }).recommend()
+        val local = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, now = { recommendationNow }).recommend()
         val invalid = listOf(
             listOf(RankedRecommendation("inventado", "Motivo")),
             listOf(RankedRecommendation("a", "Motivo"), RankedRecommendation("a", "Motivo")),
@@ -75,7 +75,7 @@ class RecommendationRepositoryTest {
             emptyList()
         )
         invalid.forEach { response ->
-            val repository = LocalRecommendationRepository(fixture.events, fixture.users, RecommendationRanker { response }, now = { recommendationNow })
+            val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, RecommendationRanker { response }, now = { recommendationNow })
             assertEquals(local, repository.recommend())
         }
     }
@@ -83,10 +83,10 @@ class RecommendationRepositoryTest {
     @Test
     fun serviceFailureFallsBackButCancellationIsNotSwallowed() = runTest {
         val fixture = RecommendationFixture(listOf(recommendationEvent("a")))
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users,
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider,
             RecommendationRanker { error("Servicio no disponible") }, now = { recommendationNow })
         assertEquals(listOf("a"), repository.recommend().items.map { it.event.id })
-        val cancelled = LocalRecommendationRepository(fixture.events, fixture.users,
+        val cancelled = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider,
             RecommendationRanker { throw CancellationException("Cancelado") }, now = { recommendationNow })
         try {
             cancelled.recommend()
@@ -97,7 +97,7 @@ class RecommendationRepositoryTest {
     @Test
     fun validResponseIsResolvedByIdInTheReturnedOrder() = runTest {
         val fixture = RecommendationFixture(listOf(recommendationEvent("a"), recommendationEvent("b")))
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, RecommendationRanker {
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, RecommendationRanker {
             listOf(RankedRecommendation("b", "Motivo breve"), RankedRecommendation("a", "Otro motivo"))
         }, now = { recommendationNow })
 
@@ -109,7 +109,7 @@ class RecommendationRepositoryTest {
     @Test
     fun availabilityAndAttendanceAreRecheckedAfterRanking() = runTest {
         val fixture = RecommendationFixture(listOf(recommendationEvent("se-llena", capacity = 1), recommendationEvent("confirmado"), recommendationEvent("valido")))
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, RecommendationRanker { request ->
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, RecommendationRanker { request ->
             fixture.events.confirmAttendance("se-llena", "otro")
             fixture.events.confirmAttendance("confirmado", "lector")
             request.candidates.map { RankedRecommendation(it.event.id, "Motivo") }
@@ -122,7 +122,7 @@ class RecommendationRepositoryTest {
     @Test
     fun publicationReturnedToReviewDuringRankingCannotBeDisplayed() = runTest {
         val fixture = RecommendationFixture(listOf(recommendationEvent("cambia"), recommendationEvent("valido")))
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, RecommendationRanker { request ->
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, RecommendationRanker { request ->
             fixture.events.updateStatus("cambia", EventStatus.PENDING)
             request.candidates.map { RankedRecommendation(it.event.id, "Motivo") }
         }, now = { recommendationNow })
@@ -133,7 +133,7 @@ class RecommendationRepositoryTest {
     fun expiredEventsAreRemovedBeforePublishingAndBeforeRendering() = runTest {
         var clock = recommendationNow
         val fixture = RecommendationFixture(listOf(recommendationEvent("vence", start = clock.plusSeconds(1))))
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, now = { clock })
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, now = { clock })
         val feed = repository.recommend()
         assertEquals(1, feed.items.size)
         clock = clock.plusSeconds(1)
@@ -144,12 +144,12 @@ class RecommendationRepositoryTest {
     @Test
     fun logoutOrSessionChangeDoesNotLeakOldRecommendations() = runTest {
         val fixture = RecommendationFixture(listOf(recommendationEvent("a")))
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, now = { recommendationNow })
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, now = { recommendationNow })
         val feed = repository.recommend()
         fixture.users.logout()
         assertTrue(repository.revalidate(feed).items.isEmpty())
         assertTrue(repository.recommend().items.isEmpty())
-        val duringRequest = LocalRecommendationRepository(fixture.events, fixture.users, RecommendationRanker {
+        val duringRequest = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, RecommendationRanker {
             fixture.users.logout()
             listOf(RankedRecommendation("a", "Motivo"))
         }, now = { recommendationNow })
@@ -163,7 +163,7 @@ class RecommendationRepositoryTest {
             recommendationEvent("evento-$it", title = "t".repeat(300), description = "d".repeat(2000))
         }, liked = (1..50).map { Interest("evento-$it", "lector") })
         var received: RecommendationRequest? = null
-        LocalRecommendationRepository(fixture.events, fixture.users, RecommendationRanker { request ->
+        LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, RecommendationRanker { request ->
             received = request
             request.candidates.map { RankedRecommendation(it.event.id, "Motivo") }
         }, now = { recommendationNow }).recommend()

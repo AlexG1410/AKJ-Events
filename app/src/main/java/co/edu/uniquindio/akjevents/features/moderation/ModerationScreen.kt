@@ -61,6 +61,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -68,6 +70,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CategoryChip
 import co.edu.uniquindio.akjevents.core.component.ConfirmDialog
 import co.edu.uniquindio.akjevents.core.component.ContentCard
@@ -96,6 +99,7 @@ import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import java.time.LocalDateTime
@@ -132,7 +136,7 @@ fun ModerationScreen(
 
     Scaffold(
         containerColor = WarmBackground,
-        topBar = { MainTopBar(title = "Moderación", user = state.moderator, onAvatarClick = onOpenProfile) },
+        topBar = { MainTopBar(title = stringResource(R.string.moderation_title), user = state.moderator, onAvatarClick = onOpenProfile) },
         bottomBar = bottomBar,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { innerPadding ->
@@ -144,13 +148,13 @@ fun ModerationScreen(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Tag(
-                        text = "${state.moderator?.address ?: "Nodo"} • Moderador Comunitario",
+                        text = stringResource(R.string.moderation_role, state.moderator?.address ?: stringResource(R.string.moderation_node)),
                         icon = Icons.Outlined.Shield,
                         container = SecondaryFixed,
                         content = OnSecondaryFixedVariant
                     )
                     Tag(
-                        text = "${state.count(ModerationTab.PENDING)} pendientes",
+                        text = pluralStringResource(R.plurals.pending_count, state.count(ModerationTab.PENDING), state.count(ModerationTab.PENDING)),
                         icon = Icons.Outlined.PendingActions,
                         container = PrimaryFixed,
                         content = Terracotta
@@ -161,7 +165,7 @@ fun ModerationScreen(
                 FormTextField(
                     value = state.query,
                     onValueChange = viewModel::onQueryChange,
-                    placeholder = "Filtrar por evento, organizador o lugar",
+                    placeholder = stringResource(R.string.moderation_filter_placeholder),
                     leadingIcon = Icons.Outlined.Search,
                     style = SearchStyle,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -169,7 +173,7 @@ fun ModerationScreen(
                     trailingContent = if (state.query.isNotEmpty()) {
                         {
                             IconButton(onClick = { viewModel.onQueryChange("") }) {
-                                Icon(Icons.Outlined.Close, contentDescription = "Borrar filtro", tint = MutedText)
+                                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.moderation_clear_filter), tint = MutedText)
                             }
                         }
                     } else null
@@ -178,7 +182,7 @@ fun ModerationScreen(
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(ModerationTab.entries) { tab ->
-                        FilterPill(text = tab.label, count = state.count(tab), isSelected = state.tab == tab, onClick = { viewModel.selectTab(tab) })
+                        FilterPill(text = stringResource(tab.label), count = state.count(tab), isSelected = state.tab == tab, onClick = { viewModel.selectTab(tab) })
                     }
                 }
             }
@@ -191,9 +195,9 @@ fun ModerationScreen(
                     ) {
                         Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = ErrorColor, modifier = Modifier.size(20.dp))
                         Column {
-                            Text("Revisión en curso", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.moderation_review_in_progress), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             Text(
-                                "Verifica que cada evento sea real y apropiado. Si lo rechazas, el motivo es obligatorio y se notifica al organizador.",
+                                stringResource(R.string.moderation_review_hint),
                                 color = MutedText,
                                 fontSize = 12.sp
                             )
@@ -206,8 +210,8 @@ fun ModerationScreen(
                 item {
                     EmptyState(
                         icon = Icons.Outlined.Inbox,
-                        title = if (state.tab == ModerationTab.PENDING) "¡Cola al día!" else "No hay eventos aquí",
-                        message = if (state.tab == ModerationTab.PENDING) "No hay eventos esperando revisión." else "Prueba con otra pestaña o filtro."
+                        title = stringResource(if (state.tab == ModerationTab.PENDING) R.string.moderation_queue_clear else R.string.moderation_no_events),
+                        message = stringResource(if (state.tab == ModerationTab.PENDING) R.string.moderation_queue_clear_message else R.string.moderation_no_events_message)
                     )
                 }
             }
@@ -239,7 +243,7 @@ fun ModerationScreen(
                 ) {
                     Icon(Icons.Outlined.Verified, contentDescription = null, tint = Sage, modifier = Modifier.size(18.dp))
                     Text(
-                        "Las decisiones de moderación se notifican automáticamente al organizador en su apartado de alertas.",
+                        stringResource(R.string.moderation_footer),
                         color = MutedText,
                         fontSize = 12.sp
                     )
@@ -250,9 +254,9 @@ fun ModerationScreen(
 
     confirmFinish?.let { event ->
         ConfirmDialog(
-            title = "¿Marcar como finalizado?",
-            message = "«${event.title}» dejará de recibir confirmaciones de asistencia y saldrá del feed público.",
-            confirmText = "Finalizar",
+            title = stringResource(R.string.moderation_finish_title),
+            message = stringResource(R.string.moderation_finish_message, event.title),
+            confirmText = stringResource(R.string.action_finish),
             onConfirm = {
                 viewModel.finish(event.id)
                 confirmFinish = null
@@ -275,7 +279,7 @@ private fun CompactReviewCard(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             CategoryChip(event.category, showIcon = true)
             Text(
-                if (event.status == EventStatus.PENDING) "En espera ${EventFormat.relative(event.createdAt).lowercase()}" else event.status.label,
+                if (event.status == EventStatus.PENDING) stringResource(R.string.moderation_waiting, EventFormat.relative(event.createdAt).lowercase()) else stringResource(event.status.labelRes),
                 color = MutedText,
                 fontSize = 12.sp,
                 modifier = Modifier.weight(1f)
@@ -283,7 +287,7 @@ private fun CompactReviewCard(
         }
         Text(event.title, color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
         Text(
-            "Organizador: ${item.organizer?.name ?: "Cuenta eliminada"} • ${event.address.substringBefore(",")}",
+            stringResource(R.string.moderation_organizer_place, item.organizer?.name ?: stringResource(R.string.detail_deleted_account), event.address.substringBefore(",")),
             color = MutedText,
             fontSize = 12.sp,
             maxLines = 1,
@@ -291,22 +295,22 @@ private fun CompactReviewCard(
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             IconText(Icons.Outlined.CalendarToday, EventFormat.shortDateTime(event.startsAt))
-            IconText(Icons.Outlined.Groups, event.capacity?.let { "Cupo: $it" } ?: "Cupo abierto")
+            IconText(Icons.Outlined.Groups, event.capacity?.let { stringResource(R.string.moderation_capacity, it) } ?: stringResource(R.string.open_capacity))
         }
         if (event.status == EventStatus.REJECTED) {
-            Text("Motivo: ${event.rejectionReason}", color = ErrorColor, fontSize = 12.sp, lineHeight = 16.sp)
+            Text(stringResource(R.string.moderation_reason, event.rejectionReason.orEmpty()), color = ErrorColor, fontSize = 12.sp, lineHeight = 16.sp)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             when (event.status) {
                 EventStatus.PENDING -> {
-                    ActionButton("Aprobar directo", Icons.Outlined.CheckCircle, SecondaryFixed, OnSecondaryFixedVariant, onApprove, Modifier.weight(1f))
-                    ActionButton("Revisar ficha", Icons.Outlined.Visibility, SurfaceContainer, WarmText, onReview, Modifier.weight(1f))
+                    ActionButton(stringResource(R.string.moderation_approve), Icons.Outlined.CheckCircle, SecondaryFixed, OnSecondaryFixedVariant, onApprove, Modifier.weight(1f))
+                    ActionButton(stringResource(R.string.moderation_review), Icons.Outlined.Visibility, SurfaceContainer, WarmText, onReview, Modifier.weight(1f))
                 }
                 EventStatus.VERIFIED -> {
-                    ActionButton("Ver evento", Icons.Outlined.Visibility, SurfaceContainer, WarmText, onOpenEvent, Modifier.weight(1f))
-                    ActionButton("Finalizar", Icons.Outlined.Flag, SurfaceContainerHigh, WarmText, onFinish, Modifier.weight(1f))
+                    ActionButton(stringResource(R.string.map_see_event), Icons.Outlined.Visibility, SurfaceContainer, WarmText, onOpenEvent, Modifier.weight(1f))
+                    ActionButton(stringResource(R.string.action_finish), Icons.Outlined.Flag, SurfaceContainerHigh, WarmText, onFinish, Modifier.weight(1f))
                 }
-                else -> ActionButton("Ver ficha", Icons.Outlined.Visibility, SurfaceContainer, WarmText, onOpenEvent, Modifier.weight(1f))
+                else -> ActionButton(stringResource(R.string.moderation_see_details), Icons.Outlined.Visibility, SurfaceContainer, WarmText, onOpenEvent, Modifier.weight(1f))
             }
         }
     }
@@ -326,18 +330,18 @@ private fun ExpandedReviewCard(
     ContentCard(spacing = 14.dp, modifier = Modifier.shadow(2.dp, RoundedCornerShape(16.dp))) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             CategoryChip(event.category, showIcon = true)
-            Tag(event.capacity?.let { "Cupo: $it pers." } ?: "Cupo abierto", icon = Icons.Outlined.Groups, container = SurfaceContainer, content = MutedText)
+            Tag(event.capacity?.let { stringResource(R.string.moderation_capacity_people, it) } ?: stringResource(R.string.open_capacity), icon = Icons.Outlined.Groups, container = SurfaceContainer, content = MutedText)
             Spacer(Modifier.weight(1f))
             StatusBadge(event.status)
         }
-        Text("Enviado ${EventFormat.relative(event.createdAt).lowercase()}", color = MutedText, fontSize = 12.sp)
+        Text(stringResource(R.string.moderation_submitted, EventFormat.relative(event.createdAt).lowercase()), color = MutedText, fontSize = 12.sp)
         Text(event.title, color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold)
 
         Column(
             modifier = Modifier.fillMaxWidth().background(SurfaceContainerLow, RoundedCornerShape(12.dp)).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            IconText(Icons.Outlined.CalendarToday, "${EventFormat.weekdayFullDate(event.startsAt)} • ${EventFormat.timeRange(event.startsAt, event.endsAt)}")
+            IconText(Icons.Outlined.CalendarToday, stringResource(R.string.moderation_date_time, EventFormat.weekdayFullDate(event.startsAt), EventFormat.timeRange(event.startsAt, event.endsAt)))
             IconText(Icons.Outlined.LocationOn, event.address)
         }
 
@@ -351,7 +355,12 @@ private fun ExpandedReviewCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(organizer.name, color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        "${organizer.level.label} • ${organizer.points} pts • ${item.organizerVerifiedCount} eventos aprobados",
+                        stringResource(
+                            R.string.moderation_organizer_stats,
+                            stringResource(organizer.level.labelRes),
+                            organizer.points,
+                            pluralStringResource(R.plurals.approved_events, item.organizerVerifiedCount, item.organizerVerifiedCount)
+                        ),
                         color = MutedText,
                         fontSize = 12.sp
                     )
@@ -359,7 +368,7 @@ private fun ExpandedReviewCard(
             }
         }
 
-        Text("DESCRIPCIÓN COMUNITARIA", color = MutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        Text(stringResource(R.string.moderation_description), color = MutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         Text(event.description, color = WarmText, fontSize = 14.sp, lineHeight = 20.sp)
         EventImage(event, Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)))
 
@@ -375,27 +384,27 @@ private fun ExpandedReviewCard(
                 ) {
                     Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = Color.White)
-                        Text("  Verificar y Publicar Evento", color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        Text("  " + stringResource(R.string.moderation_verify_publish), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     ActionButton(
-                        "Rechazar evento",
+                        stringResource(R.string.moderation_reject),
                         Icons.Outlined.Cancel,
                         RejectRed,
                         ErrorColor,
                         { if (isRejecting) viewModel.cancelRejection() else viewModel.startRejection(event.id) },
                         Modifier.weight(1f)
                     )
-                    ActionButton("Finalizado", Icons.Outlined.Flag, SurfaceContainerHigh, WarmText, onFinish, Modifier.weight(1f))
+                    ActionButton(stringResource(R.string.moderation_finished), Icons.Outlined.Flag, SurfaceContainerHigh, WarmText, onFinish, Modifier.weight(1f))
                 }
                 if (isRejecting) RejectionForm(state, viewModel)
             }
             EventStatus.VERIFIED -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ActionButton("Ver evento", Icons.Outlined.Visibility, SurfaceContainer, WarmText, onOpenEvent, Modifier.weight(1f))
-                ActionButton("Finalizar", Icons.Outlined.Flag, SurfaceContainerHigh, WarmText, onFinish, Modifier.weight(1f))
+                ActionButton(stringResource(R.string.map_see_event), Icons.Outlined.Visibility, SurfaceContainer, WarmText, onOpenEvent, Modifier.weight(1f))
+                ActionButton(stringResource(R.string.action_finish), Icons.Outlined.Flag, SurfaceContainerHigh, WarmText, onFinish, Modifier.weight(1f))
             }
-            else -> ActionButton("Ver ficha", Icons.Outlined.Visibility, SurfaceContainer, WarmText, onOpenEvent, Modifier.fillMaxWidth())
+            else -> ActionButton(stringResource(R.string.moderation_see_details), Icons.Outlined.Visibility, SurfaceContainer, WarmText, onOpenEvent, Modifier.fillMaxWidth())
         }
     }
 }
@@ -407,10 +416,10 @@ private fun SystemChecks(event: CommunityEvent, organizerVerifiedCount: Int) {
         modifier = Modifier.fillMaxWidth().background(SurfaceContainerLow, RoundedCornerShape(12.dp)).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text("VALIDACIONES AUTOMÁTICAS DEL SISTEMA", color = MutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-        CheckRow(true, "Ubicación con coordenadas GPS registradas")
-        CheckRow(event.startsAt.isAfter(LocalDateTime.now()), "La fecha de inicio es futura")
-        CheckRow(organizerVerifiedCount > 0, if (organizerVerifiedCount > 0) "El organizador tiene eventos aprobados" else "Primer evento del organizador: revisa con detalle")
+        Text(stringResource(R.string.moderation_checks), color = MutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        CheckRow(true, stringResource(R.string.moderation_check_gps))
+        CheckRow(event.startsAt.isAfter(LocalDateTime.now()), stringResource(R.string.moderation_check_future))
+        CheckRow(organizerVerifiedCount > 0, stringResource(if (organizerVerifiedCount > 0) R.string.moderation_check_organizer_ok else R.string.moderation_check_first_event))
     }
 }
 
@@ -441,10 +450,10 @@ private fun RejectionForm(state: ModerationUiState, viewModel: ModerationViewMod
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = ErrorColor, modifier = Modifier.size(20.dp))
-            Text("  Motivo del rechazo (obligatorio)", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-            Tag("Auditable", container = TertiaryFixed, content = OnTertiaryContainer)
+            Text("  " + stringResource(R.string.moderation_rejection_required), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Tag(stringResource(R.string.moderation_auditable), container = TertiaryFixed, content = OnTertiaryContainer)
         }
-        Text("Selecciona la causal para notificar formalmente al organizador:", color = MutedText, fontSize = 12.sp)
+        Text(stringResource(R.string.moderation_choose_cause), color = MutedText, fontSize = 12.sp)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             RejectionReason.entries.forEach { reason ->
                 val selected = state.rejectionReason == reason
@@ -454,7 +463,7 @@ private fun RejectionForm(state: ModerationUiState, viewModel: ModerationViewMod
                     color = if (selected) Terracotta else SurfaceContainer
                 ) {
                     Text(
-                        reason.label,
+                        stringResource(reason.label),
                         color = if (selected) Color.White else WarmText,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
@@ -464,14 +473,14 @@ private fun RejectionForm(state: ModerationUiState, viewModel: ModerationViewMod
             }
         }
         Text(
-            "Describe el motivo para el organizador *",
+            stringResource(R.string.moderation_describe_reason),
             color = MutedText,
             fontSize = 12.sp
         )
         TextField(
             value = state.rejectionNote,
             onValueChange = viewModel::onRejectionNoteChange,
-            placeholder = { Text("Ej: Solicita el permiso de uso del espacio público y vuelve a enviarlo.") },
+            placeholder = { Text(stringResource(R.string.moderation_reason_placeholder)) },
             minLines = 3,
             colors = TextFieldDefaults.colors(
                 focusedContainerColor = Color.White,
@@ -489,7 +498,7 @@ private fun RejectionForm(state: ModerationUiState, viewModel: ModerationViewMod
         ) {
             Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
-                Text("  Confirmar rechazo con notificación", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("  " + stringResource(R.string.moderation_confirm_rejection), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

@@ -50,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -58,6 +60,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.ConfirmDialog
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
@@ -79,6 +82,7 @@ import co.edu.uniquindio.akjevents.core.theme.Terracotta
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import java.util.Locale
@@ -144,9 +148,9 @@ fun EditProfileScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ScreenHeader(title = "Editar Perfil", kicker = "Ajustes cívicos", onBack = onBack) {
+            ScreenHeader(title = stringResource(R.string.edit_profile_title), kicker = stringResource(R.string.edit_profile_kicker), onBack = onBack) {
                 Surface(onClick = onBack, shape = CircleShape, color = SurfaceContainer) {
-                    Text("Cancelar", color = WarmText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+                    Text(stringResource(R.string.action_cancel), color = WarmText, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
                 }
             }
 
@@ -155,38 +159,38 @@ fun EditProfileScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.VerifiedUser, contentDescription = null, tint = Sage, modifier = Modifier.size(18.dp))
                     Text(
-                        if (user.isModerator) " Moderador comunitario" else " ${user.level.label} comunitario verificado",
+                        if (user.isModerator) stringResource(R.string.edit_profile_moderator) else stringResource(R.string.edit_profile_verified, stringResource(user.level.labelRes)),
                         color = WarmText,
                         fontSize = 14.sp
                     )
                 }
             }
 
-            Field("Nombre completo *") {
+            Field(stringResource(R.string.register_full_name)) {
                 FormTextField(
                     value = state.name,
                     onValueChange = viewModel::onNameChange,
-                    placeholder = "Tu nombre y apellido",
+                    placeholder = stringResource(R.string.register_full_name_placeholder),
                     leadingIcon = Icons.Outlined.Person,
                     style = ProfileFieldStyle,
                     isError = state.nameError != null,
                     keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Next)
                 )
-                state.nameError?.let { ErrorText(it) }
+                state.nameError?.let { ErrorText(it.asString()) }
             }
-            Field("Correo electrónico *") {
+            Field(stringResource(R.string.register_email)) {
                 FormTextField(
                     value = state.email,
                     onValueChange = viewModel::onEmailChange,
-                    placeholder = "correo@ejemplo.com",
+                    placeholder = stringResource(R.string.register_email_placeholder),
                     leadingIcon = Icons.Outlined.Mail,
                     style = ProfileFieldStyle,
                     isError = state.emailError != null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Done)
                 )
-                state.emailError?.let { ErrorText(it) }
+                state.emailError?.let { ErrorText(it.asString()) }
             }
-            Field("Ubicación principal *") {
+            Field(stringResource(R.string.edit_profile_location)) {
                 CityPicker(city = state.city, cities = viewModel.cities, onSelect = viewModel::onCityChange)
                 MapLocationRow(
                     address = state.address,
@@ -200,11 +204,11 @@ fun EditProfileScreen(
             }
 
             PrimaryButton(
-                text = "Guardar cambios",
+                text = stringResource(R.string.create_save_changes),
                 onClick = viewModel::save,
                 leadingIcon = Icons.Outlined.Check,
                 isLoading = state.isBusy,
-                loadingText = "Guardando...",
+                loadingText = stringResource(R.string.create_saving),
                 containerColor = Terracotta,
                 height = 52.dp
             )
@@ -217,9 +221,9 @@ fun EditProfileScreen(
 
     if (confirmDelete) {
         ConfirmDialog(
-            title = "¿Eliminar tu cuenta?",
-            message = "Se borrarán tus datos, tus eventos, comentarios y asistencias. Esta acción no se puede deshacer.",
-            confirmText = "Eliminar definitivamente",
+            title = stringResource(R.string.edit_profile_delete_title),
+            message = stringResource(R.string.edit_profile_delete_message),
+            confirmText = stringResource(R.string.edit_profile_delete_confirm),
             isDestructive = true,
             onConfirm = {
                 confirmDelete = false
@@ -248,8 +252,8 @@ private fun CityPicker(city: String, cities: List<String>, onSelect: (String) ->
         Surface(onClick = { expanded = true }, shape = RoundedCornerShape(16.dp), color = SurfaceContainerLow, modifier = Modifier.fillMaxWidth().height(52.dp)) {
             Row(modifier = Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = MutedText, modifier = Modifier.size(20.dp))
-                Text(city.ifBlank { "Elige tu ciudad" }, color = WarmText, fontSize = 15.sp, modifier = Modifier.weight(1f))
-                Icon(Icons.Outlined.ExpandMore, contentDescription = "Elegir ciudad", tint = MutedText)
+                Text(city.ifBlank { stringResource(R.string.edit_profile_choose_city) }, color = WarmText, fontSize = 15.sp, modifier = Modifier.weight(1f))
+                Icon(Icons.Outlined.ExpandMore, contentDescription = stringResource(R.string.edit_profile_pick_city), tint = MutedText)
             }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -271,8 +275,12 @@ private fun MapLocationRow(address: String, location: Location?, onClick: () -> 
             Column(modifier = Modifier.weight(1f)) {
                 Text(address, color = OnSecondaryFixedVariant, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
                 Text(
-                    location?.let { "Lat ${"%.4f".format(Locale.US, it.latitude)}, Lon ${"%.4f".format(Locale.US, it.longitude)} • Ajustar en el mapa" }
-                        ?: "Seleccionar ubicación en el mapa",
+                    location?.let {
+                        stringResource(
+                            R.string.edit_profile_adjust_on_map,
+                            stringResource(R.string.detail_coordinates, "%.4f".format(Locale.US, it.latitude), "%.4f".format(Locale.US, it.longitude))
+                        )
+                    } ?: stringResource(R.string.edit_profile_select_on_map),
                     color = OnSecondaryFixedVariant,
                     fontSize = 12.sp
                 )
@@ -287,8 +295,8 @@ private fun MapLocationRow(address: String, location: Location?, onClick: () -> 
 private fun InterestsSection(selected: Set<EventCategory>, onToggle: (EventCategory) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row {
-            Text("Categorías e intereses favoritos", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Text("${selected.size} activas", color = Sage, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.edit_profile_interests), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(pluralStringResource(R.plurals.interests_active, selected.size, selected.size), color = Sage, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             EventCategory.entries.forEach { category ->
@@ -300,7 +308,7 @@ private fun InterestsSection(selected: Set<EventCategory>, onToggle: (EventCateg
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(category.style.icon, contentDescription = null, tint = if (isSelected) Color.White else WarmText, modifier = Modifier.size(18.dp))
-                        Text(category.label, color = if (isSelected) Color.White else WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(category.labelRes), color = if (isSelected) Color.White else WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -313,7 +321,7 @@ private fun AccountZone(onDelete: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             HorizontalDivider(modifier = Modifier.weight(1f), color = SurfaceContainerHigh)
-            Text("  ZONA DE CUENTA  ", color = MutedText, fontSize = 12.sp, letterSpacing = 1.sp)
+            Text(stringResource(R.string.edit_profile_account_zone), color = MutedText, fontSize = 12.sp, letterSpacing = 1.sp)
             HorizontalDivider(modifier = Modifier.weight(1f), color = SurfaceContainerHigh)
         }
         Column(
@@ -325,9 +333,9 @@ private fun AccountZone(onDelete: () -> Unit) {
                     Icon(Icons.Outlined.WarningAmber, contentDescription = null, tint = ErrorColor)
                 }
                 Column {
-                    Text("Gestión definitiva de identidad", color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.edit_profile_identity), color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Si eliminas tu cuenta, se borrarán tus datos y tu participación en los eventos comunitarios.",
+                        stringResource(R.string.edit_profile_delete_hint),
                         color = MutedText,
                         fontSize = 13.sp
                     )
@@ -336,7 +344,7 @@ private fun AccountZone(onDelete: () -> Unit) {
             Surface(onClick = onDelete, shape = RoundedCornerShape(12.dp), color = SurfaceContainer, modifier = Modifier.fillMaxWidth().height(46.dp)) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.DeleteForever, contentDescription = null, tint = ErrorColor, modifier = Modifier.size(18.dp))
-                    Text("  Eliminar mi cuenta", color = ErrorColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text("  " + stringResource(R.string.edit_profile_delete_account), color = ErrorColor, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

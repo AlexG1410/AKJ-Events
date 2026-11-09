@@ -18,7 +18,7 @@ class SendNoticeUseCase @Inject constructor(
             .map { it.userId }
             .distinct()
         recipients.forEach {
-            notificationRepository.notify(it, NotificationType.ORGANIZER_NOTICE, "Aviso del organizador: ${event.title}", message.trim(), eventId)
+            notificationRepository.notify(it, NotificationType.ORGANIZER_NOTICE, eventId = eventId, eventTitle = event.title, detail = message.trim())
         }
         return recipients.size
     }

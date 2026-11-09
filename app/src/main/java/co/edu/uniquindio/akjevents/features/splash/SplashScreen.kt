@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -91,7 +92,7 @@ fun SplashScreen(
             Spacer(Modifier.height(24.dp))
 
             Text(
-                "COMUNIDAD EN MOVIMIENTO",
+                stringResource(R.string.splash_tagline),
                 color = BrandTerracotta,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.ExtraBold,
@@ -99,7 +100,7 @@ fun SplashScreen(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "AKJ Events",
+                stringResource(R.string.app_name),
                 color = BrandDark,
                 fontSize = 30.sp,
                 lineHeight = 36.sp,
@@ -114,7 +115,7 @@ fun SplashScreen(
             ) {
                 SloganDot()
                 Text(
-                    "“Conecta tu comunidad”",
+                    stringResource(R.string.splash_quote),
                     color = BrandSage,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
@@ -124,7 +125,7 @@ fun SplashScreen(
 
             Spacer(Modifier.height(12.dp))
             Text(
-                "Descubre, crea y participa en iniciativas, cultura y deporte cerca de ti.",
+                stringResource(R.string.splash_description),
                 color = BrandMuted,
                 fontSize = 12.sp,
                 lineHeight = 19.sp,
@@ -142,7 +143,7 @@ fun SplashScreen(
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                "Cargando eventos cercanos...",
+                stringResource(R.string.splash_loading),
                 color = BrandMuted,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
@@ -179,7 +180,7 @@ private fun SplashLogo() {
         ) {
             Image(
                 painter = painterResource(R.drawable.logo),
-                contentDescription = "Logo AKJ Events",
+                contentDescription = stringResource(R.string.app_logo_description),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()
             )
@@ -228,13 +229,13 @@ private fun SplashFooter(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            FeaturePill(Icons.Rounded.Verified, "Eventos Verificados", BrandSage)
+            FeaturePill(Icons.Rounded.Verified, stringResource(R.string.splash_verified_events), BrandSage)
             Text("•", color = SeparatorDot, fontSize = 11.sp)
-            FeaturePill(Icons.Rounded.QrCodeScanner, "Check-in QR", BrandTerracotta)
+            FeaturePill(Icons.Rounded.QrCodeScanner, stringResource(R.string.splash_check_in_qr), BrandTerracotta)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Nodo Armenia • Quindío", color = BrandDark, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-            Text("Versión $versionName • Material 3", color = VersionText, fontSize = 10.sp)
+            Text(stringResource(R.string.splash_node), color = BrandDark, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.splash_version, versionName.orEmpty()), color = VersionText, fontSize = 10.sp)
         }
     }
 }

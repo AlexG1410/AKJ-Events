@@ -1,6 +1,5 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
@@ -8,6 +7,7 @@ import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.features.profile.edit.EditProfileViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -19,7 +19,7 @@ class EditProfileViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repos = TestRepositories()
-    private val viewModel by lazy { repos.useCases.let { EditProfileViewModel(it.observeCurrentUser, it.updateProfile, it.deleteAccount) } }
+    private val viewModel by lazy { repos.useCases.let { EditProfileViewModel(it.observeCurrentUser, it.updateProfile, it.deleteAccount, TestResourceProvider) } }
 
     @Test
     fun savesPersonalDataLocationAndInterests() = runTest {

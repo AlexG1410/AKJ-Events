@@ -40,6 +40,7 @@ Los moderadores están precargados; el Registro siempre crea cuentas de Usuario.
 - La recompensa por verificación se entrega una sola vez por evento; editarlo y aprobarlo de nuevo no repite esos puntos. El cupo no puede reducirse por debajo de los asistentes confirmados.
 - **Niveles:** Espectador (0), Participante (100), Organizador (250) y Líder Comunitario (500 puntos).
 - **Insignias:** Primer evento, Primer aporte, Primera asistencia, 10 Verificados y Destacado del mes.
+- **Idiomas:** la app está en inglés (`res/values/strings.xml`, idioma por defecto) y español (`res/values-es/strings.xml`), según el idioma del teléfono. Desde Android 13 también se puede elegir en Ajustes > Apps > AKJ Events > Idioma. Las notificaciones y el historial de puntos guardan datos, no frases, así que cada persona los lee en su idioma.
 
 ## Qué está simulado
 

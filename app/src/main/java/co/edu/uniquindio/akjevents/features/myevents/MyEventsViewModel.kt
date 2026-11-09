@@ -1,7 +1,10 @@
 package co.edu.uniquindio.akjevents.features.myevents
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.akjevents.R
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.domain.model.Attendance
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
@@ -24,12 +27,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Pestañas del mockup 11; [status] null muestra todos. */
-enum class MyEventsTab(val label: String, val status: EventStatus?) {
-    ALL("Todos", null),
-    PENDING("Pendientes", EventStatus.PENDING),
-    VERIFIED("Verificados", EventStatus.VERIFIED),
-    REJECTED("Rechazados", EventStatus.REJECTED),
-    FINISHED("Finalizados", EventStatus.FINISHED)
+enum class MyEventsTab(@param:StringRes val label: Int, val status: EventStatus?) {
+    ALL(R.string.tab_all, null),
+    PENDING(R.string.tab_pending, EventStatus.PENDING),
+    VERIFIED(R.string.tab_verified, EventStatus.VERIFIED),
+    REJECTED(R.string.tab_rejected, EventStatus.REJECTED),
+    FINISHED(R.string.tab_finished, EventStatus.FINISHED)
 }
 
 /** Persona inscrita en un evento; [user] es null si eliminó su cuenta. */
@@ -65,7 +68,8 @@ class MyEventsViewModel @Inject constructor(
     private val getUserById: GetUserByIdUseCase,
     private val deleteEventUseCase: DeleteEventUseCase,
     private val finishEventUseCase: FinishEventUseCase,
-    private val sendNoticeUseCase: SendNoticeUseCase
+    private val sendNoticeUseCase: SendNoticeUseCase,
+    private val resources: ResourceProvider
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MyEventsUiState())
     val uiState: StateFlow<MyEventsUiState> = _uiState.asStateFlow()
@@ -87,42 +91,41 @@ class MyEventsViewModel @Inject constructor(
 
     fun deleteEvent(eventId: String) {
         val user = observeCurrentUser().value ?: return
-        runAction("No se pudo eliminar el evento") {
-            showMessage(if (deleteEventUseCase(eventId, user.id)) "Evento eliminado" else "No se pudo eliminar el evento")
+        runAction(R.string.my_events_error_delete) {
+            showMessage(if (deleteEventUseCase(eventId, user.id)) R.string.my_events_deleted else R.string.my_events_error_delete)
         }
     }
 
     fun finishEvent(eventId: String) {
         val user = observeCurrentUser().value ?: return
-        runAction("No se pudo finalizar el evento") {
-            showMessage(if (finishEventUseCase(eventId, user.id)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
+        runAction(R.string.error_finish_event) {
+            showMessage(if (finishEventUseCase(eventId, user.id)) R.string.event_marked_finished else R.string.error_finish_event)
         }
     }
 
     fun sendNotice(eventId: String, message: String) {
         val user = observeCurrentUser().value ?: return
         if (message.isBlank()) {
-            showMessage("Escribe el aviso antes de enviarlo")
+            showMessage(R.string.my_events_notice_empty)
             return
         }
-        runAction("No se pudo enviar el aviso") {
+        runAction(R.string.my_events_error_notice) {
             val sent = sendNoticeUseCase(eventId, user.id, message)
-            showMessage(
-                when (sent) {
-                    0 -> "Aún no hay personas inscritas con cuenta para avisarles"
-                    1 -> "Aviso enviado a 1 persona"
-                    else -> "Aviso enviado a $sent personas"
-                }
-            )
+            val message = if (sent == 0) {
+                resources.getString(R.string.my_events_notice_nobody)
+            } else {
+                resources.getQuantityString(R.plurals.notice_sent, sent, sent)
+            }
+            _uiState.update { it.copy(userMessage = message) }
         }
     }
 
     fun onMessageShown() = _uiState.update { it.copy(userMessage = null) }
 
-    private fun showMessage(message: String) = _uiState.update { it.copy(userMessage = message) }
+    private fun showMessage(@StringRes message: Int) = _uiState.update { it.copy(userMessage = resources.getString(message)) }
 
     /** Ejecuta una acción sobre un evento; si falla (por ejemplo, sin conexión), muestra [errorMessage]. */
-    private fun runAction(errorMessage: String, action: suspend () -> Unit) {
+    private fun runAction(@StringRes errorMessage: Int, action: suspend () -> Unit) {
         if (isBusy) return
         isBusy = true
         viewModelScope.launch {

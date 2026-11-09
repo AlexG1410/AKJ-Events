@@ -1,6 +1,5 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
@@ -10,6 +9,7 @@ import co.edu.uniquindio.akjevents.domain.model.UserLevel
 import co.edu.uniquindio.akjevents.domain.usecase.auth.RegisterUserUseCase
 import co.edu.uniquindio.akjevents.features.auth.register.PasswordStrength
 import co.edu.uniquindio.akjevents.features.auth.register.RegisterViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -21,7 +21,7 @@ class RegisterViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val users = InMemoryUserRepository()
-    private val viewModel by lazy { RegisterViewModel(RegisterUserUseCase(users), simulatedRequestMs = 0) }
+    private val viewModel by lazy { RegisterViewModel(RegisterUserUseCase(users), TestResourceProvider, simulatedRequestMs = 0) }
     private val picked = PickedLocation("Parque Sucre, Cra. 14 # 13-00", Location(4.5382, -75.6731))
 
     private fun fillForm(password: String, confirmation: String = password) = with(viewModel) {

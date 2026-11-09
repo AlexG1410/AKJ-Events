@@ -1,7 +1,5 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
@@ -10,6 +8,8 @@ import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
 import co.edu.uniquindio.akjevents.features.event.create.CreateEventViewModel
 import java.time.LocalDateTime
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
@@ -29,7 +29,7 @@ class CreateEventViewModelTest {
     private val currentUserId = runBlocking { repos.users.register("Ana Gómez", "ana@ejemplo.com", "Armenia, Quindío", "Comunidad1", emptySet(), "Parque de la Vida", Location(4.5511, -75.6598)) as RegisterResult.Success }.user.id
     private val viewModel by lazy { createViewModel(repos) }
     private fun createViewModel(from: TestRepositories, eventId: String? = null) = from.useCases.let {
-        CreateEventViewModel(it.getEventById, it.observeCurrentUser, it.createEvent, it.updateEvent, eventId = eventId, now = { now })
+        CreateEventViewModel(it.getEventById, it.observeCurrentUser, it.createEvent, it.updateEvent, TestResourceProvider, eventId = eventId, now = { now })
     }
     private val parqueDeLaVida = PickedLocation("Parque de la Vida, Av. Bolívar", Location(4.5511, -75.6598))
 
@@ -53,7 +53,7 @@ class CreateEventViewModelTest {
 
         viewModel.submit()
 
-        assertEquals(RequestResult.Success(CreateEventViewModel.SUBMITTED_MESSAGE), viewModel.uiState.value.result)
+        assertEquals(RequestResult.Success("Tu evento fue enviado a verificación"), viewModel.uiState.value.result)
         val created = repository.findEventsByOrganizer(currentUserId).single()
         assertEquals(EventStatus.PENDING, created.status)
         assertEquals("Taller de huertos urbanos", created.title)
@@ -184,7 +184,7 @@ class CreateEventViewModelTest {
         edit.onEndsAtChange(now.plusDays(3).withHour(18))
         edit.submit()
 
-        assertEquals(RequestResult.Success(CreateEventViewModel.RESUBMITTED_MESSAGE), edit.uiState.value.result)
+        assertEquals(RequestResult.Success("Evento corregido y reenviado a verificación"), edit.uiState.value.result)
         val event = demo.events.findEvent("voleibol-callejero")!!
         assertEquals("Torneo de Voleibol en la cancha comunal", event.title)
         assertEquals(EventStatus.PENDING, event.status)

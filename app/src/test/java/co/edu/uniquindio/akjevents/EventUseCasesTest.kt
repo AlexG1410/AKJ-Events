@@ -1,6 +1,5 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.data.demo.SampleEvents
@@ -10,6 +9,7 @@ import co.edu.uniquindio.akjevents.domain.model.NotificationType
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
 import co.edu.uniquindio.akjevents.domain.repository.AttendanceResult
 import co.edu.uniquindio.akjevents.domain.usecase.participation.CheckInResult
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -184,7 +184,7 @@ class EventUseCasesTest {
         assertEquals(EventStatus.REJECTED, event.status)
         assertEquals("Información insuficiente", event.rejectionReason)
         assertNull(repository.findPublicEvent("huertos-urbanos"))
-        assertTrue(repos.notificationsOf(DEMO_USER).any { it.type == NotificationType.EVENT_REJECTED && it.message.contains("Información insuficiente") })
+        assertTrue(repos.notificationsOf(DEMO_USER).any { it.type == NotificationType.EVENT_REJECTED && it.detail == "Información insuficiente" })
     }
 
     @Test
@@ -222,7 +222,7 @@ class EventUseCasesTest {
         assertTrue(repos.notificationsOf("organizer-4").any { it.type == NotificationType.EVENT_FINISHED })
 
         assertTrue(uc.finishEvent("ciclopaseo", MODERATOR))
-        assertTrue(repos.notificationsOf("organizer-1").any { it.type == NotificationType.EVENT_FINISHED })
+        assertTrue(repos.notificationsOf("organizer-1").any { it.type == NotificationType.EVENT_FINISHED_BY_MODERATOR })
     }
 
     @Test

@@ -25,7 +25,7 @@ class RecommendationsViewModelTest {
         val fixture = RecommendationFixture(listOf(
             recommendationEvent("deportes"), recommendationEvent("cultura", category = EventCategory.CULTURE)
         ))
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, now = { recommendationNow })
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, now = { recommendationNow })
         val viewModel = recommendationsViewModel(repository) { recommendationNow }
         assertFalse(viewModel.uiState.value.isLoading)
         assertEquals(2, viewModel.uiState.value.feed.items.size)
@@ -47,7 +47,7 @@ class RecommendationsViewModelTest {
     fun startingEventExpiresWithoutAnyRepositoryMutation() = runTest {
         var clock = recommendationNow
         val fixture = RecommendationFixture(listOf(recommendationEvent("vence", start = clock.plusSeconds(1))))
-        val repository = LocalRecommendationRepository(fixture.events, fixture.users, now = { clock })
+        val repository = LocalRecommendationRepository(fixture.events, fixture.users, TestResourceProvider, now = { clock })
         val viewModel = recommendationsViewModel(repository) { clock }
         assertEquals(1, viewModel.uiState.value.feed.items.size)
 

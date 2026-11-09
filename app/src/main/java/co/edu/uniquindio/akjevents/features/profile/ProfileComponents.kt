@@ -25,10 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.OnSecondaryFixedVariant
@@ -40,6 +42,7 @@ import co.edu.uniquindio.akjevents.core.theme.SurfaceContainerLow
 import co.edu.uniquindio.akjevents.core.theme.Terracotta
 import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmText
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.Badge
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
@@ -59,22 +62,22 @@ fun LevelProgress(user: User) {
             Box(Modifier.size(28.dp).background(PrimaryFixed, CircleShape), contentAlignment = Alignment.Center) {
                 Icon(Icons.Outlined.Star, contentDescription = null, tint = Terracotta, modifier = Modifier.size(16.dp))
             }
-            Text("${user.points} Puntos Cívicos", color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.reputation_points, user.points), color = WarmText, fontSize = 15.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Text(
-                if (next == null) "Nivel máximo" else "${user.points} / ${next.minPoints} pts • ${(progress * 100).roundToInt()}%",
+                if (next == null) stringResource(R.string.reputation_max_level) else stringResource(R.string.reputation_progress, user.points, next.minPoints, (progress * 100).roundToInt()),
                 color = MutedText,
                 fontSize = 12.sp
             )
         }
         CapacityBar(progress = progress, color = Terracotta, height = 8.dp)
         Text(
-            if (next == null) "¡Alcanzaste el rango máximo de Líder Comunitario!"
-            else "Estás a ${next.minPoints - user.points} pts de alcanzar el rango de ${next.label} (${next.minPoints} pts).",
+            if (next == null) stringResource(R.string.reputation_max_reached)
+            else stringResource(R.string.reputation_next_level, next.minPoints - user.points, stringResource(next.labelRes), next.minPoints),
             color = WarmText,
             fontSize = 12.sp
         )
         Text(
-            "* Los rangos reflejan tu reputación en la comunidad; no dan permisos de moderación.",
+            stringResource(R.string.reputation_disclaimer),
             color = MutedText,
             fontSize = 11.sp
         )
@@ -85,7 +88,7 @@ fun LevelProgress(user: User) {
 @Composable
 fun LevelRoute(user: User) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("RUTA DE LIDERAZGO LOCAL", color = MutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+        Text(stringResource(R.string.reputation_path), color = MutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             UserLevel.entries.forEach { level ->
                 val isCurrent = level == user.level
@@ -98,9 +101,9 @@ fun LevelRoute(user: User) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text("N${level.number}", color = if (isCurrent) OnSecondaryFixedVariant else MutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.reputation_level_short, level.number), color = if (isCurrent) OnSecondaryFixedVariant else MutedText, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     Text(
-                        level.label,
+                        stringResource(level.labelRes),
                         color = if (isCurrent) OnSecondaryFixedVariant else WarmText,
                         fontSize = 11.sp,
                         lineHeight = 13.sp,
@@ -108,8 +111,8 @@ fun LevelRoute(user: User) {
                         textAlign = TextAlign.Center
                     )
                     when {
-                        reached -> Icon(Icons.Outlined.CheckCircle, contentDescription = "Alcanzado", tint = OnSecondaryFixedVariant, modifier = Modifier.size(14.dp))
-                        isCurrent -> Text("${user.points} pts", color = OnSecondaryFixedVariant, fontSize = 10.sp)
+                        reached -> Icon(Icons.Outlined.CheckCircle, contentDescription = stringResource(R.string.reputation_reached), tint = OnSecondaryFixedVariant, modifier = Modifier.size(14.dp))
+                        isCurrent -> Text(stringResource(R.string.reputation_points_short, user.points), color = OnSecondaryFixedVariant, fontSize = 10.sp)
                         else -> Text("+${level.minPoints - user.points}", color = Terracotta, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -136,9 +139,9 @@ fun BadgeItem(badge: Badge, unlocked: Boolean, modifier: Modifier = Modifier) {
         Box(Modifier.size(52.dp).background(container, CircleShape), contentAlignment = Alignment.Center) {
             Icon(if (unlocked) badge.icon else Icons.Outlined.Lock, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         }
-        Text(badge.label, color = if (unlocked) WarmText else MutedText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 13.sp)
+        Text(stringResource(badge.labelRes), color = if (unlocked) WarmText else MutedText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center, lineHeight = 13.sp)
         Text(
-            if (unlocked) "Obtenida" else "Bloqueada",
+            stringResource(if (unlocked) R.string.badge_unlocked else R.string.badge_locked),
             color = if (unlocked) OnSecondaryFixedVariant else MutedText.copy(alpha = 0.7f),
             fontSize = 10.sp,
             maxLines = 1

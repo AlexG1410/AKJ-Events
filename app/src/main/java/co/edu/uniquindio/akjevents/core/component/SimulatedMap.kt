@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -44,6 +45,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -52,7 +54,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.widthIn
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.Sage
 import co.edu.uniquindio.akjevents.core.theme.Terracotta
@@ -212,10 +214,10 @@ fun SimulatedMap(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 if (userLocation != null) {
-                    MapButton(Icons.Outlined.MyLocation, "Centrar en mi ubicación", Terracotta) { state.moveTo(userLocation) }
+                    MapButton(Icons.Outlined.MyLocation, stringResource(R.string.map_center_on_me), Terracotta) { state.moveTo(userLocation) }
                 }
-                MapButton(Icons.Outlined.Add, "Acercar", WarmText, state::zoomIn)
-                MapButton(Icons.Outlined.Remove, "Alejar", WarmText, state::zoomOut)
+                MapButton(Icons.Outlined.Add, stringResource(R.string.map_zoom_in), WarmText, state::zoomIn)
+                MapButton(Icons.Outlined.Remove, stringResource(R.string.map_zoom_out), WarmText, state::zoomOut)
             }
         }
 

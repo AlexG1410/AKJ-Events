@@ -1,6 +1,5 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
@@ -8,6 +7,7 @@ import co.edu.uniquindio.akjevents.domain.model.NotificationType
 import co.edu.uniquindio.akjevents.features.moderation.ModerationTab
 import co.edu.uniquindio.akjevents.features.moderation.ModerationViewModel
 import co.edu.uniquindio.akjevents.features.moderation.RejectionReason
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -22,7 +22,7 @@ class ModerationViewModelTest {
     private val repos = TestRepositories(sessionUserId = MODERATOR)
 
     private fun moderationViewModel(from: TestRepositories) = from.useCases.let {
-        ModerationViewModel(it.observeCurrentUser, it.observeEvents, it.getUserById, it.verifyEvent, it.rejectEvent, it.finishEvent)
+        ModerationViewModel(it.observeCurrentUser, it.observeEvents, it.getUserById, it.verifyEvent, it.rejectEvent, it.finishEvent, TestResourceProvider)
     }
     private val viewModel by lazy { moderationViewModel(repos) }
 

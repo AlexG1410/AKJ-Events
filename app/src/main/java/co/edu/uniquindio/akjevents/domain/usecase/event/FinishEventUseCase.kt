@@ -2,6 +2,7 @@ package co.edu.uniquindio.akjevents.domain.usecase.event
 
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
+import co.edu.uniquindio.akjevents.domain.model.PointsReason
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
 import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
@@ -27,24 +28,22 @@ class FinishEventUseCase @Inject constructor(
         eventRepository.updateStatus(eventId, EventStatus.FINISHED) ?: return false
 
         if (wasPublic) {
-            awardPoints(event.organizerId, ReputationPoints.EVENT_FINISHED, "«${event.title}» finalizó con éxito")
+            awardPoints(event.organizerId, ReputationPoints.EVENT_FINISHED, PointsReason.EVENT_FINISHED, event.title)
             eventRepository.attendances.value.filter { it.eventId == eventId && it.userId != actorId }.forEach {
                 notificationRepository.notify(
                     userId = it.userId,
                     type = NotificationType.EVENT_FINISHED,
-                    title = "Evento finalizado",
-                    message = "«${event.title}» fue marcado como finalizado. ¡Gracias por participar!",
-                    eventId = eventId
+                    eventId = eventId,
+                    eventTitle = event.title
                 )
             }
         }
         if (actorId != event.organizerId) {
             notificationRepository.notify(
                 userId = event.organizerId,
-                type = NotificationType.EVENT_FINISHED,
-                title = "Un moderador finalizó tu evento",
-                message = "«${event.title}» quedó marcado como finalizado y ya no recibe confirmaciones.",
-                eventId = eventId
+                type = NotificationType.EVENT_FINISHED_BY_MODERATOR,
+                eventId = eventId,
+                eventTitle = event.title
             )
         }
         return true

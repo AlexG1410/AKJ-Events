@@ -14,10 +14,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.Sage
 import co.edu.uniquindio.akjevents.core.theme.SurfaceContainerLow
@@ -42,8 +45,8 @@ fun RecommendedEventCard(item: RecommendedEvent, onOpen: () -> Unit, modifier: M
                 }
                 Text(event.title, color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(EventFormat.weekdayDateTime(event.startsAt), color = MutedText, fontSize = 12.sp)
-                Text("${event.address} • a ${EventFormat.distance(item.distanceKm)}", color = MutedText, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(event.remainingSpots?.let { "$it cupos disponibles" } ?: "Cupo abierto", color = Sage, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.event_distance_suffix, event.address, EventFormat.distance(item.distanceKm)), color = MutedText, fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(event.remainingSpots?.let { pluralStringResource(R.plurals.spots_available, it, it) } ?: stringResource(R.string.open_capacity), color = Sage, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(8.dp)) {
                     Text(item.reason, modifier = Modifier.fillMaxWidth().padding(10.dp), color = WarmText, fontSize = 12.sp, lineHeight = 17.sp)
                 }

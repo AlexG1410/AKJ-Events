@@ -1,10 +1,10 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.features.event.detail.EventDetailViewModel
 import co.edu.uniquindio.akjevents.features.home.HomeViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -23,7 +23,7 @@ class EventDetailViewModelTest {
     private fun detail(id: String, viewer: TestRepositories = repos) = viewer.useCases.let {
         EventDetailViewModel(
             id, it.observeCurrentUser, it.observeEvents, it.observeAttendances, it.observeInterests, it.observeComments,
-            it.getUserById, it.toggleInterest, it.confirmAttendance, it.cancelAttendance, it.addComment
+            it.getUserById, it.toggleInterest, it.confirmAttendance, it.cancelAttendance, it.addComment, TestResourceProvider
         )
     }
 
@@ -116,7 +116,7 @@ class EventDetailViewModelTest {
         val state = viewModel.uiState.value
         assertEquals(event.attendanceCount, state.event!!.attendanceCount)
         assertFalse(state.isAttending)
-        assertEquals(EventDetailViewModel.FULL_EVENT_MESSAGE, state.userMessage)
+        assertEquals("No hay cupos disponibles: el evento está lleno", state.userMessage)
     }
 
     @Test

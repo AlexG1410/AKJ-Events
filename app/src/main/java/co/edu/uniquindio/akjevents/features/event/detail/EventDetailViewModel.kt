@@ -1,9 +1,12 @@
 package co.edu.uniquindio.akjevents.features.event.detail
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import co.edu.uniquindio.akjevents.R
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.domain.model.Attendance
 import co.edu.uniquindio.akjevents.domain.model.Comment
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
@@ -23,13 +26,13 @@ import co.edu.uniquindio.akjevents.domain.usecase.participation.ToggleInterestUs
 import co.edu.uniquindio.akjevents.domain.usecase.user.GetUserByIdUseCase
 import co.edu.uniquindio.akjevents.navigation.MainRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /** Comentario con su autor (null si el autor eliminó su cuenta). */
 data class CommentItem(val comment: Comment, val author: User?)
@@ -75,7 +78,8 @@ class EventDetailViewModel(
     private val toggleInterestUseCase: ToggleInterestUseCase,
     private val confirmAttendance: ConfirmAttendanceUseCase,
     private val cancelAttendance: CancelAttendanceUseCase,
-    private val addComment: AddCommentUseCase
+    private val addComment: AddCommentUseCase,
+    private val resources: ResourceProvider
 ) : ViewModel() {
 
     /** Hilt lee el id del evento de la ruta [MainRoutes.EventDetail]. */
@@ -91,11 +95,12 @@ class EventDetailViewModel(
         toggleInterestUseCase: ToggleInterestUseCase,
         confirmAttendance: ConfirmAttendanceUseCase,
         cancelAttendance: CancelAttendanceUseCase,
-        addComment: AddCommentUseCase
+        addComment: AddCommentUseCase,
+        resources: ResourceProvider
     ) : this(
         savedStateHandle.toRoute<MainRoutes.EventDetail>().eventId,
         observeCurrentUser, observeEvents, observeAttendances, observeInterests, observeComments,
-        getUserById, toggleInterestUseCase, confirmAttendance, cancelAttendance, addComment
+        getUserById, toggleInterestUseCase, confirmAttendance, cancelAttendance, addComment, resources
     )
 
     private val _uiState = MutableStateFlow(EventDetailUiState())
@@ -133,9 +138,9 @@ class EventDetailViewModel(
 
     fun toggleInterest() {
         val viewer = observeCurrentUser().value ?: return
-        runAction("No se pudo actualizar tu interés") {
+        runAction(R.string.detail_error_interest) {
             val interested = toggleInterestUseCase(eventId, viewer.id) ?: return@runAction
-            showMessage(if (interested) "Guardado en tus eventos de interés" else "Quitado de tus eventos de interés")
+            showMessage(if (interested) R.string.detail_interest_saved else R.string.detail_interest_removed)
         }
     }
 
@@ -144,20 +149,20 @@ class EventDetailViewModel(
         val viewer = observeCurrentUser().value ?: return
         val state = _uiState.value
         if (state.isAttending && state.isCheckedIn) {
-            showMessage("Ya registraste tu asistencia con QR; no se puede cancelar")
+            showMessage(R.string.detail_cannot_cancel)
             return
         }
-        runAction("No se pudo actualizar tu asistencia") {
+        runAction(R.string.detail_error_attendance) {
             if (state.isAttending) {
-                if (cancelAttendance(eventId, viewer.id)) showMessage("Cancelaste tu asistencia")
+                if (cancelAttendance(eventId, viewer.id)) showMessage(R.string.detail_attendance_cancelled)
                 return@runAction
             }
             when (confirmAttendance(eventId, viewer.id)) {
-                AttendanceResult.CONFIRMED -> showMessage("¡Asistencia confirmada! Te esperamos")
-                AttendanceResult.ALREADY_CONFIRMED -> showMessage("Ya confirmaste tu asistencia a este evento")
-                AttendanceResult.FULL -> showMessage(FULL_EVENT_MESSAGE)
-                AttendanceResult.CLOSED -> showMessage("El evento ya finalizó")
-                AttendanceResult.NOT_FOUND -> showMessage("Este evento ya no está disponible")
+                AttendanceResult.CONFIRMED -> showMessage(R.string.detail_attendance_confirmed)
+                AttendanceResult.ALREADY_CONFIRMED -> showMessage(R.string.detail_attendance_already)
+                AttendanceResult.FULL -> showMessage(R.string.detail_event_full)
+                AttendanceResult.CLOSED -> showMessage(R.string.detail_event_closed)
+                AttendanceResult.NOT_FOUND -> showMessage(R.string.detail_event_gone)
             }
         }
     }
@@ -168,24 +173,24 @@ class EventDetailViewModel(
         val viewer = observeCurrentUser().value ?: return
         val text = _uiState.value.commentDraft
         if (text.isBlank()) {
-            showMessage("Escribe tu comentario antes de enviarlo")
+            showMessage(R.string.detail_comment_empty)
             return
         }
-        runAction("No se pudo publicar el comentario") {
+        runAction(R.string.detail_error_comment) {
             if (addComment(eventId, viewer.id, text) != null) {
-                _uiState.update { it.copy(commentDraft = "", userMessage = "Comentario publicado") }
+                _uiState.update { it.copy(commentDraft = "", userMessage = resources.getString(R.string.detail_comment_posted)) }
             } else {
-                showMessage("No se pudo publicar el comentario")
+                showMessage(R.string.detail_error_comment)
             }
         }
     }
 
     fun onMessageShown() = _uiState.update { it.copy(userMessage = null) }
 
-    private fun showMessage(message: String) = _uiState.update { it.copy(userMessage = message) }
+    private fun showMessage(@StringRes message: Int) = _uiState.update { it.copy(userMessage = resources.getString(message)) }
 
     /** Ejecuta una acción del usuario; si falla (por ejemplo, sin conexión), muestra [errorMessage]. */
-    private fun runAction(errorMessage: String, action: suspend () -> Unit) {
+    private fun runAction(@StringRes errorMessage: Int, action: suspend () -> Unit) {
         if (isBusy) return
         isBusy = true
         viewModelScope.launch {
@@ -240,7 +245,6 @@ class EventDetailViewModel(
     private suspend fun findUser(id: String): User? = runCatching { getUserById(id) }.getOrNull()
 
     companion object {
-        const val FULL_EVENT_MESSAGE = "No hay cupos disponibles: el evento está lleno"
         const val MAX_COMMENT_LENGTH = 500
     }
 }

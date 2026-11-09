@@ -26,12 +26,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.OnPrimaryFixed
@@ -41,6 +41,7 @@ import co.edu.uniquindio.akjevents.core.theme.Terracotta
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.domain.model.User
+import coil3.compose.AsyncImage
 
 /** Barra superior de las pantallas principales: logo, "AKJ EVENTS", título, acciones y avatar. */
 @Composable
@@ -63,11 +64,11 @@ fun MainTopBar(
         ) {
             Image(
                 painter = painterResource(R.drawable.logo),
-                contentDescription = "Logo AKJ Events",
+                contentDescription = stringResource(R.string.app_logo_description),
                 modifier = Modifier.size(32.dp)
             )
             Column(modifier = Modifier.weight(1f)) {
-                Text("AKJ EVENTS", color = Terracotta, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(stringResource(R.string.app_brand_caps), color = Terracotta, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 Text(
                     title,
                     color = WarmText,
@@ -106,7 +107,7 @@ fun ScreenHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        RoundIconButton(Icons.AutoMirrored.Outlined.ArrowBack, "Volver", onClick = onBack)
+        RoundIconButton(Icons.AutoMirrored.Outlined.ArrowBack, stringResource(R.string.action_back), onClick = onBack)
         Column(modifier = Modifier.weight(1f)) {
             kicker?.let {
                 Text(it.uppercase(), color = Terracotta, fontSize = 11.sp, lineHeight = 14.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
@@ -152,7 +153,7 @@ fun UserAvatar(
             contentAlignment = Alignment.Center
         ) {
             if (user.profilePictureUrl != null) {
-                AsyncImage(model = user.profilePictureUrl, contentDescription = "Foto de ${user.name}", modifier = Modifier.size(size))
+                AsyncImage(model = user.profilePictureUrl, contentDescription = stringResource(R.string.user_photo_description, user.name), modifier = Modifier.size(size))
             } else {
                 Text(user.initials, color = contentColor, fontSize = (size.value * 0.38f).sp, fontWeight = FontWeight.Bold)
             }

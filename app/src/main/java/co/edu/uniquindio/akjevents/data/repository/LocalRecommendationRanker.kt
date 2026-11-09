@@ -1,5 +1,8 @@
 package co.edu.uniquindio.akjevents.data.repository
 
+import co.edu.uniquindio.akjevents.R
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.core.util.normalizedForSearch
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.RankedRecommendation
@@ -10,7 +13,10 @@ import co.edu.uniquindio.akjevents.domain.repository.RecommendationRanker
 import javax.inject.Inject
 
 /** Reglas locales, no IA: afinidad de categorías/texto, cercanía, cupos y diversidad. */
-class LocalRecommendationRanker @Inject constructor() : RecommendationRanker {
+/** Los motivos salen de strings.xml, en el idioma del dispositivo. */
+class LocalRecommendationRanker @Inject constructor(
+    private val resources: ResourceProvider
+) : RecommendationRanker {
     override suspend fun rank(request: RecommendationRequest): List<RankedRecommendation> {
         val historyCategories = request.interactions.groupBy { it.event.category }
         val historyWords = request.interactions.flatMap { words(it.event) }.toSet()
@@ -35,12 +41,13 @@ class LocalRecommendationRanker @Inject constructor() : RecommendationRanker {
             ).first()
             val category = next.event.category
             val reason = when {
-                category in request.interests -> "Coincide con tu interés en ${category.label.lowercase()}."
-                historyCategories[category].orEmpty().any { it.checkedIn } -> "Similar a categorías de eventos en los que hiciste check-in."
-                historyCategories[category].orEmpty().isNotEmpty() -> "De una categoría que marcaste «Me interesa»."
-                words(next.event).intersect(historyWords).isNotEmpty() -> "Comparte temas con eventos que te interesaron o en los que participaste."
-                next.distanceKm <= 5 -> "Una opción cercana para descubrir en tu comunidad."
-                else -> "Una opción para descubrir nuevas actividades con cupos disponibles."
+                category in request.interests ->
+                    resources.getString(R.string.recommendation_reason_interest, resources.getString(category.labelRes).lowercase())
+                historyCategories[category].orEmpty().any { it.checkedIn } -> resources.getString(R.string.recommendation_reason_check_in)
+                historyCategories[category].orEmpty().isNotEmpty() -> resources.getString(R.string.recommendation_reason_liked_category)
+                words(next.event).intersect(historyWords).isNotEmpty() -> resources.getString(R.string.recommendation_reason_topics)
+                next.distanceKm <= 5 -> resources.getString(R.string.recommendation_reason_nearby)
+                else -> resources.getString(R.string.recommendation_reason_discover)
             }
             result += RankedRecommendation(next.event.id, reason)
             selectedCategories[category] = (selectedCategories[category] ?: 0) + 1
@@ -50,7 +57,7 @@ class LocalRecommendationRanker @Inject constructor() : RecommendationRanker {
     }
 
     private fun words(event: RecommendationEvent): Set<String> =
-        "${event.title} ${event.description} ${event.category.label}".normalizedForSearch()
+        "${event.title} ${event.description}".normalizedForSearch()
             .split(Regex("[^a-z0-9]+"))
             .filter { it.length >= 4 && it !in STOP_WORDS }.toSet()
 

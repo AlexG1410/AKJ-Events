@@ -1,5 +1,7 @@
 package co.edu.uniquindio.akjevents.core.util
 
+import co.edu.uniquindio.akjevents.R
+
 /** Reglas de validación compartidas por los formularios de autenticación. */
 object FormValidation {
     const val MIN_PASSWORD_LENGTH = 8
@@ -13,8 +15,8 @@ object FormValidation {
     fun isStrongPassword(password: String): Boolean =
         isValidPassword(password) && password.any(Char::isUpperCase) && password.any(Char::isDigit)
 
-    const val INVALID_EMAIL_MESSAGE = "Ingresa un correo electrónico válido"
-    const val SHORT_PASSWORD_MESSAGE = "La contraseña debe tener al menos $MIN_PASSWORD_LENGTH caracteres"
-    const val WEAK_PASSWORD_MESSAGE =
-        "La contraseña debe tener al menos $MIN_PASSWORD_LENGTH caracteres, una mayúscula y un número"
+    // Mensajes en strings.xml; los de contraseña reciben MIN_PASSWORD_LENGTH como argumento
+    val INVALID_EMAIL_MESSAGE = UiText(R.string.error_invalid_email)
+    val SHORT_PASSWORD_MESSAGE = UiText(R.string.error_short_password, MIN_PASSWORD_LENGTH)
+    val WEAK_PASSWORD_MESSAGE = UiText(R.string.error_weak_password, MIN_PASSWORD_LENGTH)
 }

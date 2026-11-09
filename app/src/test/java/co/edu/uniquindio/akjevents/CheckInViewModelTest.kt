@@ -1,11 +1,11 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
 import co.edu.uniquindio.akjevents.domain.usecase.participation.CheckInResult
 import co.edu.uniquindio.akjevents.features.checkin.CheckInTab
 import co.edu.uniquindio.akjevents.features.checkin.CheckInViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -20,7 +20,7 @@ class CheckInViewModelTest {
     private val repos = TestRepositories()
 
     private fun checkInViewModel(eventId: String?, showMyQr: Boolean) = repos.useCases.let {
-        CheckInViewModel(eventId, showMyQr, it.observeCurrentUser, it.observePublicEvents, it.observeAttendances, it.getPublicEventById, it.getUserById, it.checkIn)
+        CheckInViewModel(eventId, showMyQr, it.observeCurrentUser, it.observePublicEvents, it.observeAttendances, it.getPublicEventById, it.getUserById, it.checkIn, TestResourceProvider)
     }
 
     @Test

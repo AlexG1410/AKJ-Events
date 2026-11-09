@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import co.edu.uniquindio.akjevents.R
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
@@ -53,7 +55,8 @@ class CheckInViewModel(
     observeAttendances: ObserveAttendancesUseCase,
     private val getPublicEventById: GetPublicEventByIdUseCase,
     private val getUserById: GetUserByIdUseCase,
-    private val checkIn: CheckInUseCase
+    private val checkIn: CheckInUseCase,
+    private val resources: ResourceProvider
 ) : ViewModel() {
 
     /** Hilt lee el evento preseleccionado de la ruta [MainRoutes.CheckIn]. */
@@ -65,11 +68,12 @@ class CheckInViewModel(
         observeAttendances: ObserveAttendancesUseCase,
         getPublicEventById: GetPublicEventByIdUseCase,
         getUserById: GetUserByIdUseCase,
-        checkIn: CheckInUseCase
+        checkIn: CheckInUseCase,
+        resources: ResourceProvider
     ) : this(
         savedStateHandle.toRoute<MainRoutes.CheckIn>().eventId,
         savedStateHandle.toRoute<MainRoutes.CheckIn>().showMyQr,
-        observeCurrentUser, observePublicEvents, observeAttendances, getPublicEventById, getUserById, checkIn
+        observeCurrentUser, observePublicEvents, observeAttendances, getPublicEventById, getUserById, checkIn, resources
     )
 
     private val _uiState = MutableStateFlow(
@@ -114,14 +118,14 @@ class CheckInViewModel(
         if (state.isValidating) return
         val code = state.code
         if (code.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Escribe o escanea el código del evento") }
+            _uiState.update { it.copy(errorMessage = resources.getString(R.string.check_in_error_empty)) }
             return
         }
         val pointsBefore = user.points
         _uiState.update { it.copy(isValidating = true, errorMessage = null) }
         viewModelScope.launch {
             val result = runCatching { checkIn(code, user.id) }.getOrElse {
-                showError("No se pudo validar el código. Intenta de nuevo")
+                showError(resources.getString(R.string.check_in_error_generic))
                 return@launch
             }
             when (result) {
@@ -131,10 +135,10 @@ class CheckInViewModel(
                         it.copy(result = result, pointsBefore = pointsBefore, organizer = organizer, errorMessage = null, isValidating = false)
                     }
                 }
-                is CheckInResult.AlreadyCheckedIn -> showError("Ya registraste tu asistencia en «${result.event.title}»")
-                is CheckInResult.Full -> showError("«${result.event.title}» ya no tiene cupos disponibles")
-                is CheckInResult.OwnEvent -> showError("No puedes hacer check-in en tu propio evento")
-                CheckInResult.InvalidCode -> showError("Código no válido o el evento no está activo")
+                is CheckInResult.AlreadyCheckedIn -> showError(resources.getString(R.string.check_in_error_already, result.event.title))
+                is CheckInResult.Full -> showError(resources.getString(R.string.check_in_error_full, result.event.title))
+                is CheckInResult.OwnEvent -> showError(resources.getString(R.string.check_in_error_own_event))
+                CheckInResult.InvalidCode -> showError(resources.getString(R.string.check_in_error_invalid))
             }
         }
     }

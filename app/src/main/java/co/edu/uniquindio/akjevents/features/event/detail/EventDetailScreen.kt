@@ -69,6 +69,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -108,6 +110,7 @@ import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.core.util.occupancy
 import co.edu.uniquindio.akjevents.core.util.remainingSpots
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
@@ -175,11 +178,16 @@ fun EventDetailScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            val shareText = stringResource(
+                R.string.detail_share_text, event.title, EventFormat.weekdayDateTime(event.startsAt), event.address
+            )
+            val shareTitle = stringResource(R.string.detail_share_event)
+            val directionsTitle = stringResource(R.string.map_directions)
             QuickActions(
                 event = event,
                 isInterested = state.isInterested,
                 canToggleInterest = state.canParticipate,
-                onShare = { context.startActivity(shareIntent(event)) },
+                onShare = { context.startActivity(shareIntent(shareText, shareTitle)) },
                 onToggleInterest = viewModel::toggleInterest
             )
             if (event.status != EventStatus.VERIFIED) {
@@ -203,7 +211,7 @@ fun EventDetailScreen(
             LocationSection(
                 event = event,
                 distanceKm = state.distanceKm,
-                onDirections = { context.startActivity(directionsIntent(event)) }
+                onDirections = { context.startActivity(directionsIntent(event, directionsTitle)) }
             )
             state.organizer?.let { organizer ->
                 OrganizerSection(
@@ -231,19 +239,18 @@ fun EventDetailScreen(
     }
 }
 
-private fun directionsIntent(event: CommunityEvent): Intent {
+private fun directionsIntent(event: CommunityEvent, title: String): Intent {
     // Abre la app de mapas del teléfono en las coordenadas del evento
     val uri = Uri.parse("geo:${event.location.latitude},${event.location.longitude}?q=${event.location.latitude},${event.location.longitude}(${Uri.encode(event.title)})")
-    return Intent.createChooser(Intent(Intent.ACTION_VIEW, uri), "Cómo llegar")
+    return Intent.createChooser(Intent(Intent.ACTION_VIEW, uri), title)
 }
 
-private fun shareIntent(event: CommunityEvent): Intent {
-    val text = "${event.title}\n${EventFormat.weekdayDateTime(event.startsAt)}\n${event.address}\n\nDescúbrelo en AKJ Events."
+private fun shareIntent(text: String, title: String): Intent {
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, text)
     }
-    return Intent.createChooser(send, "Compartir evento")
+    return Intent.createChooser(send, title)
 }
 
 @Composable
@@ -259,11 +266,11 @@ private fun DetailTopBar(onBack: () -> Unit, onEdit: (() -> Unit)?) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Volver", tint = WarmText)
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back), tint = WarmText)
             }
             Image(painter = painterResource(R.drawable.logo), contentDescription = null, modifier = Modifier.size(32.dp))
             Text(
-                "Detalle del evento",
+                stringResource(R.string.detail_title),
                 color = WarmText,
                 fontSize = 22.sp,
                 lineHeight = 28.sp,
@@ -272,7 +279,7 @@ private fun DetailTopBar(onBack: () -> Unit, onEdit: (() -> Unit)?) {
             )
             if (onEdit != null) {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Outlined.Edit, contentDescription = "Editar evento", tint = Terracotta)
+                    Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.detail_edit_event), tint = Terracotta)
                 }
             }
         }
@@ -299,18 +306,18 @@ private fun QuickActions(
             Icon(event.category.style.icon, contentDescription = null, tint = OnSecondaryContainer, modifier = Modifier.size(18.dp))
         }
         Text(
-            "EVENTO COMUNITARIO",
+            stringResource(R.string.detail_community_event),
             color = MutedText,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
             letterSpacing = 1.sp,
             modifier = Modifier.weight(1f)
         )
-        RoundAction(Icons.Outlined.Share, "Compartir evento", WarmText, onShare)
+        RoundAction(Icons.Outlined.Share, stringResource(R.string.detail_share_event), WarmText, onShare)
         if (canToggleInterest) {
             RoundAction(
                 if (isInterested) Icons.Rounded.Favorite else Icons.Outlined.FavoriteBorder,
-                if (isInterested) "Quitar de me interesa" else "Me interesa",
+                stringResource(if (isInterested) R.string.interest_remove else R.string.interest_add),
                 Terracotta,
                 onToggleInterest
             )
@@ -339,7 +346,7 @@ private fun HeroImage(event: CommunityEvent) {
     ) {
         AsyncImage(
             model = event.imageUrls.first(),
-            contentDescription = "Imagen del evento ${event.title}",
+            contentDescription = stringResource(R.string.event_image_description, event.title),
             contentScale = ContentScale.Crop,
             placeholder = painterResource(R.drawable.event_placeholder),
             error = painterResource(R.drawable.event_placeholder),
@@ -356,13 +363,13 @@ private fun HeroImage(event: CommunityEvent) {
         ) {
             HeroBadge(
                 icon = event.category.style.icon,
-                text = event.category.label,
+                text = stringResource(event.category.labelRes),
                 container = WarmBackground.copy(alpha = 0.9f),
                 content = WarmText,
                 iconTint = Terracotta
             )
             if (event.status == EventStatus.VERIFIED) {
-                HeroBadge(icon = Icons.Rounded.Verified, text = "Verificado ✓", container = Sage, content = Color.White, iconTint = Color.White)
+                HeroBadge(icon = Icons.Rounded.Verified, text = stringResource(R.string.detail_verified_badge), container = Sage, content = Color.White, iconTint = Color.White)
             } else {
                 StatusBadge(event.status)
             }
@@ -438,7 +445,7 @@ private fun CapacityCard(event: CommunityEvent) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("Cupos y comunidad", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.detail_capacity_title), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 Text(
                     capacityMessage(remaining, event.capacity),
                     color = Terracotta,
@@ -448,7 +455,7 @@ private fun CapacityCard(event: CommunityEvent) {
             }
             if (occupancy != null) {
                 Text(
-                    "${(occupancy * 100).roundToInt()}% lleno",
+                    stringResource(R.string.detail_percent_full, (occupancy * 100).roundToInt()),
                     color = OnPrimaryFixed,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
@@ -460,12 +467,14 @@ private fun CapacityCard(event: CommunityEvent) {
             CapacityBar(progress = occupancy, color = Terracotta, height = 10.dp)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
+            val people = pluralStringResource(R.plurals.people_count, event.attendanceCount, event.attendanceCount)
+            val confirmedSuffix = stringResource(R.string.detail_confirmed_suffix, event.interestCount)
             Text(
                 buildAnnotatedString {
                     withStyle(SpanStyle(color = WarmText, fontWeight = FontWeight.SemiBold)) {
-                        append(if (event.attendanceCount == 1) "1 persona" else "${event.attendanceCount} personas")
+                        append(people)
                     }
-                    append(" ya confirmadas · ${event.interestCount} interesadas")
+                    append(confirmedSuffix)
                 },
                 color = MutedText,
                 fontSize = 12.sp,
@@ -476,18 +485,19 @@ private fun CapacityCard(event: CommunityEvent) {
     }
 }
 
+@Composable
 private fun capacityMessage(remaining: Int?, capacity: Int?): String = when {
-    remaining == null || capacity == null -> "Cupo abierto, sin límite de asistentes"
-    remaining == 0 -> "Cupo lleno"
-    remaining == 1 -> "¡Último cupo disponible!"
-    remaining <= capacity / 5 -> "¡Últimos $remaining cupos disponibles!"
-    else -> "$remaining cupos disponibles de $capacity"
+    remaining == null || capacity == null -> stringResource(R.string.detail_capacity_open)
+    remaining == 0 -> stringResource(R.string.capacity_full)
+    remaining == 1 -> stringResource(R.string.detail_capacity_last)
+    remaining <= capacity / 5 -> stringResource(R.string.detail_capacity_last_few, remaining)
+    else -> stringResource(R.string.detail_capacity_available, remaining, capacity)
 }
 
 @Composable
 private fun DescriptionSection(description: String) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Detalles del evento", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.detail_section_details), color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
         Text(
             description,
             color = WarmText,
@@ -507,9 +517,9 @@ private fun DescriptionSection(description: String) {
 private fun OrganizerSection(organizer: User, eventCount: Int, showContact: Boolean, onContact: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Organizador", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.detail_organizer), color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             if (organizer.level == UserLevel.COMMUNITY_LEADER) {
-                Text("Anfitrión destacado", color = Sage, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.detail_featured_host), color = Sage, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             }
         }
         Column(
@@ -530,11 +540,11 @@ private fun OrganizerSection(organizer: User, eventCount: Int, showContact: Bool
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(organizer.name, color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f, fill = false))
-                        Icon(Icons.Rounded.CheckCircle, contentDescription = "Organizador verificado", tint = Sage, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Rounded.CheckCircle, contentDescription = stringResource(R.string.detail_verified_organizer), tint = Sage, modifier = Modifier.size(18.dp))
                     }
-                    Text("${organizer.level.label} 🏅", color = Terracotta, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.detail_organizer_level, stringResource(organizer.level.labelRes)), color = Terracotta, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "${organizer.points} pts  •  ${if (eventCount == 1) "1 evento publicado" else "$eventCount eventos publicados"}",
+                        stringResource(R.string.detail_organizer_points, organizer.points, pluralStringResource(R.plurals.events_published, eventCount, eventCount)),
                         color = MutedText,
                         fontSize = 12.sp
                     )
@@ -548,7 +558,7 @@ private fun OrganizerSection(organizer: User, eventCount: Int, showContact: Bool
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = null, tint = WarmText, modifier = Modifier.size(18.dp))
-                        Text("  Preguntar al organizador", color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        Text("  " + stringResource(R.string.detail_ask_organizer), color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -563,13 +573,13 @@ private data class BannerContent(val title: String, val message: String, val con
 private fun StatusBanner(event: CommunityEvent, isOwner: Boolean) {
     val banner = when (event.status) {
         EventStatus.PENDING -> BannerContent(
-            "En revisión de moderación",
-            if (isOwner) "Solo tú y los moderadores pueden verlo. Será público cuando lo aprueben." else "Este evento espera la verificación de un moderador.",
+            stringResource(R.string.detail_pending_title),
+            stringResource(if (isOwner) R.string.detail_pending_owner else R.string.detail_pending_other),
             TertiaryFixed,
             OnTertiaryContainer
         )
-        EventStatus.REJECTED -> BannerContent("Evento rechazado", "Motivo: ${event.rejectionReason}", Color(0xFFFFDAD6), ErrorColor)
-        else -> BannerContent("Evento finalizado", "Este evento ya terminó; ya no recibe confirmaciones de asistencia.", SurfaceContainerHigh, MutedText)
+        EventStatus.REJECTED -> BannerContent(stringResource(R.string.detail_rejected_title), stringResource(R.string.detail_rejected_message, event.rejectionReason.orEmpty()), Color(0xFFFFDAD6), ErrorColor)
+        else -> BannerContent(stringResource(R.string.detail_finished_title), stringResource(R.string.detail_finished_message), SurfaceContainerHigh, MutedText)
     }
     Column(
         modifier = Modifier
@@ -599,13 +609,13 @@ private fun CheckInCard(isCheckedIn: Boolean, onOpenCheckIn: () -> Unit) {
         }
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                if (isCheckedIn) "Asistencia registrada con QR" else "Ya tienes tu cupo",
+                stringResource(if (isCheckedIn) R.string.detail_checked_in else R.string.detail_have_spot),
                 color = OnSecondaryFixedVariant,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                if (isCheckedIn) "Sumaste puntos de reputación por asistir." else "Al llegar, escanea el QR del organizador para registrar tu asistencia.",
+                stringResource(if (isCheckedIn) R.string.detail_checked_in_message else R.string.detail_have_spot_message),
                 color = OnSecondaryFixedVariant,
                 fontSize = 12.sp,
                 lineHeight = 16.sp
@@ -614,7 +624,7 @@ private fun CheckInCard(isCheckedIn: Boolean, onOpenCheckIn: () -> Unit) {
         if (!isCheckedIn) {
             Surface(onClick = onOpenCheckIn, shape = CircleShape, color = Sage) {
                 Text(
-                    "Check-in",
+                    stringResource(R.string.detail_check_in),
                     color = Color.White,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
@@ -629,7 +639,7 @@ private fun CheckInCard(isCheckedIn: Boolean, onOpenCheckIn: () -> Unit) {
 private fun LocationSection(event: CommunityEvent, distanceKm: Double?, onDirections: () -> Unit) {
     val mapState = rememberSimulatedMapState(center = event.location, latSpan = 0.02)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Ubicación exacta", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.detail_exact_location), color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -640,7 +650,7 @@ private fun LocationSection(event: CommunityEvent, distanceKm: Double?, onDirect
         ) {
             SimulatedMap(
                 state = mapState,
-                markers = listOf(MapMarker(event.id, event.location, event.category.label, event.category.style.icon, Terracotta)),
+                markers = listOf(MapMarker(event.id, event.location, stringResource(event.category.labelRes), event.category.style.icon, Terracotta)),
                 selectedMarkerId = event.id,
                 interactive = false,
                 modifier = Modifier.fillMaxWidth().height(160.dp)
@@ -649,8 +659,11 @@ private fun LocationSection(event: CommunityEvent, distanceKm: Double?, onDirect
                 Column(modifier = Modifier.weight(1f)) {
                     Text(event.address, color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Lat ${"%.4f".format(Locale.US, event.location.latitude)}, Lon ${"%.4f".format(Locale.US, event.location.longitude)}" +
-                            (distanceKm?.let { " • a ${EventFormat.distance(it)} de ti" } ?: ""),
+                        stringResource(
+                            R.string.detail_coordinates,
+                            "%.4f".format(Locale.US, event.location.latitude),
+                            "%.4f".format(Locale.US, event.location.longitude)
+                        ) + (distanceKm?.let { stringResource(R.string.detail_distance_from_you, EventFormat.distance(it)) } ?: ""),
                         color = MutedText,
                         fontSize = 12.sp
                     )
@@ -662,7 +675,7 @@ private fun LocationSection(event: CommunityEvent, distanceKm: Double?, onDirect
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(Icons.Outlined.Directions, contentDescription = null, tint = Sage, modifier = Modifier.size(18.dp))
-                        Text("Cómo llegar", color = WarmText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.map_directions), color = WarmText, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -682,12 +695,12 @@ private fun CommentsSection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Comentarios", color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.detail_comments), color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Text("${comments.size}", color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.Bold)
         }
         if (comments.isEmpty()) {
             Text(
-                "Aún no hay comentarios. Comparte información útil o pregúntale al organizador.",
+                stringResource(R.string.detail_no_comments),
                 color = MutedText,
                 fontSize = 13.sp
             )
@@ -699,14 +712,14 @@ private fun CommentsSection(
             FormTextField(
                 value = draft,
                 onValueChange = onDraftChange,
-                placeholder = "Escribe un comentario...",
+                placeholder = stringResource(R.string.detail_comment_placeholder),
                 leadingIcon = Icons.Outlined.ChatBubbleOutline,
                 style = CommentFieldStyle,
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { onSend() }),
                 trailingContent = {
                     IconButton(onClick = onSend, modifier = Modifier.size(40.dp)) {
-                        Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = "Publicar comentario", tint = Terracotta, modifier = Modifier.size(20.dp))
+                        Icon(Icons.AutoMirrored.Outlined.Send, contentDescription = stringResource(R.string.detail_publish_comment), tint = Terracotta, modifier = Modifier.size(20.dp))
                     }
                 },
                 modifier = Modifier.focusRequester(focusRequester)
@@ -747,14 +760,14 @@ private fun CommentRow(item: CommentItem, isOrganizer: Boolean) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    item.author?.name ?: "Cuenta eliminada",
+                    item.author?.name ?: stringResource(R.string.detail_deleted_account),
                     color = WarmText,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f, fill = false)
                 )
                 if (isOrganizer) {
-                    Text("Organizador", color = Sage, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.detail_organizer), color = Sage, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Text(item.comment.text, color = WarmText, fontSize = 14.sp, lineHeight = 20.sp)
@@ -790,7 +803,7 @@ private fun AttendanceBar(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Icon(if (isInterested) Icons.Rounded.Star else Icons.Outlined.StarOutline, contentDescription = null, tint = Terracotta, modifier = Modifier.size(20.dp))
-                    Text(if (isInterested) "Te interesa" else "Me interesa", color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(if (isInterested) R.string.detail_interested else R.string.interest_add), color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
             // Ya inscrito: el botón pasa a ser secundario y permite cancelar
@@ -814,7 +827,7 @@ private fun AttendanceBar(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        if (isAttending) "  Cancelar asistencia" else "  Confirmar asistencia",
+                        "  " + stringResource(if (isAttending) R.string.detail_cancel_attendance else R.string.detail_confirm_attendance),
                         color = contentColor,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold
@@ -833,11 +846,11 @@ private fun UnavailableEvent(onBack: () -> Unit, modifier: Modifier = Modifier) 
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
     ) {
         Icon(Icons.Outlined.EventBusy, contentDescription = null, tint = MutedText, modifier = Modifier.size(48.dp))
-        Text("Este evento no está disponible", color = WarmText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-        Text("Puede que aún esté en revisión o que ya no sea público.", color = MutedText, fontSize = 14.sp)
+        Text(stringResource(R.string.detail_unavailable_title), color = WarmText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.detail_unavailable_message), color = MutedText, fontSize = 14.sp)
         Surface(onClick = onBack, shape = RoundedCornerShape(12.dp), color = Terracotta) {
             Text(
-                "Volver al inicio",
+                stringResource(R.string.detail_back_home),
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp)

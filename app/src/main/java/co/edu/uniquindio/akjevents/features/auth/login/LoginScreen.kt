@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -121,7 +122,7 @@ fun LoginScreen(
                 LoginHeader()
 
                 Text(
-                    "¡Bienvenido de nuevo!",
+                    stringResource(R.string.login_title),
                     color = BrandDark,
                     fontSize = 24.sp,
                     lineHeight = 32.sp,
@@ -130,7 +131,7 @@ fun LoginScreen(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Ingresa para participar y descubrir eventos comunitarios.",
+                    stringResource(R.string.login_subtitle),
                     color = BrandMuted,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
@@ -144,13 +145,13 @@ fun LoginScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            FieldLabel("Correo electrónico")
-                            Text("Ej. camilo@quindio.org", color = BrandMuted, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+                            FieldLabel(stringResource(R.string.field_email))
+                            Text(stringResource(R.string.login_email_example), color = BrandMuted, fontSize = 10.sp, fontWeight = FontWeight.Medium)
                         }
                         FormTextField(
                             value = state.email,
                             onValueChange = viewModel::onEmailChange,
-                            placeholder = "tu.correo@ejemplo.com",
+                            placeholder = stringResource(R.string.login_email_placeholder),
                             leadingIcon = Icons.Outlined.Mail,
                             isError = state.emailError != null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
@@ -158,14 +159,14 @@ fun LoginScreen(
                                 {
                                     Icon(
                                         Icons.Outlined.CheckCircle,
-                                        contentDescription = "Correo válido",
+                                        contentDescription = stringResource(R.string.login_valid_email),
                                         tint = BrandSage,
                                         modifier = Modifier.padding(end = 10.dp).size(18.dp)
                                     )
                                 }
                             } else null
                         )
-                        FormFieldError(state.emailError)
+                        FormFieldError(state.emailError?.asString())
                     }
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -174,9 +175,9 @@ fun LoginScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            FieldLabel("Contraseña")
+                            FieldLabel(stringResource(R.string.field_password))
                             Text(
-                                "¿Olvidaste tu contraseña?",
+                                stringResource(R.string.login_forgot_password),
                                 color = BrandTerracotta,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
@@ -186,7 +187,7 @@ fun LoginScreen(
                         PasswordFormTextField(
                             value = state.password,
                             onValueChange = viewModel::onPasswordChange,
-                            placeholder = "Tu contraseña secreta",
+                            placeholder = stringResource(R.string.login_password_placeholder),
                             leadingIcon = Icons.Outlined.Lock,
                             isPasswordVisible = state.isPasswordVisible,
                             onTogglePasswordVisibility = viewModel::togglePasswordVisibility,
@@ -197,7 +198,7 @@ fun LoginScreen(
                                 viewModel.login()
                             })
                         )
-                        FormFieldError(state.passwordError)
+                        FormFieldError(state.passwordError?.asString())
                     }
 
                     Row(
@@ -216,15 +217,15 @@ fun LoginScreen(
                             onCheckedChange = null,
                             colors = CheckboxDefaults.colors(checkedColor = BrandTerracotta, uncheckedColor = BrandMuted)
                         )
-                        Text("Recordar este dispositivo", color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text(stringResource(R.string.login_remember_device), color = BrandDark, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
 
                     PrimaryButton(
-                        text = "Iniciar Sesión",
+                        text = stringResource(R.string.login_button),
                         trailingIcon = Icons.AutoMirrored.Rounded.ArrowForward,
                         enabled = state.isFormValid,
                         isLoading = state.isBusy,
-                        loadingText = "Ingresando...",
+                        loadingText = stringResource(R.string.login_loading),
                         onClick = {
                             focusManager.clearFocus()
                             viewModel.login()
@@ -243,9 +244,9 @@ fun LoginScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("¿No tienes una cuenta comunitaria?", color = BrandMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.login_no_account), color = BrandMuted, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     Text(
-                        "Crear cuenta",
+                        stringResource(R.string.login_create_account),
                         color = BrandTerracotta,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
@@ -276,7 +277,7 @@ private fun LoginHeader() {
         ) {
             Image(
                 painter = painterResource(R.drawable.logo),
-                contentDescription = "Logo AKJ Events",
+                contentDescription = stringResource(R.string.app_logo_description),
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.padding(6.dp)
             )
@@ -296,7 +297,7 @@ private fun LoginHeader() {
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Box(Modifier.size(8.dp).alpha(pulse).background(BrandSage, CircleShape))
-            Text("Comunidad Activa", color = BrandSage, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.login_active_community), color = BrandSage, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -317,10 +318,12 @@ private fun TrustNote() {
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Icon(Icons.Outlined.Shield, contentDescription = null, tint = BrandSage, modifier = Modifier.padding(top = 2.dp).size(18.dp))
+        val privacyNotice = stringResource(R.string.login_privacy_notice)
+        val appName = stringResource(R.string.app_name)
         Text(
             buildAnnotatedString {
-                append("Tus datos cívicos y asistencias están protegidos bajo los protocolos comunitarios de ")
-                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append("AKJ Events") }
+                append(privacyNotice)
+                withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(appName) }
                 append(".")
             },
             color = BrandDark,

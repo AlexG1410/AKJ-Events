@@ -1,5 +1,6 @@
  package co.edu.uniquindio.akjevents.core.component
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,23 +31,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.OnPrimaryFixedVariant
 import co.edu.uniquindio.akjevents.core.theme.PrimaryFixed
 import co.edu.uniquindio.akjevents.core.theme.Terracotta
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 
-enum class BottomDestination(val label: String, val icon: ImageVector) {
-    HOME("Inicio", Icons.Outlined.Home),
-    MAP("Mapa", Icons.Outlined.Map),
-    CREATE("Crear", Icons.Outlined.Add),
-    MODERATION("Moderar", Icons.Outlined.Shield),
-    ALERTS("Alertas", Icons.Outlined.Notifications),
-    PROFILE("Perfil", Icons.Outlined.Person)
+enum class BottomDestination(@param:StringRes val label: Int, val icon: ImageVector) {
+    HOME(R.string.nav_home, Icons.Outlined.Home),
+    MAP(R.string.nav_map, Icons.Outlined.Map),
+    CREATE(R.string.nav_create, Icons.Outlined.Add),
+    MODERATION(R.string.nav_moderation, Icons.Outlined.Shield),
+    ALERTS(R.string.nav_alerts, Icons.Outlined.Notifications),
+    PROFILE(R.string.nav_profile, Icons.Outlined.Person)
 }
 
 /**
@@ -135,7 +138,7 @@ private fun BottomBarItem(
             }
         }
         Text(
-            destination.label,
+            stringResource(destination.label),
             fontSize = 11.sp,
             lineHeight = 11.sp,
             letterSpacing = 0.5.sp,

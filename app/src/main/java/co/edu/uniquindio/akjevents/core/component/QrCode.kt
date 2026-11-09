@@ -8,8 +8,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
@@ -22,7 +24,8 @@ fun QrCode(content: String, modifier: Modifier = Modifier, color: Color = WarmTe
     val matrix = remember(content) {
         QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, 0, 0, mapOf(EncodeHintType.MARGIN to 1))
     }
-    Canvas(modifier = modifier.aspectRatio(1f).semantics { contentDescription = "Código QR $content" }) {
+    val description = stringResource(R.string.qr_code_description, content)
+    Canvas(modifier = modifier.aspectRatio(1f).semantics { contentDescription = description }) {
         val cell = size.width / matrix.width
         for (x in 0 until matrix.width) {
             for (y in 0 until matrix.height) {

@@ -2,9 +2,12 @@ package co.edu.uniquindio.akjevents.features.profile.edit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
+import co.edu.uniquindio.akjevents.core.util.UiText
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
@@ -33,9 +36,9 @@ data class EditProfileUiState(
     /** La cuenta se eliminó: la pantalla vuelve al Login. */
     val isAccountDeleted: Boolean = false
 ) {
-    val nameError: String?
-        get() = if (name.isNotEmpty() && name.trim().length < MIN_NAME_LENGTH) "Escribe un nombre de al menos $MIN_NAME_LENGTH caracteres" else null
-    val emailError: String?
+    val nameError: UiText?
+        get() = if (name.isNotEmpty() && name.trim().length < MIN_NAME_LENGTH) UiText(R.string.error_short_name, MIN_NAME_LENGTH) else null
+    val emailError: UiText?
         get() = if (email.isNotEmpty() && !FormValidation.isValidEmail(email)) FormValidation.INVALID_EMAIL_MESSAGE else null
     val isBusy: Boolean get() = result is RequestResult.Loading || result is RequestResult.Success
 
@@ -49,7 +52,8 @@ data class EditProfileUiState(
 class EditProfileViewModel @Inject constructor(
     observeCurrentUser: ObserveCurrentUserUseCase,
     private val updateProfile: UpdateProfileUseCase,
-    private val deleteAccountUseCase: DeleteAccountUseCase
+    private val deleteAccountUseCase: DeleteAccountUseCase,
+    private val resources: ResourceProvider
 ) : ViewModel() {
     val cities: List<String> = SamplePlaces.cities.map { it.name }
 
@@ -91,13 +95,13 @@ class EditProfileViewModel @Inject constructor(
         val user = state.user ?: return
         if (state.isBusy) return
         val error = when {
-            state.name.trim().length < EditProfileUiState.MIN_NAME_LENGTH -> "Escribe un nombre de al menos ${EditProfileUiState.MIN_NAME_LENGTH} caracteres"
+            state.name.trim().length < EditProfileUiState.MIN_NAME_LENGTH -> UiText(R.string.error_short_name, EditProfileUiState.MIN_NAME_LENGTH)
             !FormValidation.isValidEmail(state.email) -> FormValidation.INVALID_EMAIL_MESSAGE
-            state.city.isBlank() || state.location == null -> "Elige tu ubicación principal"
+            state.city.isBlank() || state.location == null -> UiText(R.string.edit_profile_error_location)
             else -> null
         }
         if (error != null) {
-            _uiState.update { it.copy(result = RequestResult.Failure(error)) }
+            _uiState.update { it.copy(result = RequestResult.Failure(error.asString(resources))) }
             return
         }
         val updated = user.copy(
@@ -113,12 +117,12 @@ class EditProfileViewModel @Inject constructor(
             val result = runCatching { updateProfile(updated) }.fold(
                 onSuccess = { outcome ->
                     when (outcome) {
-                        ProfileUpdateResult.UPDATED -> RequestResult.Success("Perfil actualizado")
-                        ProfileUpdateResult.EMAIL_IN_USE -> RequestResult.Failure("Ese correo ya pertenece a otra cuenta")
-                        ProfileUpdateResult.NOT_FOUND -> RequestResult.Failure("No encontramos tu cuenta")
+                        ProfileUpdateResult.UPDATED -> RequestResult.Success(resources.getString(R.string.edit_profile_updated))
+                        ProfileUpdateResult.EMAIL_IN_USE -> RequestResult.Failure(resources.getString(R.string.edit_profile_error_email_in_use))
+                        ProfileUpdateResult.NOT_FOUND -> RequestResult.Failure(resources.getString(R.string.edit_profile_error_not_found))
                     }
                 },
-                onFailure = { RequestResult.Failure("No se pudo guardar el perfil. Intenta de nuevo") }
+                onFailure = { RequestResult.Failure(resources.getString(R.string.edit_profile_error_save)) }
             )
             _uiState.update { it.copy(result = result) }
         }
@@ -134,7 +138,7 @@ class EditProfileViewModel @Inject constructor(
             val deleted = runCatching { deleteAccountUseCase(user.id) }.getOrDefault(false)
             _uiState.update {
                 if (deleted) it.copy(isAccountDeleted = true, result = null)
-                else it.copy(result = RequestResult.Failure("No se pudo eliminar la cuenta"))
+                else it.copy(result = RequestResult.Failure(resources.getString(R.string.edit_profile_error_delete)))
             }
         }
     }

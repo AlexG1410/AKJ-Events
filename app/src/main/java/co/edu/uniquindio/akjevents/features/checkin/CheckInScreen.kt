@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -54,6 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.ContentCard
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
@@ -78,6 +80,7 @@ import co.edu.uniquindio.akjevents.core.theme.TertiaryFixed
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
@@ -119,7 +122,7 @@ fun CheckInScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            ScreenHeader(title = "Check-in de Asistencia", subtitle = "Lector de QR simulado", onBack = onBack)
+            ScreenHeader(title = stringResource(R.string.check_in_title), subtitle = stringResource(R.string.check_in_subtitle), onBack = onBack)
 
             TabSwitcher(selected = state.tab, onSelect = viewModel::selectTab)
 
@@ -154,7 +157,7 @@ fun CheckInScreen(
                         )
                         state.errorMessage?.let { Text(it, color = ErrorColor, fontSize = 13.sp) }
                         PrimaryButton(
-                            text = "Validar código",
+                            text = stringResource(R.string.check_in_validate),
                             onClick = {
                                 focusManager.clearFocus()
                                 viewModel.validate()
@@ -176,8 +179,8 @@ private fun TabSwitcher(selected: CheckInTab, onSelect: (CheckInTab) -> Unit) {
         modifier = Modifier.fillMaxWidth().background(SurfaceContainer, CircleShape).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        TabOption("Escanear QR", Icons.Outlined.QrCodeScanner, selected == CheckInTab.SCAN, { onSelect(CheckInTab.SCAN) }, Modifier.weight(1f))
-        TabOption("Mostrar mi QR", Icons.Outlined.QrCode2, selected == CheckInTab.MY_QR, { onSelect(CheckInTab.MY_QR) }, Modifier.weight(1f))
+        TabOption(stringResource(R.string.check_in_tab_scan), Icons.Outlined.QrCodeScanner, selected == CheckInTab.SCAN, { onSelect(CheckInTab.SCAN) }, Modifier.weight(1f))
+        TabOption(stringResource(R.string.check_in_tab_my_qr), Icons.Outlined.QrCode2, selected == CheckInTab.MY_QR, { onSelect(CheckInTab.MY_QR) }, Modifier.weight(1f))
     }
 }
 
@@ -208,11 +211,11 @@ private fun ScannerBox() {
         Box(Modifier.size(130.dp).border(3.dp, Sage.copy(alpha = 0.8f), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Outlined.QrCode2, contentDescription = null, tint = Honey, modifier = Modifier.size(48.dp))
-                Text("Esperando código", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.check_in_waiting), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             }
         }
         Text(
-            "Escribe el código que muestra el QR del organizador",
+            stringResource(R.string.check_in_type_code),
             color = Color.White.copy(alpha = 0.85f),
             fontSize = 12.sp,
             modifier = Modifier.align(Alignment.BottomCenter).padding(10.dp)
@@ -223,10 +226,10 @@ private fun ScannerBox() {
 @Composable
 private fun PendingEvents(events: List<CommunityEvent>, onScan: (CommunityEvent) -> Unit) {
     ContentCard(spacing = 10.dp) {
-        Text("Tus eventos confirmados", color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(stringResource(R.string.check_in_confirmed_events), color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
         if (events.isEmpty()) {
             Text(
-                "Confirma tu asistencia a un evento para hacer check-in al llegar. También puedes escribir el código del organizador.",
+                stringResource(R.string.check_in_no_events),
                 color = MutedText,
                 fontSize = 13.sp
             )
@@ -241,7 +244,7 @@ private fun PendingEvents(events: List<CommunityEvent>, onScan: (CommunityEvent)
                     Text(EventFormat.shortDateTime(event.startsAt), color = MutedText, fontSize = 12.sp)
                 }
                 Surface(onClick = { onScan(event) }, shape = CircleShape, color = Sage) {
-                    Text("Escanear", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
+                    Text(stringResource(R.string.check_in_scan), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp))
                 }
             }
         }
@@ -267,7 +270,7 @@ private fun SuccessCard(
                 Icon(Icons.Outlined.CheckCircle, contentDescription = null, tint = OnSecondaryFixedVariant, modifier = Modifier.size(32.dp))
             }
             Column {
-                Tag("¡Asistencia confirmada!", container = SecondaryFixed, content = OnSecondaryFixedVariant, icon = Icons.Outlined.Verified)
+                Tag(stringResource(R.string.check_in_success), container = SecondaryFixed, content = OnSecondaryFixedVariant, icon = Icons.Outlined.Verified)
                 Text(event.title, color = WarmText, fontSize = 20.sp, lineHeight = 24.sp, fontWeight = FontWeight.SemiBold)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.LocationOn, contentDescription = null, tint = MutedText, modifier = Modifier.size(14.dp))
@@ -284,7 +287,7 @@ private fun SuccessCard(
             ) {
                 UserAvatar(it, size = 36.dp)
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Anfitrión verificado", color = MutedText, fontSize = 11.sp)
+                    Text(stringResource(R.string.check_in_verified_host), color = MutedText, fontSize = 11.sp)
                     Text(it.name, color = WarmText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
@@ -299,13 +302,13 @@ private fun SuccessCard(
                     Icon(Icons.Outlined.EmojiEvents, contentDescription = null, tint = OnTertiaryContainer)
                 }
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("RECOMPENSA CÍVICA", color = OnTertiaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                    Text("+${result.pointsEarned} pts obtenidos", color = WarmText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.check_in_reward), color = OnTertiaryContainer, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                    Text(stringResource(R.string.check_in_points_earned, result.pointsEarned), color = WarmText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
-                Tag("Nivel ${user.level.number}", container = TertiaryFixed, content = OnTertiaryContainer)
+                Tag(stringResource(R.string.level_number, user.level.number), container = TertiaryFixed, content = OnTertiaryContainer)
             }
             Text(
-                if (next == null) "Balance cívico: ${user.points} pts (nivel máximo)" else "Balance cívico: ${user.points} / ${next.minPoints} pts",
+                if (next == null) stringResource(R.string.check_in_balance_max, user.points) else stringResource(R.string.check_in_balance, user.points, next.minPoints),
                 color = MutedText,
                 fontSize = 12.sp
             )
@@ -314,29 +317,29 @@ private fun SuccessCard(
                 color = Sage
             )
             if (leveledUp) {
-                Text("¡Felicidades! Alcanzaste el rango de ${user.level.label}", color = Sage, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.check_in_level_up, stringResource(user.level.labelRes)), color = Sage, fontSize = 13.sp, fontWeight = FontWeight.Bold)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(Icons.Outlined.Favorite, contentDescription = null, tint = Terracotta, modifier = Modifier.size(16.dp))
                 Text(
-                    "Tu presencia fortalece el tejido social de la comunidad.",
+                    stringResource(R.string.check_in_social_fabric),
                     color = MutedText,
                     fontSize = 12.sp
                 )
             }
         }
 
-        PrimaryButton(text = "Ver detalles del evento", onClick = onOpenEvent, containerColor = Terracotta)
+        PrimaryButton(text = stringResource(R.string.check_in_see_event), onClick = onOpenEvent, containerColor = Terracotta)
         Surface(onClick = onOpenProfile, shape = RoundedCornerShape(16.dp), color = PrimaryFixed, modifier = Modifier.fillMaxWidth().height(48.dp)) {
             Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Person, contentDescription = null, tint = Terracotta, modifier = Modifier.size(18.dp))
-                Text("  Ir a mi perfil y logros", color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("  " + stringResource(R.string.check_in_go_profile), color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
         }
         Surface(onClick = onScanAgain, shape = RoundedCornerShape(16.dp), color = Color.Transparent, modifier = Modifier.fillMaxWidth()) {
             Row(modifier = Modifier.padding(8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Outlined.Refresh, contentDescription = null, tint = MutedText, modifier = Modifier.size(16.dp))
-                Text("  Escanear otro código", color = MutedText, fontSize = 13.sp)
+                Text("  " + stringResource(R.string.check_in_scan_another), color = MutedText, fontSize = 13.sp)
             }
         }
     }
@@ -348,12 +351,12 @@ private fun MyQrCard(user: User) {
         Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             UserAvatar(user, size = 56.dp)
             Text(user.name, color = WarmText, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-            Tag("${user.level.label} • ${user.points} pts", container = TertiaryFixed, content = OnTertiaryContainer)
+            Tag(stringResource(R.string.level_and_points, stringResource(user.level.labelRes), user.points), container = TertiaryFixed, content = OnTertiaryContainer)
             Box(Modifier.background(Color.White, RoundedCornerShape(16.dp)).border(1.dp, SurfaceContainer, RoundedCornerShape(16.dp)).padding(16.dp)) {
                 QrCode(content = "AKJ-USER:${user.id}", modifier = Modifier.size(220.dp))
             }
             Text(
-                "Tu código personal te identifica ante los organizadores en los eventos comunitarios.",
+                stringResource(R.string.check_in_personal_code),
                 color = MutedText,
                 fontSize = 13.sp,
                 textAlign = TextAlign.Center

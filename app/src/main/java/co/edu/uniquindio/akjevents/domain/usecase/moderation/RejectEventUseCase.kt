@@ -21,9 +21,9 @@ class RejectEventUseCase @Inject constructor(
         notificationRepository.notify(
             userId = event.organizerId,
             type = NotificationType.EVENT_REJECTED,
-            title = "Revisión requerida: ${event.title}",
-            message = "Motivo: ${rejected.rejectionReason}",
-            eventId = eventId
+            eventId = eventId,
+            eventTitle = event.title,
+            detail = rejected.rejectionReason
         )
         return true
     }

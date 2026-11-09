@@ -68,6 +68,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -77,6 +79,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.CategoryChip
 import co.edu.uniquindio.akjevents.core.component.EventImage
@@ -100,6 +103,7 @@ import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.EventFormat
 import co.edu.uniquindio.akjevents.core.util.isFull
+import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.core.util.occupancy
 import co.edu.uniquindio.akjevents.core.util.remainingSpots
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
@@ -144,9 +148,9 @@ fun HomeScreen(
     Scaffold(
         containerColor = WarmBackground,
         topBar = {
-            MainTopBar(title = "Inicio", user = state.user, onAvatarClick = onOpenProfile) {
+            MainTopBar(title = stringResource(R.string.nav_home), user = state.user, onAvatarClick = onOpenProfile) {
                 IconButton(onClick = { searchFocus.requestFocus() }) {
-                    Icon(Icons.Outlined.Search, contentDescription = "Buscar", tint = MutedText)
+                    Icon(Icons.Outlined.Search, contentDescription = stringResource(R.string.home_search), tint = MutedText)
                 }
             }
         },
@@ -175,7 +179,7 @@ fun HomeScreen(
                     FormTextField(
                         value = state.query,
                         onValueChange = viewModel::onQueryChange,
-                        placeholder = "Buscar eventos, talleres, deportes...",
+                        placeholder = stringResource(R.string.home_search_placeholder),
                         leadingIcon = Icons.Outlined.Search,
                         style = SearchFieldStyle,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -183,7 +187,7 @@ fun HomeScreen(
                         trailingContent = if (state.query.isNotEmpty()) {
                             {
                                 IconButton(onClick = { viewModel.onQueryChange("") }, modifier = Modifier.size(40.dp)) {
-                                    Icon(Icons.Outlined.Close, contentDescription = "Borrar búsqueda", tint = MutedText, modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.home_clear_search), tint = MutedText, modifier = Modifier.size(18.dp))
                                 }
                             }
                         } else null,
@@ -202,7 +206,7 @@ fun HomeScreen(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Outlined.Tune,
-                                contentDescription = "Filtrar por ubicación",
+                                contentDescription = stringResource(R.string.home_filter_location),
                                 tint = if (filtersActive) Terracotta else WarmText,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -231,8 +235,8 @@ fun HomeScreen(
                         SectionHeader(
                             icon = Icons.Outlined.LocalFireDepartment,
                             iconTint = Terracotta,
-                            title = "Eventos Destacados",
-                            action = "Ver mapa",
+                            title = stringResource(R.string.home_featured),
+                            action = stringResource(R.string.home_see_map),
                             onAction = onOpenMap
                         )
                         LazyRow(
@@ -262,8 +266,8 @@ fun HomeScreen(
                     SectionHeader(
                         icon = Icons.Outlined.Groups,
                         iconTint = Sage,
-                        title = "Próximos en tu comunidad",
-                        action = "Filtrar",
+                        title = stringResource(R.string.home_upcoming),
+                        action = stringResource(R.string.home_filter),
                         onAction = { showLocationFilters = true }
                     )
                 }
@@ -292,7 +296,7 @@ private fun LocationFilterChips(selected: LocationFilter, onSelect: (LocationFil
     ) {
         items(LocationFilter.entries) { filter ->
             FilterPill(
-                text = filter.label,
+                text = stringResource(filter.label, HomeViewModel.NEARBY_RADIUS_KM),
                 icon = when (filter) {
                     LocationFilter.ALL -> Icons.Outlined.Public
                     LocationFilter.NEARBY -> Icons.Outlined.NearMe
@@ -310,12 +314,12 @@ private fun Greeting(firstName: String, city: String, onCalendarClick: () -> Uni
     Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text("COMUNIDAD QUINDÍO", color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                Text("¡Hola, $firstName! 👋", color = WarmText, fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.home_community_quindio), color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                Text(stringResource(R.string.home_greeting, firstName), color = WarmText, fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.SemiBold)
             }
             Surface(onClick = onCalendarClick, modifier = Modifier.size(44.dp), shape = CircleShape, color = SurfaceContainer) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Outlined.Today, contentDescription = "Mi agenda", tint = MutedText, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Outlined.Today, contentDescription = stringResource(R.string.home_my_agenda), tint = MutedText, modifier = Modifier.size(22.dp))
                     Box(
                         Modifier
                             .align(Alignment.TopEnd)
@@ -338,7 +342,7 @@ private fun Greeting(firstName: String, city: String, onCalendarClick: () -> Uni
             Icon(Icons.Rounded.LocationOn, contentDescription = null, tint = Terracotta, modifier = Modifier.size(18.dp))
             Text(city, color = WarmText, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             Text(
-                "Cambiar",
+                stringResource(R.string.home_change),
                 color = Terracotta,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
@@ -356,11 +360,11 @@ private fun CategoryChips(selected: EventCategory?, onSelect: (EventCategory?) -
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
-            FilterPill(text = "Todos", icon = Icons.Outlined.Stars, isSelected = selected == null, onClick = { onSelect(null) }, selectedColor = Terracotta)
+            FilterPill(text = stringResource(R.string.home_all), icon = Icons.Outlined.Stars, isSelected = selected == null, onClick = { onSelect(null) }, selectedColor = Terracotta)
         }
         items(EventCategory.entries) { category ->
             FilterPill(
-                text = "${category.label} ${category.style.emoji}",
+                text = "${stringResource(category.labelRes)} ${category.style.emoji}",
                 isSelected = selected == category,
                 onClick = { onSelect(category) },
                 selectedColor = Terracotta
@@ -458,7 +462,7 @@ private fun FeaturedEventCard(
                     ) {
                         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                             Text(
-                                if (event.isFull) "Ver detalle" else "Inscribirse gratis",
+                                stringResource(if (event.isFull) R.string.home_see_detail else R.string.home_sign_up_free),
                                 color = Color.White,
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
@@ -476,7 +480,7 @@ private fun FeaturedEventCard(
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 if (isInterested) Icons.Rounded.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = if (isInterested) "Quitar de me interesa" else "Me interesa",
+                                contentDescription = stringResource(if (isInterested) R.string.interest_remove else R.string.interest_add),
                                 tint = if (isInterested) Terracotta else MutedText,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -509,13 +513,12 @@ private fun CapacitySummary(event: CommunityEvent) {
     val occupancy = event.occupancy
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("${event.attendanceCount} confirmados", color = MutedText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(pluralStringResource(R.plurals.attendees_confirmed, event.attendanceCount, event.attendanceCount), color = MutedText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
             Text(
                 when (remaining) {
-                    null -> "Cupo abierto"
-                    0 -> "Cupo lleno"
-                    1 -> "1 cupo libre"
-                    else -> "$remaining cupos libres"
+                    null -> stringResource(R.string.open_capacity)
+                    0 -> stringResource(R.string.capacity_full)
+                    else -> pluralStringResource(R.plurals.spots_left, remaining, remaining)
                 },
                 color = if (remaining == null) Sage else Terracotta,
                 fontSize = 11.sp,
@@ -590,7 +593,8 @@ private fun UpcomingEventCard(
                 AvailabilityLabel(event)
                 Text("  •  ", color = MutedText.copy(alpha = 0.4f), fontSize = 11.sp)
                 Text(
-                    "${event.attendanceCount} asistirán" + (distanceKm?.let { " • a ${EventFormat.distance(it)}" } ?: ""),
+                    pluralStringResource(R.plurals.attendees_going, event.attendanceCount, event.attendanceCount) +
+                        (distanceKm?.let { stringResource(R.string.distance_away, EventFormat.distance(it)) } ?: ""),
                     color = MutedText,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
@@ -607,10 +611,10 @@ private fun UpcomingEventCard(
 private fun AvailabilityLabel(event: CommunityEvent) {
     val remaining = event.remainingSpots
     val (text, color) = when {
-        remaining == null -> "Cupo abierto" to Sage
-        remaining == 0 -> "Cupo lleno" to ErrorColor
-        remaining <= 5 -> "¡Últimos $remaining cupos!" to ErrorColor
-        else -> "$remaining cupos libres" to Terracotta
+        remaining == null -> stringResource(R.string.open_capacity) to Sage
+        remaining == 0 -> stringResource(R.string.capacity_full) to ErrorColor
+        remaining <= 5 -> pluralStringResource(R.plurals.last_spots, remaining, remaining) to ErrorColor
+        else -> pluralStringResource(R.plurals.spots_left, remaining, remaining) to Terracotta
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(Modifier.size(8.dp).background(color, CircleShape))
@@ -628,7 +632,7 @@ private fun InterestPill(isInterested: Boolean, onClick: () -> Unit) {
         ) {
             val color = if (isInterested) Color.White else OnPrimaryFixedVariant
             Icon(if (isInterested) Icons.Rounded.Star else Icons.Outlined.StarOutline, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-            Text("Me interesa", color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.interest_add), color = color, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -646,9 +650,9 @@ private fun LeaderBanner(onCreate: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("¿ERES LÍDER O GESTOR?", color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-            Text("Crea y publica tu propio evento comunitario", color = WarmText, fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold)
-            Text("Conecta con cientos de personas activas en el Quindío.", color = MutedText, fontSize = 12.sp, lineHeight = 16.sp)
+            Text(stringResource(R.string.home_cta_title), color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Text(stringResource(R.string.home_cta_subtitle), color = WarmText, fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.home_cta_description), color = MutedText, fontSize = 12.sp, lineHeight = 16.sp)
             Surface(
                 onClick = onCreate,
                 shape = RoundedCornerShape(12.dp),
@@ -661,7 +665,7 @@ private fun LeaderBanner(onCreate: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Crear iniciativa", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.home_cta_button), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     Icon(Icons.Outlined.AddCircleOutline, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
                 }
             }
@@ -683,9 +687,9 @@ private fun EmptyResults() {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Icon(Icons.Outlined.SearchOff, contentDescription = null, tint = MutedText, modifier = Modifier.size(40.dp))
-        Text("No encontramos eventos", color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.home_empty_title), color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         Text(
-            "Prueba con otra búsqueda o categoría.",
+            stringResource(R.string.home_empty_message),
             color = MutedText,
             fontSize = 14.sp,
             textAlign = TextAlign.Center

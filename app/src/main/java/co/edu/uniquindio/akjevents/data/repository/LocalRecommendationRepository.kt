@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents.data.repository
 
+import co.edu.uniquindio.akjevents.core.util.ResourceProvider
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.RankedRecommendation
@@ -14,26 +15,29 @@ import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRanker
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRepository
 import co.edu.uniquindio.akjevents.domain.repository.UserRepository
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import java.time.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /** Filtra antes de clasificar y valida de nuevo usando los datos actuales al recibir la respuesta. */
 @Singleton
 class LocalRecommendationRepository(
     private val events: EventRepository,
     private val users: UserRepository,
-    private val ranker: RecommendationRanker = LocalRecommendationRanker(),
+    resources: ResourceProvider,
+    private val ranker: RecommendationRanker = LocalRecommendationRanker(resources),
     private val now: () -> LocalDateTime = LocalDateTime::now
 ) : RecommendationRepository {
 
     @Inject
-    constructor(events: EventRepository, users: UserRepository, ranker: RecommendationRanker) :
-        this(events, users, ranker, LocalDateTime::now)
-    private val fallback = LocalRecommendationRanker()
+    constructor(events: EventRepository, users: UserRepository, resources: ResourceProvider, ranker: RecommendationRanker) :
+        this(events, users, resources, ranker, LocalDateTime::now)
+
+    // Si la clasificación principal falla o responde algo inválido, se usa la local
+    private val fallback = LocalRecommendationRanker(resources)
 
     override val changes: Flow<Unit> = combine(
         events.publicEvents, events.events, events.interests, events.attendances, users.currentUser

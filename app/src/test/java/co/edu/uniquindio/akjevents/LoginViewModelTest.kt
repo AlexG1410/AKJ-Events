@@ -1,12 +1,12 @@
 package co.edu.uniquindio.akjevents
 
-import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
 import co.edu.uniquindio.akjevents.data.demo.SampleUsers
 import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.domain.usecase.auth.LoginUseCase
 import co.edu.uniquindio.akjevents.features.auth.login.LoginViewModel
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -16,7 +16,7 @@ class LoginViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val viewModel by lazy { LoginViewModel(LoginUseCase(InMemoryUserRepository()), simulatedRequestMs = 0) }
+    private val viewModel by lazy { LoginViewModel(LoginUseCase(InMemoryUserRepository()), TestResourceProvider, simulatedRequestMs = 0) }
 
     @Test
     fun demoCredentialsBelongToTheDemoUser() = runTest {
