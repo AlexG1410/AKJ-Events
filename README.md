@@ -21,11 +21,11 @@ Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Fireba
 - **Feed (Home):** eventos verificados, destacados por votos "Me interesa", búsqueda, filtro por categoría y **filtro por ubicación** (cerca de mí, a 5 km, o en mi ciudad), "Me interesa" y acceso al mapa.
 - **Mapa (explorar):** los eventos sobre el mapa, con filtros de cercanía, categoría y "esta semana", tarjeta del evento elegido con distancia y "Cómo llegar".
 - **Detalle de evento:** información completa, **ubicación exacta en el mapa**, organizador, cupos, confirmar o cancelar asistencia, "Me interesa" y **comentarios**. El autor y los moderadores pueden ver eventos pendientes o rechazados (con su estado y el motivo).
-- **Crear y editar evento:** título, categoría, descripción, imagen, fechas, lugar, **punto en el mapa** y cupo opcional. Todo evento nuevo o editado queda pendiente de verificación.
+- **Crear y editar evento:** título, categoría, descripción, **hasta 3 fotos** (cámara o galería; la primera es la principal), fechas, lugar, **punto en el mapa** y cupo opcional. Todo evento nuevo o editado queda pendiente de verificación.
 - **Mis eventos:** pestañas por estado. Según el estado se puede editar, eliminar, reenviar un rechazado, **marcar como finalizado**, mostrar el **QR de asistencia**, ver los inscritos y enviarles un aviso.
 - **Notificaciones:** comentarios en mis eventos, verificación o rechazo (con el motivo), avisos de organizadores, eventos finalizados, insignias y subidas de nivel. Se marcan como leídas o no leídas y abren el evento relacionado.
 - **Perfil:** nivel, puntos, ruta de los 4 niveles, estadísticas, insignias, eventos recientes y cierre de sesión.
-- **Editar perfil:** datos personales, ciudad, **ubicación en el mapa**, intereses y **eliminar la cuenta** (borra también sus eventos, comentarios y asistencias).
+- **Editar perfil:** **foto de perfil** (cámara o galería), datos personales, ciudad, **ubicación en el mapa**, intereses y **eliminar la cuenta** (borra también sus eventos, comentarios y asistencias).
 - **Mis estadísticas:** eventos activos, finalizados y pendientes, asistencias con QR, comentarios, alcance, tasa de cumplimiento, gráfica por categoría e historial de puntos.
 - **Check-in con QR:** el organizador muestra el QR de su evento; el asistente valida el código y suma puntos. También está el QR personal del usuario.
 
@@ -44,7 +44,20 @@ Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Fireba
 - **Mapa:** `core/component/SimulatedMap` dibuja un mapa del Eje Cafetero con coordenadas reales: se puede mover, acercar, ubicar eventos y elegir un punto. La búsqueda usa lugares de referencia locales (`SamplePlaces`) en lugar de un servicio de mapas.
 - **Filtros de ubicación y fecha:** "En mi ciudad" usa las coordenadas: respeta el municipio de los lugares conocidos del catálogo local y, para otros puntos, aproxima por el centro más cercano. No depende del texto de la dirección ni usa límites municipales reales. "Esta semana" muestra inicios desde el momento actual hasta antes de siete días después.
 - **QR:** los códigos QR son reales (librería ZXing), pero no se usa la cámara: el escaneo se simula escribiendo el código o eligiendo un evento confirmado.
-- **Imágenes:** las fotos salen de URLs de ejemplo de picsum.photos, con una imagen local de respaldo. La foto de perfil se muestra con las iniciales.
+- **Imágenes de ejemplo:** los eventos de muestra usan fotos de picsum.photos. Las fotos que suben los usuarios sí van a la nube (ver «Fotos en la nube»).
+
+## Fotos en la nube
+
+Las fotos de los eventos y de perfil se toman con la **cámara** o se eligen de la **galería** (guía 15: permiso de cámara en tiempo de ejecución, `FileProvider` e `ImagePickerBottomSheet`; si se niega el permiso, la galería sigue funcionando). Al guardar, la app las reduce a 1600 px, las comprime en JPEG y las sube a **Cloudinary** con **Retrofit** (guía 18, `CloudinaryApi` y `NetworkModule`). En Firestore solo se guarda la URL pública. Si la subida falla, no se guarda nada y se muestra el error.
+
+La subida usa un *upload preset* sin firma, así que la app no lleva ninguna clave secreta. Para compilar con la subida activa, agrega a `local.properties` (no se sube al repositorio):
+
+```
+cloudinary.cloudName=<cloud name de la cuenta>
+cloudinary.uploadPreset=<preset sin firma>
+```
+
+El preset se crea en Cloudinary → Settings → Upload → Upload presets, con *Signing mode* = Unsigned. Sin estos datos la app funciona, pero no puede guardar fotos nuevas.
 
 Solo los eventos `VERIFIED` se muestran públicamente. Los rechazados y pendientes no aparecen en el feed ni en el mapa.
 
@@ -86,7 +99,7 @@ Dentro de `app/src/main/java/co/edu/uniquindio/akjevents/`:
 - `core/`: tema, componentes compartidos (barras, tarjetas, mapa simulado, QR) y utilidades (`RequestResult`, validación, formatos, búsqueda).
 - `domain/`: modelos (`CommunityEvent`, `User`, `Comment`, `AppNotification`, insignias, niveles, puntos...), las interfaces de los repositorios y los casos de uso (`domain/usecase/`), que aplican las reglas: permisos, puntos, insignias y notificaciones.
 - `data/`: los repositorios, que solo guardan y consultan datos: `FirebaseUserRepository` (Authentication + Firestore), `FirestoreEventRepository` y `FirestoreNotificationRepository`, con sus DTO en `data/remote/`; la preferencia de sesión con DataStore; los repositorios en memoria, que usan las pruebas unitarias, y los datos de demostración.
-- `di/`: los módulos de Hilt: `RepositoryModule` (qué implementación usar para cada repositorio), `FirebaseModule` (instancias de Firebase) y `CoroutinesModule`.
+- `di/`: los módulos de Hilt: `RepositoryModule` (qué implementación usar para cada repositorio), `FirebaseModule` (instancias de Firebase), `NetworkModule` (Retrofit para Cloudinary) y `CoroutinesModule`.
 - `features/`: una carpeta por pantalla, cada una con su `Screen` y su `ViewModel` (`@HiltViewModel`) con su `UiState`. Los ViewModels solo usan casos de uso, nunca los repositorios directamente.
 - `navigation/`: navegación principal, rutas tipadas y el `SessionViewModel` (rol y alertas sin leer).
 
@@ -98,7 +111,7 @@ Las dependencias las crea Hilt: pantalla (`hiltViewModel()`) → ViewModel → c
 2. ~~Internacionalización en inglés y español.~~
 3. ~~Firebase Authentication con recuperación de contraseña y sesión recordada.~~
 4. ~~Eventos, comentarios, asistencias y notificaciones en Firestore, con reglas de seguridad y datos de ejemplo.~~
-5. Imágenes de eventos y de perfil en la nube.
+5. ~~Fotos de eventos y de perfil con cámara o galería, subidas a Cloudinary.~~
 6. Mapa real con Mapbox y permiso de ubicación.
 7. Sugerencia de categoría con IA (OpenRouter), siempre con opción de cambiarla.
 8. APK release distribuido con Firebase App Distribution.

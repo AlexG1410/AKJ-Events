@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -29,6 +31,15 @@ android {
         // 10.0.2.2 es el computador visto desde el emulador de Android; con `adb reverse` se usa 127.0.0.1
         val firebaseEmulatorHost = providers.gradleProperty("firebaseEmulatorHost").orNull ?: "10.0.2.2"
         buildConfigField("String", "FIREBASE_EMULATOR_HOST", "\"$firebaseEmulatorHost\"")
+
+        // Cloudinary (imágenes en la nube): el nombre de la nube y el preset sin firma van en local.properties,
+        // que no se sube al repositorio (cloudinary.cloudName y cloudinary.uploadPreset)
+        val localProperties = Properties().apply {
+            val file = rootProject.file("local.properties")
+            if (file.exists()) file.inputStream().use(::load)
+        }
+        buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${localProperties.getProperty("cloudinary.cloudName", "")}\"")
+        buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"${localProperties.getProperty("cloudinary.uploadPreset", "")}\"")
     }
 
     buildTypes {
@@ -83,5 +94,8 @@ dependencies {
     implementation(libs.kotlinx.coroutines.play.services)
     // Preferencias locales (guía 13)
     implementation(libs.data.store)
+    // Subida de imágenes a Cloudinary con Retrofit (guía 18)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
     implementation(libs.androidx.lifecycle.runtime.compose)
 }

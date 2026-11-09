@@ -12,8 +12,10 @@ import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.domain.model.User
+import co.edu.uniquindio.akjevents.domain.repository.ImageFolder
 import co.edu.uniquindio.akjevents.domain.repository.ProfileUpdateResult
 import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.image.UploadImagesUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.user.DeleteAccountUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.user.UpdateProfileUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +34,8 @@ data class EditProfileUiState(
     val address: String = "",
     val location: Location? = null,
     val interests: Set<EventCategory> = emptySet(),
+    /** Foto de perfil: la URL guardada o el URI local de una foto nueva, que se sube al guardar. */
+    val photo: String? = null,
     val result: RequestResult? = null,
     /** La cuenta se eliminó: la pantalla vuelve al Login. */
     val isAccountDeleted: Boolean = false
@@ -53,6 +57,7 @@ class EditProfileViewModel @Inject constructor(
     observeCurrentUser: ObserveCurrentUserUseCase,
     private val updateProfile: UpdateProfileUseCase,
     private val deleteAccountUseCase: DeleteAccountUseCase,
+    private val uploadImages: UploadImagesUseCase,
     private val resources: ResourceProvider
 ) : ViewModel() {
     val cities: List<String> = SamplePlaces.cities.map { it.name }
@@ -66,7 +71,8 @@ class EditProfileViewModel @Inject constructor(
                 city = user.city,
                 address = user.address,
                 location = user.location,
-                interests = user.interests
+                interests = user.interests,
+                photo = user.profilePictureUrl
             )
         } ?: EditProfileUiState()
     )
@@ -86,6 +92,9 @@ class EditProfileViewModel @Inject constructor(
         it.copy(location = picked.location, address = picked.address, city = SamplePlaces.nearestCity(picked.location).name)
     }
 
+    /** Foto tomada con la cámara o elegida de la galería (guía 15). */
+    fun onPhotoPicked(uri: String) = _uiState.update { it.copy(photo = uri) }
+
     fun toggleInterest(category: EventCategory) = _uiState.update {
         it.copy(interests = if (category in it.interests) it.interests - category else it.interests + category)
     }
@@ -104,16 +113,24 @@ class EditProfileViewModel @Inject constructor(
             _uiState.update { it.copy(result = RequestResult.Failure(error.asString(resources))) }
             return
         }
-        val updated = user.copy(
-            name = state.name,
-            email = state.email,
-            city = state.city,
-            address = state.address.ifBlank { state.city },
-            location = state.location!!,
-            interests = state.interests
-        )
+        val location = state.location!!
         _uiState.update { it.copy(result = RequestResult.Loading) }
         viewModelScope.launch {
+            // Si hay una foto nueva, primero se sube a la nube y se guarda su URL
+            val photoUrl = runCatching { state.photo?.let { uploadImages(listOf(it), ImageFolder.PROFILES).single() } }.getOrElse {
+                _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(R.string.edit_profile_error_upload))) }
+                return@launch
+            }
+            _uiState.update { it.copy(photo = photoUrl) }
+            val updated = user.copy(
+                name = state.name,
+                email = state.email,
+                city = state.city,
+                address = state.address.ifBlank { state.city },
+                location = location,
+                interests = state.interests,
+                profilePictureUrl = photoUrl
+            )
             val result = runCatching { updateProfile(updated) }.fold(
                 onSuccess = { outcome ->
                     when (outcome) {

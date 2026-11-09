@@ -34,7 +34,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.automirrored.outlined.Send
-import androidx.compose.material.icons.outlined.Autorenew
+import androidx.compose.material.icons.outlined.AddPhotoAlternate
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Done
@@ -81,6 +81,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +92,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -107,8 +109,10 @@ import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.EmptyState
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
+import co.edu.uniquindio.akjevents.core.component.ImagePickerSheet
 import co.edu.uniquindio.akjevents.core.component.PrimaryButton
 import co.edu.uniquindio.akjevents.core.component.RequestResultEffect
+import co.edu.uniquindio.akjevents.core.component.rememberImagePicker
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.OnPrimaryFixedVariant
 import co.edu.uniquindio.akjevents.core.theme.OnSecondaryFixedVariant
@@ -136,6 +140,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneOffset
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 private val OnSecondaryFixed = Color(0xFF002114)
 
@@ -191,6 +196,15 @@ fun CreateEventScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showHelp by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    // Cámara o galería (guía 15); si se niega el permiso de cámara, la galería sigue disponible
+    val imagePicker = rememberImagePicker(
+        onImagePicked = { viewModel.addImage(it.toString()) },
+        onCameraDenied = {
+            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.camera_permission_required)) }
+        }
+    )
 
     // Primero se elige la fecha y luego la hora
     var datePickerField by remember { mutableStateOf<DateTimeField?>(null) }
@@ -240,7 +254,7 @@ fun CreateEventScreen(
         ) {
             StepIndicator(isInfoComplete = state.isInfoComplete, isScheduleComplete = state.isScheduleComplete)
 
-            BasicInfoSection(state = state, viewModel = viewModel)
+            BasicInfoSection(state = state, viewModel = viewModel, onAddImage = imagePicker::open)
 
             ScheduleSection(
                 state = state,
@@ -290,6 +304,8 @@ fun CreateEventScreen(
             }
         }
     }
+
+    ImagePickerSheet(imagePicker)
 
     datePickerField?.let { field ->
         val current = if (field == DateTimeField.START) state.startsAt else state.endsAt
@@ -509,7 +525,7 @@ private fun Step(number: Int, label: String, icon: ImageVector, status: StepStat
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventViewModel) {
+private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventViewModel, onAddImage: () -> Unit) {
     FormCard {
         SectionHeader(
             icon = Icons.Outlined.EditNote,
@@ -577,7 +593,7 @@ private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventVi
             }
         }
 
-        EventImagePicker(imageUrl = state.imageUrl, onChangeImage = viewModel::changeImage)
+        EventImagePicker(images = state.images, canAdd = state.canAddImage, onAdd = onAddImage, onRemove = viewModel::removeImage)
     }
 }
 
@@ -636,69 +652,107 @@ private fun DescriptionField(value: String, onValueChange: (String) -> Unit) {
     )
 }
 
-/** Imagen temporal aleatoria mientras no exista la carga de imágenes. */
+/**
+ * Fotos del evento (mockup 07): la principal a la izquierda y, a la derecha, las demás y el botón para
+ * añadir otra (máximo [CreateEventViewModel.MAX_IMAGES]). Se toman con la cámara o se eligen de la galería.
+ */
 @Composable
-private fun EventImagePicker(imageUrl: String, onChangeImage: () -> Unit) {
+private fun EventImagePicker(images: List<String>, canAdd: Boolean, onAdd: () -> Unit, onRemove: (Int) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             FieldLabel(stringResource(R.string.create_field_photo), modifier = Modifier.weight(1f))
-            Text(stringResource(R.string.create_temporary_image), color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.create_min_one_image), color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Box(
-                modifier = Modifier
-                    .weight(2f)
-                    .height(144.dp)
-                    .shadow(1.dp, RoundedCornerShape(12.dp))
-                    .clip(RoundedCornerShape(12.dp))
-            ) {
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = stringResource(R.string.create_event_image),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(R.drawable.event_placeholder),
-                    error = painterResource(R.drawable.event_placeholder),
-                    modifier = Modifier.fillMaxSize()
-                )
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.5f)))
-                )
-                Text(
-                    stringResource(R.string.create_main_photo),
-                    color = Color.White,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(8.dp)
-                        .background(Terracotta.copy(alpha = 0.8f), CircleShape)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-            Surface(
-                onClick = onChangeImage,
-                shape = RoundedCornerShape(12.dp),
-                color = SurfaceContainerLow,
-                modifier = Modifier.weight(1f).height(144.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier.size(40.dp).background(SecondaryFixed, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Outlined.Autorenew, contentDescription = null, tint = OnSecondaryFixedVariant, modifier = Modifier.size(20.dp))
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Text(stringResource(R.string.create_change_image), color = WarmText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(R.string.create_random), color = OutlineColor, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+        if (images.isEmpty()) {
+            AddPhotoTile(count = 0, onClick = onAdd, modifier = Modifier.fillMaxWidth().height(144.dp))
+            return@Column
+        }
+        Row(modifier = Modifier.height(144.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            EventPhoto(
+                image = images.first(),
+                index = 0,
+                onRemove = { onRemove(0) },
+                isMain = true,
+                modifier = Modifier.weight(2f).fillMaxHeight()
+            )
+            Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                images.drop(1).forEachIndexed { offset, image ->
+                    val index = offset + 1
+                    EventPhoto(image = image, index = index, onRemove = { onRemove(index) }, modifier = Modifier.fillMaxWidth().weight(1f))
+                }
+                if (canAdd) {
+                    AddPhotoTile(count = images.size, onClick = onAdd, modifier = Modifier.fillMaxWidth().weight(1f))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun EventPhoto(image: String, index: Int, onRemove: () -> Unit, modifier: Modifier = Modifier, isMain: Boolean = false) {
+    Box(modifier = modifier.shadow(1.dp, RoundedCornerShape(12.dp)).clip(RoundedCornerShape(12.dp))) {
+        // Coil carga igual una URL ya publicada o el URI local de la cámara o la galería
+        AsyncImage(
+            model = image,
+            contentDescription = stringResource(R.string.create_photo_number, index + 1),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(R.drawable.event_placeholder),
+            error = painterResource(R.drawable.event_placeholder),
+            modifier = Modifier.fillMaxSize()
+        )
+        if (isMain) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .background(Brush.verticalGradient(0.5f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.5f)))
+            )
+            Text(
+                stringResource(R.string.create_main_photo),
+                color = Color.White,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(8.dp)
+                    .background(Terracotta.copy(alpha = 0.8f), CircleShape)
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+        Surface(
+            onClick = onRemove,
+            shape = CircleShape,
+            color = Color.Black.copy(alpha = 0.55f),
+            modifier = Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.create_remove_photo), tint = Color.White, modifier = Modifier.size(16.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddPhotoTile(count: Int, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Surface(onClick = onClick, shape = RoundedCornerShape(12.dp), color = SurfaceContainerLow, modifier = modifier) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier.size(36.dp).background(SecondaryFixed, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Outlined.AddPhotoAlternate, contentDescription = null, tint = OnSecondaryFixedVariant, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.create_add_photo), color = WarmText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                stringResource(R.string.create_photos_count, count, CreateEventViewModel.MAX_IMAGES),
+                color = OutlineColor,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }

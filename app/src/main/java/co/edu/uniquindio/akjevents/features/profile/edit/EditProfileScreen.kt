@@ -29,6 +29,7 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.DropdownMenu
@@ -46,10 +47,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -64,10 +67,12 @@ import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.ConfirmDialog
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
+import co.edu.uniquindio.akjevents.core.component.ImagePickerSheet
 import co.edu.uniquindio.akjevents.core.component.PrimaryButton
 import co.edu.uniquindio.akjevents.core.component.RequestResultEffect
 import co.edu.uniquindio.akjevents.core.component.ScreenHeader
 import co.edu.uniquindio.akjevents.core.component.UserAvatar
+import co.edu.uniquindio.akjevents.core.component.rememberImagePicker
 import co.edu.uniquindio.akjevents.core.component.style
 import co.edu.uniquindio.akjevents.core.theme.ErrorColor
 import co.edu.uniquindio.akjevents.core.theme.MutedText
@@ -85,7 +90,9 @@ import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.labelRes
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.Location
+import co.edu.uniquindio.akjevents.domain.model.User
 import java.util.Locale
+import kotlinx.coroutines.launch
 
 private val ProfileFieldStyle = FormFieldStyle(
     height = 52.dp,
@@ -115,6 +122,15 @@ fun EditProfileScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmDelete by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    // Cámara o galería (guía 15); si se niega el permiso de cámara, la galería sigue disponible
+    val imagePicker = rememberImagePicker(
+        onImagePicked = { viewModel.onPhotoPicked(it.toString()) },
+        onCameraDenied = {
+            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.camera_permission_required)) }
+        }
+    )
 
     LaunchedEffect(pickedLocation) {
         if (pickedLocation != null) {
@@ -155,7 +171,7 @@ fun EditProfileScreen(
             }
 
             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                UserAvatar(user, size = 112.dp)
+                ProfilePhoto(user = user.copy(profilePictureUrl = state.photo), onChange = imagePicker::open)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Outlined.VerifiedUser, contentDescription = null, tint = Sage, modifier = Modifier.size(18.dp))
                     Text(
@@ -219,6 +235,8 @@ fun EditProfileScreen(
         }
     }
 
+    ImagePickerSheet(imagePicker)
+
     if (confirmDelete) {
         ConfirmDialog(
             title = stringResource(R.string.edit_profile_delete_title),
@@ -231,6 +249,25 @@ fun EditProfileScreen(
             },
             onDismiss = { confirmDelete = false }
         )
+    }
+}
+
+/** Foto circular con el botón de cámara para cambiarla (mockup 13). */
+@Composable
+private fun ProfilePhoto(user: User, onChange: () -> Unit) {
+    Box {
+        UserAvatar(user, size = 112.dp, onClick = onChange)
+        Surface(
+            onClick = onChange,
+            shape = CircleShape,
+            color = Terracotta,
+            shadowElevation = 2.dp,
+            modifier = Modifier.align(Alignment.BottomEnd).size(40.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.PhotoCamera, contentDescription = stringResource(R.string.edit_profile_change_photo), tint = Color.White, modifier = Modifier.size(20.dp))
+            }
+        }
     }
 }
 

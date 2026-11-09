@@ -20,7 +20,8 @@ hiltNavigationCompose = "1.4.0"
 ksp = "2.3.6"
 firebaseBom = "35.0.2"
 googleServices = "4.4.4"
-dataStore = "1.2.1" # Desde KSP 2.3.0 la versión ya no va atada a la de Kotlin
+dataStore = "1.2.1"
+retrofit = "3.0.0" # Desde KSP 2.3.0 la versión ya no va atada a la de Kotlin
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -53,6 +54,8 @@ firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutines" }
 data-store = { module = "androidx.datastore:datastore-preferences", version.ref = "dataStore" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleViewmodelCompose" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 
 [plugins]
