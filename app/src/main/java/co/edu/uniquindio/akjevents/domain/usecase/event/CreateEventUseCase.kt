@@ -15,7 +15,7 @@ class CreateEventUseCase @Inject constructor(
     private val awardPoints: AwardPointsUseCase,
     private val awardBadge: AwardBadgeUseCase
 ) {
-    operator fun invoke(event: CommunityEvent) {
+    suspend operator fun invoke(event: CommunityEvent) {
         // Todo evento nuevo espera la revisión de un moderador antes de ser público
         eventRepository.createEvent(event.copy(status = EventStatus.PENDING, rejectionReason = null))
         awardPoints(event.organizerId, ReputationPoints.CREATE_EVENT, "Creaste «${event.title}»")

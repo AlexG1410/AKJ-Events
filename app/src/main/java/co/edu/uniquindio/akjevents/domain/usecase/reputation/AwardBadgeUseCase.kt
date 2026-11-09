@@ -11,7 +11,7 @@ class AwardBadgeUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val notificationRepository: NotificationRepository
 ) {
-    operator fun invoke(userId: String, badge: Badge) {
+    suspend operator fun invoke(userId: String, badge: Badge) {
         val user = userRepository.findById(userId) ?: return
         if (user.isModerator || !userRepository.addBadge(userId, badge)) return
         notificationRepository.notify(

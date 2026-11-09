@@ -7,12 +7,12 @@ import co.edu.uniquindio.akjevents.domain.usecase.auth.LogoutUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.notification.ObserveNotificationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 data class SessionUiState(
     val user: User? = null,
@@ -39,5 +39,7 @@ class SessionViewModel @Inject constructor(
         }
     }
 
-    fun logout() = logoutUseCase()
+    fun logout() {
+        viewModelScope.launch { runCatching { logoutUseCase() } }
+    }
 }

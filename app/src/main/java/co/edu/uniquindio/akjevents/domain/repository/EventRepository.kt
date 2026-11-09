@@ -31,52 +31,52 @@ interface EventRepository {
 
     val interests: StateFlow<List<Interest>>
 
-    fun findEvent(id: String): CommunityEvent?
+    suspend fun findEvent(id: String): CommunityEvent?
 
-    fun findPublicEvent(id: String): CommunityEvent?
+    suspend fun findPublicEvent(id: String): CommunityEvent?
 
     /** Evento público cuyo QR de asistencia tiene ese código. */
-    fun findPublicEventByCheckInCode(code: String): CommunityEvent?
+    suspend fun findPublicEventByCheckInCode(code: String): CommunityEvent?
 
     /** Eventos creados por un usuario, en cualquier estado (pendientes y rechazados incluidos). */
-    fun findEventsByOrganizer(organizerId: String): List<CommunityEvent>
+    suspend fun findEventsByOrganizer(organizerId: String): List<CommunityEvent>
 
     /** Guarda un evento nuevo. Si no está verificado, no aparece en [publicEvents]. */
-    fun createEvent(event: CommunityEvent)
+    suspend fun createEvent(event: CommunityEvent)
 
     /**
      * Reemplaza los datos del evento. Conserva el organizador, los conteos y la fecha de creación.
      * Devuelve el evento guardado, o null si no existe.
      */
-    fun updateEvent(event: CommunityEvent): CommunityEvent?
+    suspend fun updateEvent(event: CommunityEvent): CommunityEvent?
 
     /** Cambia el estado del evento; [rejectionReason] solo aplica a [EventStatus.REJECTED]. */
-    fun updateStatus(eventId: String, status: EventStatus, rejectionReason: String? = null): CommunityEvent?
+    suspend fun updateStatus(eventId: String, status: EventStatus, rejectionReason: String? = null): CommunityEvent?
 
     /**
      * Registra que el evento ya dio los puntos de su verificación. Devuelve false si ya los había dado,
      * para que editarlo y volverlo a aprobar no los sume otra vez.
      */
-    fun registerVerificationReward(eventId: String): Boolean
+    suspend fun registerVerificationReward(eventId: String): Boolean
 
     /** Borra el evento con sus comentarios, asistencias e intereses. */
-    fun deleteEvent(eventId: String): Boolean
+    suspend fun deleteEvent(eventId: String): Boolean
 
     /** Suma un asistente si hay cupo y el usuario no había confirmado antes. */
-    fun confirmAttendance(eventId: String, userId: String): AttendanceResult
+    suspend fun confirmAttendance(eventId: String, userId: String): AttendanceResult
 
     /** Devuelve false si el usuario no tenía asistencia confirmada o ya hizo check-in. */
-    fun cancelAttendance(eventId: String, userId: String): Boolean
+    suspend fun cancelAttendance(eventId: String, userId: String): Boolean
 
     /** Registra la asistencia presencial; quien llega sin haber confirmado ocupa un cupo, si queda alguno. */
-    fun registerCheckIn(eventId: String, userId: String): CheckInRegistration
+    suspend fun registerCheckIn(eventId: String, userId: String): CheckInRegistration
 
     /** Marca o desmarca "Me interesa". Devuelve el nuevo estado, o null si el evento no es público. */
-    fun toggleInterest(eventId: String, userId: String): Boolean?
+    suspend fun toggleInterest(eventId: String, userId: String): Boolean?
 
     /** Guarda un comentario y le asigna su id y su fecha. */
-    fun addComment(eventId: String, authorId: String, text: String): Comment
+    suspend fun addComment(eventId: String, authorId: String, text: String): Comment
 
     /** Borra los eventos, comentarios y participación de un usuario que elimina su cuenta. */
-    fun removeUserData(userId: String)
+    suspend fun removeUserData(userId: String)
 }

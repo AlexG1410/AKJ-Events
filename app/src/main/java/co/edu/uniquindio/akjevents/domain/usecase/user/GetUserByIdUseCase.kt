@@ -7,5 +7,5 @@ import javax.inject.Inject
 class GetUserByIdUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    operator fun invoke(id: String): User? = userRepository.findById(id)
+    suspend operator fun invoke(id: String): User? = userRepository.findById(id)
 }

@@ -23,7 +23,7 @@ class AddCommentUseCase @Inject constructor(
     private val awardPoints: AwardPointsUseCase,
     private val awardBadge: AwardBadgeUseCase
 ) {
-    operator fun invoke(eventId: String, authorId: String, text: String): Comment? {
+    suspend operator fun invoke(eventId: String, authorId: String, text: String): Comment? {
         val event = eventRepository.findEvent(eventId) ?: return null
         val canComment = event.status == EventStatus.VERIFIED || event.status == EventStatus.FINISHED
         val author = userRepository.findById(authorId)

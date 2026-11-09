@@ -51,13 +51,18 @@ class NotificationsViewModel @Inject constructor(
 
     fun selectFilter(group: NotificationGroup?) = _uiState.update { it.copy(filter = group) }
 
-    fun toggleRead(notification: AppNotification) = setNotificationRead(notification.id, !notification.isRead)
+    fun toggleRead(notification: AppNotification) = setRead(notification, !notification.isRead)
 
     /** Al abrir una notificación se marca como leída. */
-    fun markAsRead(notification: AppNotification) = setNotificationRead(notification.id, true)
+    fun markAsRead(notification: AppNotification) = setRead(notification, true)
 
     fun markAllAsRead() {
         val user = observeCurrentUser().value ?: return
-        markAllNotificationsRead(user.id)
+        viewModelScope.launch { runCatching { markAllNotificationsRead(user.id) } }
+    }
+
+    // Si falla, la lista conserva el estado anterior: se vuelve a observar desde el repositorio
+    private fun setRead(notification: AppNotification, isRead: Boolean) {
+        viewModelScope.launch { runCatching { setNotificationRead(notification.id, isRead) } }
     }
 }

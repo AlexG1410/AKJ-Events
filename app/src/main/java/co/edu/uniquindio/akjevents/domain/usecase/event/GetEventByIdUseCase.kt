@@ -7,5 +7,5 @@ import javax.inject.Inject
 class GetEventByIdUseCase @Inject constructor(
     private val eventRepository: EventRepository
 ) {
-    operator fun invoke(id: String): CommunityEvent? = eventRepository.findEvent(id)
+    suspend operator fun invoke(id: String): CommunityEvent? = eventRepository.findEvent(id)
 }

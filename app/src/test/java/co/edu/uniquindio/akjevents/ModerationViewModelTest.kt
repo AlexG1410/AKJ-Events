@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
@@ -28,7 +29,7 @@ class ModerationViewModelTest {
     private fun ids() = viewModel.uiState.value.items.map { it.event.id }
 
     @Test
-    fun pendingQueueIsOrderedByArrivalAndTheFirstIsExpanded() {
+    fun pendingQueueIsOrderedByArrivalAndTheFirstIsExpanded() = runTest {
         val state = viewModel.uiState.value
 
         assertEquals(4, state.count(ModerationTab.PENDING))
@@ -37,7 +38,7 @@ class ModerationViewModelTest {
     }
 
     @Test
-    fun verifyingMovesTheEventToVerified() {
+    fun verifyingMovesTheEventToVerified() = runTest {
         viewModel.verify("huertos-urbanos")
 
         assertFalse("huertos-urbanos" in ids())
@@ -48,7 +49,7 @@ class ModerationViewModelTest {
     }
 
     @Test
-    fun rejectingRequiresAReasonAndSendsIt() {
+    fun rejectingRequiresAReasonAndSendsIt() = runTest {
         viewModel.startRejection("huertos-urbanos")
         viewModel.confirmRejection()
         assertEquals(EventStatus.PENDING, repos.events.findEvent("huertos-urbanos")!!.status)
@@ -68,14 +69,14 @@ class ModerationViewModelTest {
     }
 
     @Test
-    fun searchFiltersByOrganizerName() {
+    fun searchFiltersByOrganizerName() = runTest {
         viewModel.onQueryChange("camilo")
 
         assertEquals(listOf("huertos-urbanos"), ids())
     }
 
     @Test
-    fun moderatorCanFinishAVerifiedEvent() {
+    fun moderatorCanFinishAVerifiedEvent() = runTest {
         viewModel.selectTab(ModerationTab.VERIFIED)
         assertTrue("ciclopaseo" in ids())
 
@@ -86,7 +87,7 @@ class ModerationViewModelTest {
     }
 
     @Test
-    fun aRegularUserCannotModerate() {
+    fun aRegularUserCannotModerate() = runTest {
         val asUser = TestRepositories()
         val userViewModel = moderationViewModel(asUser)
 
@@ -96,7 +97,7 @@ class ModerationViewModelTest {
     }
 
     @Test
-    fun everyRejectionCategoryRequiresANonBlankWrittenReason() {
+    fun everyRejectionCategoryRequiresANonBlankWrittenReason() = runTest {
         RejectionReason.entries.forEach { reason ->
             viewModel.startRejection("huertos-urbanos")
             viewModel.selectRejectionReason(reason)

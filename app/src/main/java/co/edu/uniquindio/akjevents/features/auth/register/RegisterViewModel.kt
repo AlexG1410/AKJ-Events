@@ -160,19 +160,26 @@ class RegisterViewModel(
         viewModelScope.launch {
             // La cuenta se guarda en memoria; con el backend la creará el servicio de autenticación
             delay(simulatedRequestMs)
-            val result = when (registerUser(
-                name = state.fullName,
-                email = state.email,
-                city = state.city,
-                password = state.password,
-                interests = state.interests,
-                address = state.address,
-                location = state.location!!
-            )) {
-                is RegisterResult.Success ->
-                    RequestResult.Success("¡Cuenta creada! Empiezas como ${state.startingLevel.label} (Nivel 1)")
-                RegisterResult.EmailInUse -> RequestResult.Failure("Ya existe una cuenta con ese correo")
-            }
+            val result = runCatching {
+                registerUser(
+                    name = state.fullName,
+                    email = state.email,
+                    city = state.city,
+                    password = state.password,
+                    interests = state.interests,
+                    address = state.address,
+                    location = state.location!!
+                )
+            }.fold(
+                onSuccess = { outcome ->
+                    when (outcome) {
+                        is RegisterResult.Success ->
+                            RequestResult.Success("¡Cuenta creada! Empiezas como ${state.startingLevel.label} (Nivel 1)")
+                        RegisterResult.EmailInUse -> RequestResult.Failure("Ya existe una cuenta con ese correo")
+                    }
+                },
+                onFailure = { RequestResult.Failure("No se pudo crear la cuenta. Revisa tu conexión") }
+            )
             _uiState.update { it.copy(result = result) }
         }
     }

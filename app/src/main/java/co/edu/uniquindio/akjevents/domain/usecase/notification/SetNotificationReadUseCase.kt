@@ -6,5 +6,5 @@ import javax.inject.Inject
 class SetNotificationReadUseCase @Inject constructor(
     private val notificationRepository: NotificationRepository
 ) {
-    operator fun invoke(notificationId: String, isRead: Boolean) = notificationRepository.setRead(notificationId, isRead)
+    suspend operator fun invoke(notificationId: String, isRead: Boolean) = notificationRepository.setRead(notificationId, isRead)
 }

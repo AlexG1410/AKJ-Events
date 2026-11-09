@@ -23,7 +23,7 @@ class CheckInUseCase @Inject constructor(
     private val awardPoints: AwardPointsUseCase,
     private val awardBadge: AwardBadgeUseCase
 ) {
-    operator fun invoke(code: String, userId: String): CheckInResult {
+    suspend operator fun invoke(code: String, userId: String): CheckInResult {
         val event = eventRepository.findPublicEventByCheckInCode(code.trim().uppercase()) ?: return CheckInResult.InvalidCode
         if (event.organizerId == userId) return CheckInResult.OwnEvent(event)
         return when (eventRepository.registerCheckIn(event.id, userId)) {

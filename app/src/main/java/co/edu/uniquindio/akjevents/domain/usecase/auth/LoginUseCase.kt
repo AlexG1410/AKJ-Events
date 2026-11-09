@@ -8,5 +8,5 @@ import javax.inject.Inject
 class LoginUseCase @Inject constructor(
     private val userRepository: UserRepository
 ) {
-    operator fun invoke(email: String, password: String): User? = userRepository.login(email.trim(), password)
+    suspend operator fun invoke(email: String, password: String): User? = userRepository.login(email.trim(), password)
 }

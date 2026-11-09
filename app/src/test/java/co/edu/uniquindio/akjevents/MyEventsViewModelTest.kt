@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
 import co.edu.uniquindio.akjevents.features.myevents.MyEventsTab
@@ -20,7 +21,7 @@ class MyEventsViewModelTest {
     } }
 
     @Test
-    fun listsOnlyTheUsersEventsWithCountsPerStatus() {
+    fun listsOnlyTheUsersEventsWithCountsPerStatus() = runTest {
         val state = viewModel.uiState.value
 
         assertEquals(4, state.count(MyEventsTab.ALL))
@@ -32,21 +33,21 @@ class MyEventsViewModelTest {
     }
 
     @Test
-    fun tabsFilterByStatus() {
+    fun tabsFilterByStatus() = runTest {
         viewModel.selectTab(MyEventsTab.REJECTED)
 
         assertEquals(listOf("voleibol-callejero"), viewModel.uiState.value.events.map { it.id })
     }
 
     @Test
-    fun attendeesAreListedPerEvent() {
+    fun attendeesAreListedPerEvent() = runTest {
         val attendees = viewModel.uiState.value.attendees["cine-foro"].orEmpty()
 
         assertEquals(setOf("organizer-4", "organizer-7"), attendees.mapNotNull { it.user?.id }.toSet())
     }
 
     @Test
-    fun finishingAndDeletingUpdateTheList() {
+    fun finishingAndDeletingUpdateTheList() = runTest {
         viewModel.finishEvent("cine-foro")
         assertEquals(EventStatus.FINISHED, repos.events.findEvent("cine-foro")!!.status)
         assertEquals(2, viewModel.uiState.value.count(MyEventsTab.FINISHED))
@@ -57,7 +58,7 @@ class MyEventsViewModelTest {
     }
 
     @Test
-    fun noticeReachesTheAttendees() {
+    fun noticeReachesTheAttendees() = runTest {
         viewModel.sendNotice("cine-foro", "La proyección empieza 15 minutos tarde")
 
         assertEquals("Aviso enviado a 2 personas", viewModel.uiState.value.userMessage)

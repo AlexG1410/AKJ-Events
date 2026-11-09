@@ -6,5 +6,5 @@ import javax.inject.Inject
 class MarkAllNotificationsReadUseCase @Inject constructor(
     private val notificationRepository: NotificationRepository
 ) {
-    operator fun invoke(userId: String) = notificationRepository.markAllAsRead(userId)
+    suspend operator fun invoke(userId: String) = notificationRepository.markAllAsRead(userId)
 }

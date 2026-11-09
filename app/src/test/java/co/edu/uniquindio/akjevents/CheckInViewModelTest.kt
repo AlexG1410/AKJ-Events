@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.domain.model.ReputationPoints
 import co.edu.uniquindio.akjevents.domain.usecase.participation.CheckInResult
@@ -23,7 +24,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun confirmedEventsWaitForTheirCheckIn() {
+    fun confirmedEventsWaitForTheirCheckIn() = runTest {
         val viewModel = checkInViewModel(null, false)
 
         // El usuario de demostración tiene asistencia confirmada a la feria
@@ -31,7 +32,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun scanningAConfirmedEventRegistersTheAttendance() {
+    fun scanningAConfirmedEventRegistersTheAttendance() = runTest {
         val viewModel = checkInViewModel(null, false)
         val points = repos.pointsOf(DEMO_USER)
 
@@ -45,7 +46,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun invalidCodeShowsAnError() {
+    fun invalidCodeShowsAnError() = runTest {
         val viewModel = checkInViewModel(null, false)
 
         viewModel.validate()
@@ -59,7 +60,7 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun aPreselectedEventFillsItsCodeAndMyQrCanOpenFirst() {
+    fun aPreselectedEventFillsItsCodeAndMyQrCanOpenFirst() = runTest {
         val code = repos.events.findEvent("ciclopaseo")!!.checkInCode
 
         assertEquals(code, checkInViewModel("ciclopaseo", false).uiState.value.code)

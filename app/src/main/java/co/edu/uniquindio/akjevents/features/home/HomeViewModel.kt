@@ -81,7 +81,8 @@ class HomeViewModel @Inject constructor(
 
     fun toggleInterest(eventId: String) {
         val user = observeCurrentUser().value ?: return
-        toggleInterestUseCase(eventId, user.id)
+        // El feed se actualiza solo al cambiar el conteo; si falla, el corazón queda como estaba
+        viewModelScope.launch { runCatching { toggleInterestUseCase(eventId, user.id) } }
     }
 
     companion object {

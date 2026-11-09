@@ -1,5 +1,7 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
@@ -24,7 +26,7 @@ class CreateEventViewModelTest {
     private val repository = repos.events
 
     // Un usuario recién registrado, sin eventos propios, abre la sesión
-    private val currentUserId = (repos.users.register("Ana Gómez", "ana@ejemplo.com", "Armenia, Quindío", "Comunidad1", emptySet(), "Parque de la Vida", Location(4.5511, -75.6598)) as RegisterResult.Success).user.id
+    private val currentUserId = runBlocking { repos.users.register("Ana Gómez", "ana@ejemplo.com", "Armenia, Quindío", "Comunidad1", emptySet(), "Parque de la Vida", Location(4.5511, -75.6598)) as RegisterResult.Success }.user.id
     private val viewModel by lazy { createViewModel(repos) }
     private fun createViewModel(from: TestRepositories, eventId: String? = null) = from.useCases.let {
         CreateEventViewModel(it.getEventById, it.observeCurrentUser, it.createEvent, it.updateEvent, eventId = eventId, now = { now })
@@ -44,7 +46,7 @@ class CreateEventViewModelTest {
     private fun errorMessage() = (viewModel.uiState.value.result as? RequestResult.Failure)?.errorMessage
 
     @Test
-    fun validFormCreatesPendingEventThatIsNotPublic() {
+    fun validFormCreatesPendingEventThatIsNotPublic() = runTest {
         fillValidForm()
         viewModel.onLimitCapacityChange(true)
         viewModel.onCapacityChange("35")
@@ -63,7 +65,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun unlimitedCapacityIsSavedAsNull() {
+    fun unlimitedCapacityIsSavedAsNull() = runTest {
         fillValidForm()
         viewModel.onCapacityChange("0")
 
@@ -73,7 +75,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun missingRequiredFieldsAreRejected() {
+    fun missingRequiredFieldsAreRejected() = runTest {
         viewModel.submit()
         assertEquals("Escribe el título del evento", errorMessage())
 
@@ -101,7 +103,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun startMustBeInTheFuture() {
+    fun startMustBeInTheFuture() = runTest {
         fillValidForm()
         viewModel.onStartsAtChange(now.minusHours(1))
 
@@ -112,7 +114,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun endMustBeAfterStart() {
+    fun endMustBeAfterStart() = runTest {
         fillValidForm()
         viewModel.onEndsAtChange(now.plusDays(2).withHour(9))
 
@@ -123,7 +125,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun limitedCapacityMustBePositive() {
+    fun limitedCapacityMustBePositive() = runTest {
         fillValidForm()
         viewModel.onLimitCapacityChange(true)
         viewModel.onCapacityChange("0")
@@ -135,14 +137,14 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun descriptionIsLimitedTo600Characters() {
+    fun descriptionIsLimitedTo600Characters() = runTest {
         viewModel.onDescriptionChange("a".repeat(700))
 
         assertEquals(CreateEventViewModel.MAX_DESCRIPTION_LENGTH, viewModel.uiState.value.description.length)
     }
 
     @Test
-    fun capacityButtonsNeverGoBelowZero() {
+    fun capacityButtonsNeverGoBelowZero() = runTest {
         viewModel.onCapacityChange("1")
         viewModel.decreaseCapacity()
         viewModel.decreaseCapacity()
@@ -153,7 +155,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun changeImageUsesANewSeed() {
+    fun changeImageUsesANewSeed() = runTest {
         val before = viewModel.uiState.value.imageUrl
 
         viewModel.changeImage()
@@ -163,7 +165,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun pickedLocationFillsAnEmptyPlace() {
+    fun pickedLocationFillsAnEmptyPlace() = runTest {
         viewModel.onLocationPicked(parqueDeLaVida)
 
         assertEquals(parqueDeLaVida.address, viewModel.uiState.value.place)
@@ -171,7 +173,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun editingARejectedEventResubmitsItForReview() {
+    fun editingARejectedEventResubmitsItForReview() = runTest {
         val demo = TestRepositories()
         val edit = createViewModel(demo, "voleibol-callejero")
         assertTrue(edit.uiState.value.isEditing)
@@ -190,7 +192,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun othersCannotEditAnEvent() {
+    fun othersCannotEditAnEvent() = runTest {
         val demo = TestRepositories()
         val edit = createViewModel(demo, "ciclopaseo")
 
@@ -200,7 +202,7 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun editingRejectsCapacityBelowLatestAttendanceAndAllowsEqualCapacity() {
+    fun editingRejectsCapacityBelowLatestAttendanceAndAllowsEqualCapacity() = runTest {
         val demo = TestRepositories()
         val edit = createViewModel(demo, "cine-foro")
         val original = demo.events.findEvent("cine-foro")!!

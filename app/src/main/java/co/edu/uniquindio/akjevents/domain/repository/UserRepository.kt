@@ -29,15 +29,15 @@ interface UserRepository {
 
     val pointsHistory: StateFlow<List<PointsEntry>>
 
-    fun findById(id: String): User?
+    suspend fun findById(id: String): User?
 
     /** Abre la sesión si el correo y la contraseña coinciden. */
-    fun login(email: String, password: String): User?
+    suspend fun login(email: String, password: String): User?
 
-    fun logout()
+    suspend fun logout()
 
     /** Crea la cuenta como Usuario (nivel Espectador) y abre su sesión. */
-    fun register(
+    suspend fun register(
         name: String,
         email: String,
         city: String,
@@ -48,14 +48,14 @@ interface UserRepository {
     ): RegisterResult
 
     /** Cambia los datos personales; el rol, los puntos y las insignias no se modifican aquí. */
-    fun updateProfile(updated: User): ProfileUpdateResult
+    suspend fun updateProfile(updated: User): ProfileUpdateResult
 
     /** Elimina la cuenta con su historial de puntos y cierra la sesión si era la del usuario actual. */
-    fun deleteAccount(userId: String): Boolean
+    suspend fun deleteAccount(userId: String): Boolean
 
     /** Suma (o resta) puntos, sin bajar de 0, y guarda el movimiento. Devuelve null si el usuario no existe. */
-    fun addPoints(userId: String, points: Int, reason: String): PointsChange?
+    suspend fun addPoints(userId: String, points: Int, reason: String): PointsChange?
 
     /** Agrega la insignia. Devuelve false si el usuario ya la tenía o no existe. */
-    fun addBadge(userId: String, badge: Badge): Boolean
+    suspend fun addBadge(userId: String, badge: Badge): Boolean
 }

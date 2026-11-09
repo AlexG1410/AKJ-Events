@@ -73,7 +73,11 @@ class LoginViewModel(
         viewModelScope.launch {
             // Las cuentas viven en memoria; con el backend las validará el servicio de autenticación
             delay(simulatedRequestMs)
-            val user = loginUseCase(state.email, state.password)
+            // Credenciales incorrectas devuelven null; un error (por ejemplo, sin conexión) lanza una excepción
+            val user = runCatching { loginUseCase(state.email, state.password) }.getOrElse {
+                _uiState.update { it.copy(result = RequestResult.Failure("No se pudo iniciar sesión. Revisa tu conexión")) }
+                return@launch
+            }
             val result = if (user != null) {
                 RequestResult.Success("¡Bienvenido de nuevo, ${user.firstName}!")
             } else {

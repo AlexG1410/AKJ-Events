@@ -9,7 +9,7 @@ import javax.inject.Inject
 class UpdateEventUseCase @Inject constructor(
     private val eventRepository: EventRepository
 ) {
-    operator fun invoke(event: CommunityEvent, actorId: String): Boolean {
+    suspend operator fun invoke(event: CommunityEvent, actorId: String): Boolean {
         val existing = eventRepository.findEvent(event.id) ?: return false
         if (existing.organizerId != actorId || existing.status == EventStatus.FINISHED) return false
         // El cupo no puede quedar por debajo de los asistentes ya confirmados

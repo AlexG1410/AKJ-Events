@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.domain.model.NotificationGroup
 import co.edu.uniquindio.akjevents.domain.model.NotificationType
@@ -19,11 +20,11 @@ class NotificationsViewModelTest {
         NotificationsViewModel(it.observeCurrentUser, it.observeNotifications, it.setNotificationRead, it.markAllNotificationsRead)
     } }
 
-    private fun notify(type: NotificationType, userId: String = DEMO_USER) =
+    private suspend fun notify(type: NotificationType, userId: String = DEMO_USER) =
         repos.notifications.notify(userId, type, "Título", "Mensaje", "ciclopaseo")
 
     @Test
-    fun showsOnlyTheSessionUsersNotifications() {
+    fun showsOnlyTheSessionUsersNotifications() = runTest {
         notify(NotificationType.NEW_COMMENT)
         notify(NotificationType.NEW_COMMENT, userId = "organizer-1")
 
@@ -31,7 +32,7 @@ class NotificationsViewModelTest {
     }
 
     @Test
-    fun notificationsCanBeMarkedReadAndUnread() {
+    fun notificationsCanBeMarkedReadAndUnread() = runTest {
         notify(NotificationType.EVENT_VERIFIED)
         val notification = viewModel.uiState.value.all.single()
         assertEquals(1, viewModel.uiState.value.unreadCount)
@@ -47,7 +48,7 @@ class NotificationsViewModelTest {
     }
 
     @Test
-    fun filterByGroup() {
+    fun filterByGroup() = runTest {
         notify(NotificationType.NEW_COMMENT)
         notify(NotificationType.EVENT_REJECTED)
         notify(NotificationType.BADGE_UNLOCKED)
@@ -58,7 +59,7 @@ class NotificationsViewModelTest {
     }
 
     @Test
-    fun aCommentOnMyEventArrivesAsANotification() {
+    fun aCommentOnMyEventArrivesAsANotification() = runTest {
         repos.useCases.addComment("cine-foro", "organizer-5", "¿A qué hora empieza?")
 
         val notification = viewModel.uiState.value.all.single()

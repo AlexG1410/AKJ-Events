@@ -70,10 +70,15 @@ class MyEventsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MyEventsUiState())
     val uiState: StateFlow<MyEventsUiState> = _uiState.asStateFlow()
 
+    // Evita que un doble toque elimine, finalice o avise dos veces mientras la operación termina
+    private var isBusy = false
+
     init {
         viewModelScope.launch {
             combine(observeCurrentUser(), observeEvents(), observeAttendances(), ::Triple).collect { (user, events, attendances) ->
-                _uiState.update { it.withData(user, events, attendances) }
+                val own = events.filter { it.organizerId == user?.id }.sortedByDescending { it.createdAt }
+                val attendees = attendeesOf(own, attendances)
+                _uiState.update { it.copy(user = user, allEvents = own, attendees = attendees) }
             }
         }
     }
@@ -82,12 +87,16 @@ class MyEventsViewModel @Inject constructor(
 
     fun deleteEvent(eventId: String) {
         val user = observeCurrentUser().value ?: return
-        showMessage(if (deleteEventUseCase(eventId, user.id)) "Evento eliminado" else "No se pudo eliminar el evento")
+        runAction("No se pudo eliminar el evento") {
+            showMessage(if (deleteEventUseCase(eventId, user.id)) "Evento eliminado" else "No se pudo eliminar el evento")
+        }
     }
 
     fun finishEvent(eventId: String) {
         val user = observeCurrentUser().value ?: return
-        showMessage(if (finishEventUseCase(eventId, user.id)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
+        runAction("No se pudo finalizar el evento") {
+            showMessage(if (finishEventUseCase(eventId, user.id)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
+        }
     }
 
     fun sendNotice(eventId: String, message: String) {
@@ -96,29 +105,39 @@ class MyEventsViewModel @Inject constructor(
             showMessage("Escribe el aviso antes de enviarlo")
             return
         }
-        val sent = sendNoticeUseCase(eventId, user.id, message)
-        showMessage(
-            when (sent) {
-                0 -> "Aún no hay personas inscritas con cuenta para avisarles"
-                1 -> "Aviso enviado a 1 persona"
-                else -> "Aviso enviado a $sent personas"
-            }
-        )
+        runAction("No se pudo enviar el aviso") {
+            val sent = sendNoticeUseCase(eventId, user.id, message)
+            showMessage(
+                when (sent) {
+                    0 -> "Aún no hay personas inscritas con cuenta para avisarles"
+                    1 -> "Aviso enviado a 1 persona"
+                    else -> "Aviso enviado a $sent personas"
+                }
+            )
+        }
     }
 
     fun onMessageShown() = _uiState.update { it.copy(userMessage = null) }
 
     private fun showMessage(message: String) = _uiState.update { it.copy(userMessage = message) }
 
-    private fun MyEventsUiState.withData(user: User?, events: List<CommunityEvent>, attendances: List<Attendance>): MyEventsUiState {
-        val own = events.filter { it.organizerId == user?.id }.sortedByDescending { it.createdAt }
+    /** Ejecuta una acción sobre un evento; si falla (por ejemplo, sin conexión), muestra [errorMessage]. */
+    private fun runAction(errorMessage: String, action: suspend () -> Unit) {
+        if (isBusy) return
+        isBusy = true
+        viewModelScope.launch {
+            runCatching { action() }.onFailure { showMessage(errorMessage) }
+            isBusy = false
+        }
+    }
+
+    /** Inscritos de cada evento propio, con su cuenta (null si la eliminó o no se pudo cargar). */
+    private suspend fun attendeesOf(own: List<CommunityEvent>, attendances: List<Attendance>): Map<String, List<AttendeeItem>> {
         val ownIds = own.map { it.id }.toSet()
-        return copy(
-            user = user,
-            allEvents = own,
-            attendees = attendances.filter { it.eventId in ownIds }
-                .groupBy { it.eventId }
-                .mapValues { (_, list) -> list.map { AttendeeItem(getUserById(it.userId), it.checkedIn) } }
-        )
+        val mine = attendances.filter { it.eventId in ownIds }
+        val users: Map<String, User?> = mine.map { it.userId }.distinct().associateWith { id ->
+            runCatching { getUserById(id) }.getOrNull()
+        }
+        return mine.groupBy { it.eventId }.mapValues { (_, list) -> list.map { AttendeeItem(users[it.userId], it.checkedIn) } }
     }
 }

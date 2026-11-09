@@ -59,23 +59,23 @@ class InMemoryEventRepository(
     private val _interests = MutableStateFlow(initialInterests)
     override val interests: StateFlow<List<Interest>> = _interests.asStateFlow()
 
-    override fun findEvent(id: String): CommunityEvent? = _events.value.find { it.id == id }
+    override suspend fun findEvent(id: String): CommunityEvent? = eventById(id)
 
-    override fun findPublicEvent(id: String): CommunityEvent? = _publicEvents.value.find { it.id == id }
+    override suspend fun findPublicEvent(id: String): CommunityEvent? = publicEventById(id)
 
-    override fun findPublicEventByCheckInCode(code: String): CommunityEvent? =
+    override suspend fun findPublicEventByCheckInCode(code: String): CommunityEvent? =
         _publicEvents.value.find { it.checkInCode == code }
 
-    override fun findEventsByOrganizer(organizerId: String): List<CommunityEvent> =
+    override suspend fun findEventsByOrganizer(organizerId: String): List<CommunityEvent> =
         _events.value.filter { it.organizerId == organizerId }
 
-    override fun createEvent(event: CommunityEvent) = synchronized(lock) {
+    override suspend fun createEvent(event: CommunityEvent) = synchronized(lock) {
         require(_events.value.none { it.id == event.id }) { "Ya existe un evento con el id ${event.id}" }
         setEvents(_events.value + event)
     }
 
-    override fun updateEvent(event: CommunityEvent): CommunityEvent? = synchronized(lock) {
-        val existing = findEvent(event.id) ?: return null
+    override suspend fun updateEvent(event: CommunityEvent): CommunityEvent? = synchronized(lock) {
+        val existing = eventById(event.id) ?: return null
         // Los conteos y el organizador no se pueden alterar desde el formulario
         val updated = event.copy(
             organizerId = existing.organizerId,
@@ -87,19 +87,19 @@ class InMemoryEventRepository(
         updated
     }
 
-    override fun updateStatus(eventId: String, status: EventStatus, rejectionReason: String?): CommunityEvent? =
+    override suspend fun updateStatus(eventId: String, status: EventStatus, rejectionReason: String?): CommunityEvent? =
         synchronized(lock) {
-            val event = findEvent(eventId) ?: return null
+            val event = eventById(eventId) ?: return null
             val reason = if (status == EventStatus.REJECTED) rejectionReason else null
             event.copy(status = status, rejectionReason = reason).also(::replace)
         }
 
-    override fun registerVerificationReward(eventId: String): Boolean = synchronized(lock) {
+    override suspend fun registerVerificationReward(eventId: String): Boolean = synchronized(lock) {
         verificationRewardedIds.add(eventId)
     }
 
-    override fun deleteEvent(eventId: String): Boolean = synchronized(lock) {
-        if (findEvent(eventId) == null) return false
+    override suspend fun deleteEvent(eventId: String): Boolean = synchronized(lock) {
+        if (eventById(eventId) == null) return false
         setEvents(_events.value.filterNot { it.id == eventId })
         _comments.update { list -> list.filterNot { it.eventId == eventId } }
         _attendances.update { list -> list.filterNot { it.eventId == eventId } }
@@ -107,9 +107,9 @@ class InMemoryEventRepository(
         true
     }
 
-    override fun confirmAttendance(eventId: String, userId: String): AttendanceResult = synchronized(lock) {
-        val event = findPublicEvent(eventId)
-            ?: return if (findEvent(eventId)?.status == EventStatus.FINISHED) AttendanceResult.CLOSED else AttendanceResult.NOT_FOUND
+    override suspend fun confirmAttendance(eventId: String, userId: String): AttendanceResult = synchronized(lock) {
+        val event = publicEventById(eventId)
+            ?: return if (eventById(eventId)?.status == EventStatus.FINISHED) AttendanceResult.CLOSED else AttendanceResult.NOT_FOUND
         when {
             isAttending(eventId, userId) -> AttendanceResult.ALREADY_CONFIRMED
             event.isFull -> AttendanceResult.FULL
@@ -121,8 +121,8 @@ class InMemoryEventRepository(
         }
     }
 
-    override fun cancelAttendance(eventId: String, userId: String): Boolean = synchronized(lock) {
-        val event = findPublicEvent(eventId)
+    override suspend fun cancelAttendance(eventId: String, userId: String): Boolean = synchronized(lock) {
+        val event = publicEventById(eventId)
         val attendance = _attendances.value.find { it.eventId == eventId && it.userId == userId }
         if (event == null || attendance == null || attendance.checkedIn) return false
         replace(event.copy(attendanceCount = (event.attendanceCount - 1).coerceAtLeast(0)))
@@ -130,8 +130,8 @@ class InMemoryEventRepository(
         true
     }
 
-    override fun registerCheckIn(eventId: String, userId: String): CheckInRegistration = synchronized(lock) {
-        val event = findPublicEvent(eventId) ?: return CheckInRegistration.NOT_FOUND
+    override suspend fun registerCheckIn(eventId: String, userId: String): CheckInRegistration = synchronized(lock) {
+        val event = publicEventById(eventId) ?: return CheckInRegistration.NOT_FOUND
         val attendance = _attendances.value.find { it.eventId == eventId && it.userId == userId }
         when {
             attendance?.checkedIn == true -> return CheckInRegistration.ALREADY_CHECKED_IN
@@ -145,8 +145,8 @@ class InMemoryEventRepository(
         CheckInRegistration.REGISTERED
     }
 
-    override fun toggleInterest(eventId: String, userId: String): Boolean? = synchronized(lock) {
-        val event = findPublicEvent(eventId) ?: return null
+    override suspend fun toggleInterest(eventId: String, userId: String): Boolean? = synchronized(lock) {
+        val event = publicEventById(eventId) ?: return null
         val interest = Interest(eventId, userId)
         val interested = interest !in _interests.value
         replace(event.copy(interestCount = (event.interestCount + if (interested) 1 else -1).coerceAtLeast(0)))
@@ -154,14 +154,14 @@ class InMemoryEventRepository(
         interested
     }
 
-    override fun addComment(eventId: String, authorId: String, text: String): Comment {
+    override suspend fun addComment(eventId: String, authorId: String, text: String): Comment {
         val comment = Comment("comentario-${UUID.randomUUID()}", eventId, authorId, text, now())
         _comments.update { it + comment }
         return comment
     }
 
-    override fun removeUserData(userId: String) = synchronized(lock) {
-        val ownEventIds = findEventsByOrganizer(userId).map { it.id }.toSet()
+    override suspend fun removeUserData(userId: String) = synchronized(lock) {
+        val ownEventIds = eventsOf(userId).map { it.id }.toSet()
         val leftAttendances = _attendances.value.filter { it.userId == userId }.map { it.eventId }
         val leftInterests = _interests.value.filter { it.userId == userId }.map { it.eventId }
         // Sus asistencias e intereses dejan de contar en los eventos de los demás
@@ -176,6 +176,13 @@ class InMemoryEventRepository(
         _attendances.update { list -> list.filterNot { it.userId == userId || it.eventId in ownEventIds } }
         _interests.update { list -> list.filterNot { it.userId == userId || it.eventId in ownEventIds } }
     }
+
+    // Lecturas sin suspensión, para usarlas dentro de las secciones sincronizadas
+    private fun eventById(id: String): CommunityEvent? = _events.value.find { it.id == id }
+
+    private fun publicEventById(id: String): CommunityEvent? = _publicEvents.value.find { it.id == id }
+
+    private fun eventsOf(organizerId: String): List<CommunityEvent> = _events.value.filter { it.organizerId == organizerId }
 
     private val CommunityEvent.isFull: Boolean get() = capacity != null && attendanceCount >= capacity
 

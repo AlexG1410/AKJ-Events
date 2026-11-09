@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
 import co.edu.uniquindio.akjevents.data.demo.SampleUsers
@@ -18,12 +19,12 @@ class LoginViewModelTest {
     private val viewModel by lazy { LoginViewModel(LoginUseCase(InMemoryUserRepository()), simulatedRequestMs = 0) }
 
     @Test
-    fun demoCredentialsBelongToTheDemoUser() {
+    fun demoCredentialsBelongToTheDemoUser() = runTest {
         assertEquals(SampleUsers.demoUser.email, DemoCredentials.email)
     }
 
     @Test
-    fun validDemoCredentialsReturnSuccess() {
+    fun validDemoCredentialsReturnSuccess() = runTest {
         viewModel.onEmailChange("  ${DemoCredentials.email.uppercase()}  ")
         viewModel.onPasswordChange(DemoCredentials.password)
 
@@ -35,7 +36,7 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun moderatorCredentialsAreFlaggedForTheModerationPanel() {
+    fun moderatorCredentialsAreFlaggedForTheModerationPanel() = runTest {
         viewModel.onEmailChange(DemoCredentials.moderatorEmail)
         viewModel.onPasswordChange(DemoCredentials.moderatorPassword)
 
@@ -46,7 +47,7 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun incorrectCredentialsReturnFailure() {
+    fun incorrectCredentialsReturnFailure() = runTest {
         viewModel.onEmailChange(DemoCredentials.email)
         viewModel.onPasswordChange("ClaveIncorrecta123")
 
@@ -59,7 +60,7 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun malformedEmailIsRejectedBeforeAuthentication() {
+    fun malformedEmailIsRejectedBeforeAuthentication() = runTest {
         viewModel.onEmailChange("correo-invalido")
         viewModel.onPasswordChange(DemoCredentials.password)
 

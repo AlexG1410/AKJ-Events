@@ -13,7 +13,7 @@ class RejectEventUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val notificationRepository: NotificationRepository
 ) {
-    operator fun invoke(eventId: String, moderatorId: String, reason: String): Boolean {
+    suspend operator fun invoke(eventId: String, moderatorId: String, reason: String): Boolean {
         val event = eventRepository.findEvent(eventId) ?: return false
         val isModerator = userRepository.findById(moderatorId)?.isModerator == true
         if (event.status != EventStatus.PENDING || reason.isBlank() || !isModerator) return false

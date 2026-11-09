@@ -2,6 +2,7 @@ package co.edu.uniquindio.akjevents.features.event.create
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
@@ -78,12 +80,23 @@ class CreateEventViewModel(
         updateEvent: UpdateEventUseCase
     ) : this(getEventById, observeCurrentUser, createEvent, updateEvent, savedStateHandle.get<String>(EVENT_ID_KEY))
 
-    private val _uiState = MutableStateFlow(initialState())
+    // Al editar, el formulario no se puede enviar hasta cargar el evento
+    private val _uiState = MutableStateFlow(
+        CreateEventUiState(imageUrl = newImageUrl(), isEditing = eventId != null, canSubmit = eventId == null)
+    )
     val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
 
-    private fun initialState(): CreateEventUiState {
-        if (eventId == null) return CreateEventUiState(imageUrl = newImageUrl())
-        val event = getEventById(eventId)
+    init {
+        if (eventId != null) {
+            viewModelScope.launch {
+                val event = runCatching { getEventById(eventId) }.getOrNull()
+                _uiState.value = editState(event)
+            }
+        }
+    }
+
+    /** Estado del formulario con los datos del evento a editar, si el usuario puede editarlo. */
+    private fun editState(event: CommunityEvent?): CreateEventUiState {
         val ownerId = observeCurrentUser().value?.id
         if (event == null || event.organizerId != ownerId || event.status == EventStatus.FINISHED) {
             return CreateEventUiState(isEditing = true, canSubmit = false, imageUrl = newImageUrl())
@@ -170,17 +183,25 @@ class CreateEventViewModel(
             status = EventStatus.PENDING,
             createdAt = now()
         )
-        val message = if (eventId == null) {
-            createEvent(event)
-            SUBMITTED_MESSAGE
-        } else {
-            if (!updateEvent(event, organizer.id)) {
-                _uiState.update { it.copy(result = RequestResult.Failure("No se pudieron guardar los cambios")) }
-                return
-            }
-            if (state.originalStatus == EventStatus.REJECTED) RESUBMITTED_MESSAGE else UPDATED_MESSAGE
+        _uiState.update { it.copy(result = RequestResult.Loading) }
+        viewModelScope.launch {
+            val result = runCatching {
+                if (eventId == null) {
+                    createEvent(event)
+                    RequestResult.Success(SUBMITTED_MESSAGE)
+                } else {
+                    // El cupo se compara con los asistentes que haya justo ahora, no con los de al abrir el formulario
+                    val attendees = getEventById(eventId)?.attendanceCount ?: 0
+                    when {
+                        event.capacity != null && event.capacity < attendees -> RequestResult.Failure(CAPACITY_BELOW_ATTENDANCE_MESSAGE)
+                        !updateEvent(event, organizer.id) -> RequestResult.Failure("No se pudieron guardar los cambios")
+                        state.originalStatus == EventStatus.REJECTED -> RequestResult.Success(RESUBMITTED_MESSAGE)
+                        else -> RequestResult.Success(UPDATED_MESSAGE)
+                    }
+                }
+            }.getOrElse { RequestResult.Failure("No se pudo enviar el evento. Revisa tu conexión e intenta de nuevo") }
+            _uiState.update { it.copy(result = result) }
         }
-        _uiState.update { it.copy(result = RequestResult.Success(message)) }
     }
 
     fun onFailureShown() = _uiState.update {
@@ -200,8 +221,6 @@ class CreateEventViewModel(
             !startsAt.isAfter(now()) -> "La fecha de inicio debe ser futura"
             !endsAt.isAfter(startsAt) -> "La fecha de fin debe ser posterior al inicio"
             state.limitCapacity && (state.capacity.toIntOrNull() ?: 0) <= 0 -> "El cupo máximo debe ser mayor que 0"
-            state.limitCapacity && state.capacity.toInt() < (eventId?.let { getEventById(it) }?.attendanceCount ?: 0) ->
-                "El cupo máximo no puede ser menor que los asistentes confirmados"
             else -> null
         }
     }
@@ -224,5 +243,6 @@ class CreateEventViewModel(
         const val SUBMITTED_MESSAGE = "Tu evento fue enviado a verificación"
         const val UPDATED_MESSAGE = "Cambios guardados: el evento vuelve a revisión"
         const val RESUBMITTED_MESSAGE = "Evento corregido y reenviado a verificación"
+        const val CAPACITY_BELOW_ATTENDANCE_MESSAGE = "El cupo máximo no puede ser menor que los asistentes confirmados"
     }
 }

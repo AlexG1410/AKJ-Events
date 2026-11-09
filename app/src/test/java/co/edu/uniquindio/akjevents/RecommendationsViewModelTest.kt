@@ -21,7 +21,7 @@ class RecommendationsViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     @Test
-    fun sharedFeedReactsToConfirmationInterestsProfileAndLogout() {
+    fun sharedFeedReactsToConfirmationInterestsProfileAndLogout() = runTest {
         val fixture = RecommendationFixture(listOf(
             recommendationEvent("deportes"), recommendationEvent("cultura", category = EventCategory.CULTURE)
         ))

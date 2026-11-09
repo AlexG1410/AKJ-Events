@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
@@ -34,7 +35,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun weakPasswordCannotRegister() {
+    fun weakPasswordCannotRegister() = runTest {
         fillForm(password = "comunidad1")
 
         assertTrue(viewModel.uiState.value.passwordStrength != PasswordStrength.STRONG)
@@ -45,7 +46,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun differentPasswordConfirmationCannotRegister() {
+    fun differentPasswordConfirmationCannotRegister() = runTest {
         fillForm(password = "Comunidad1", confirmation = "Comunidad2")
 
         assertFalse(viewModel.uiState.value.isFormValid)
@@ -56,7 +57,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun completeValidFormCanRegister() {
+    fun completeValidFormCanRegister() = runTest {
         fillForm(password = "Comunidad1")
 
         assertTrue(viewModel.uiState.value.isFormValid)
@@ -72,7 +73,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun emailAlreadyInUseCannotRegister() {
+    fun emailAlreadyInUseCannotRegister() = runTest {
         fillForm(password = "Comunidad1")
         viewModel.onEmailChange(DemoCredentials.email)
 
@@ -82,7 +83,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun selectingACityAloneDoesNotReplacePickingAnAddress() {
+    fun selectingACityAloneDoesNotReplacePickingAnAddress() = runTest {
         fillForm("Comunidad1")
         viewModel.onCityChange("Calarcá, Quindío")
 
@@ -95,7 +96,7 @@ class RegisterViewModelTest {
     }
 
     @Test
-    fun mapSelectionUpdatesCityAndCanBeChangedWithoutLosingOtherFields() {
+    fun mapSelectionUpdatesCityAndCanBeChangedWithoutLosingOtherFields() = runTest {
         fillForm("Comunidad1")
         viewModel.onCityChange("Armenia, Quindío")
         assertEquals(picked, viewModel.locationForPicker())

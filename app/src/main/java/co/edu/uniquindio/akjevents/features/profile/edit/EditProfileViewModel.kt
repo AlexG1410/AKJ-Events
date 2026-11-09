@@ -1,6 +1,7 @@
 package co.edu.uniquindio.akjevents.features.profile.edit
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import co.edu.uniquindio.akjevents.core.util.FormValidation
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.core.util.RequestResult
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class EditProfileUiState(
     val user: User? = null,
@@ -106,21 +108,34 @@ class EditProfileViewModel @Inject constructor(
             location = state.location!!,
             interests = state.interests
         )
-        val result = when (updateProfile(updated)) {
-            ProfileUpdateResult.UPDATED -> RequestResult.Success("Perfil actualizado")
-            ProfileUpdateResult.EMAIL_IN_USE -> RequestResult.Failure("Ese correo ya pertenece a otra cuenta")
-            ProfileUpdateResult.NOT_FOUND -> RequestResult.Failure("No encontramos tu cuenta")
+        _uiState.update { it.copy(result = RequestResult.Loading) }
+        viewModelScope.launch {
+            val result = runCatching { updateProfile(updated) }.fold(
+                onSuccess = { outcome ->
+                    when (outcome) {
+                        ProfileUpdateResult.UPDATED -> RequestResult.Success("Perfil actualizado")
+                        ProfileUpdateResult.EMAIL_IN_USE -> RequestResult.Failure("Ese correo ya pertenece a otra cuenta")
+                        ProfileUpdateResult.NOT_FOUND -> RequestResult.Failure("No encontramos tu cuenta")
+                    }
+                },
+                onFailure = { RequestResult.Failure("No se pudo guardar el perfil. Intenta de nuevo") }
+            )
+            _uiState.update { it.copy(result = result) }
         }
-        _uiState.update { it.copy(result = result) }
     }
 
     /** Borra la cuenta junto con sus eventos, comentarios y participación, y cierra la sesión. */
     fun deleteAccount() {
-        val user = _uiState.value.user ?: return
-        if (deleteAccountUseCase(user.id)) {
-            _uiState.update { it.copy(isAccountDeleted = true) }
-        } else {
-            _uiState.update { it.copy(result = RequestResult.Failure("No se pudo eliminar la cuenta")) }
+        val state = _uiState.value
+        val user = state.user ?: return
+        if (state.isBusy) return
+        _uiState.update { it.copy(result = RequestResult.Loading) }
+        viewModelScope.launch {
+            val deleted = runCatching { deleteAccountUseCase(user.id) }.getOrDefault(false)
+            _uiState.update {
+                if (deleted) it.copy(isAccountDeleted = true, result = null)
+                else it.copy(result = RequestResult.Failure("No se pudo eliminar la cuenta"))
+            }
         }
     }
 

@@ -19,7 +19,7 @@ class FinishEventUseCase @Inject constructor(
     private val notificationRepository: NotificationRepository,
     private val awardPoints: AwardPointsUseCase
 ) {
-    operator fun invoke(eventId: String, actorId: String): Boolean {
+    suspend operator fun invoke(eventId: String, actorId: String): Boolean {
         val event = eventRepository.findEvent(eventId) ?: return false
         val canFinish = event.organizerId == actorId || userRepository.findById(actorId)?.isModerator == true
         if (!canFinish || event.status == EventStatus.FINISHED) return false

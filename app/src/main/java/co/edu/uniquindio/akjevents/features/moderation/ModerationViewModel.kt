@@ -70,9 +70,18 @@ class ModerationViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ModerationUiState())
     val uiState: StateFlow<ModerationUiState> = _uiState.asStateFlow()
 
+    // Organizador de cada evento, para mostrarlo y buscar por su nombre sin consultarlo en cada tecla
+    private var organizers: Map<String, User?> = emptyMap()
+
+    // Evita que un doble toque apruebe o rechace dos veces mientras la operación termina
+    private var isBusy = false
+
     init {
         viewModelScope.launch {
             combine(observeCurrentUser(), observeEvents(), ::Pair).collect { (moderator, events) ->
+                organizers = events.map { it.organizerId }.distinct().associateWith { id ->
+                    organizers[id] ?: runCatching { getUserById(id) }.getOrNull()
+                }
                 _uiState.update { it.copy(moderator = moderator, allEvents = events).filtered() }
             }
         }
@@ -88,10 +97,12 @@ class ModerationViewModel @Inject constructor(
 
     fun verify(eventId: String) {
         val moderator = moderatorId() ?: return
-        if (verifyEvent(eventId, moderator)) {
-            _uiState.update { it.copy(expandedEventId = null, userMessage = "Evento verificado y publicado. Se notificó al organizador").filtered() }
-        } else {
-            showMessage("No se pudo verificar el evento")
+        runAction("No se pudo verificar el evento") {
+            if (verifyEvent(eventId, moderator)) {
+                _uiState.update { it.copy(expandedEventId = null, userMessage = "Evento verificado y publicado. Se notificó al organizador").filtered() }
+            } else {
+                showMessage("No se pudo verificar el evento")
+            }
         }
     }
 
@@ -120,16 +131,20 @@ class ModerationViewModel @Inject constructor(
             note.isEmpty() -> reason.label
             else -> "${reason.label}: $note"
         }
-        if (rejectEvent(eventId, moderator, text)) {
-            _uiState.update { it.copy(rejectingEventId = null, expandedEventId = null, userMessage = "Evento rechazado. El organizador recibió el motivo").filtered() }
-        } else {
-            showMessage("No se pudo rechazar el evento")
+        runAction("No se pudo rechazar el evento") {
+            if (rejectEvent(eventId, moderator, text)) {
+                _uiState.update { it.copy(rejectingEventId = null, expandedEventId = null, userMessage = "Evento rechazado. El organizador recibió el motivo").filtered() }
+            } else {
+                showMessage("No se pudo rechazar el evento")
+            }
         }
     }
 
     fun finish(eventId: String) {
         val moderator = moderatorId() ?: return
-        showMessage(if (finishEvent(eventId, moderator)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
+        runAction("No se pudo finalizar el evento") {
+            showMessage(if (finishEvent(eventId, moderator)) "Evento marcado como finalizado" else "No se pudo finalizar el evento")
+        }
     }
 
     fun onMessageShown() = _uiState.update { it.copy(userMessage = null) }
@@ -138,12 +153,22 @@ class ModerationViewModel @Inject constructor(
 
     private fun showMessage(message: String) = _uiState.update { it.copy(userMessage = message) }
 
+    /** Ejecuta una decisión de moderación; si falla (por ejemplo, sin conexión), muestra [errorMessage]. */
+    private fun runAction(errorMessage: String, action: suspend () -> Unit) {
+        if (isBusy) return
+        isBusy = true
+        viewModelScope.launch {
+            runCatching { action() }.onFailure { showMessage(errorMessage) }
+            isBusy = false
+        }
+    }
+
     private fun ModerationUiState.filtered(): ModerationUiState {
         val search = query.normalizedForSearch()
         val items = allEvents
             .filter { it.status == tab.status }
             .mapNotNull { event ->
-                val organizer = getUserById(event.organizerId)
+                val organizer = organizers[event.organizerId]
                 val matches = search.isEmpty() ||
                     event.title.normalizedForSearch().contains(search) ||
                     event.address.normalizedForSearch().contains(search) ||

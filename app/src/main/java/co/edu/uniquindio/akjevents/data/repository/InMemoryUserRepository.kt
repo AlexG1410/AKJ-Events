@@ -50,9 +50,9 @@ class InMemoryUserRepository(
     private val _pointsHistory = MutableStateFlow(initialPointsHistory)
     override val pointsHistory: StateFlow<List<PointsEntry>> = _pointsHistory.asStateFlow()
 
-    override fun findById(id: String): User? = _users.value.find { it.id == id }
+    override suspend fun findById(id: String): User? = userById(id)
 
-    override fun login(email: String, password: String): User? = synchronized(lock) {
+    override suspend fun login(email: String, password: String): User? = synchronized(lock) {
         val normalized = email.trim().lowercase()
         val user = _users.value.find { it.email.lowercase() == normalized }
         if (user == null || passwords[normalized] != password) return null
@@ -60,11 +60,11 @@ class InMemoryUserRepository(
         user
     }
 
-    override fun logout() {
+    override suspend fun logout() {
         _currentUser.value = null
     }
 
-    override fun register(
+    override suspend fun register(
         name: String,
         email: String,
         city: String,
@@ -92,8 +92,8 @@ class InMemoryUserRepository(
         RegisterResult.Success(user)
     }
 
-    override fun updateProfile(updated: User): ProfileUpdateResult = synchronized(lock) {
-        val existing = findById(updated.id) ?: return ProfileUpdateResult.NOT_FOUND
+    override suspend fun updateProfile(updated: User): ProfileUpdateResult = synchronized(lock) {
+        val existing = userById(updated.id) ?: return ProfileUpdateResult.NOT_FOUND
         val newEmail = updated.email.trim()
         val emailTaken = _users.value.any { it.id != updated.id && it.email.equals(newEmail, ignoreCase = true) }
         if (emailTaken) return ProfileUpdateResult.EMAIL_IN_USE
@@ -115,8 +115,8 @@ class InMemoryUserRepository(
         ProfileUpdateResult.UPDATED
     }
 
-    override fun deleteAccount(userId: String): Boolean = synchronized(lock) {
-        val user = findById(userId) ?: return false
+    override suspend fun deleteAccount(userId: String): Boolean = synchronized(lock) {
+        val user = userById(userId) ?: return false
         _users.update { list -> list.filterNot { it.id == userId } }
         passwords.remove(user.email.lowercase())
         _pointsHistory.update { list -> list.filterNot { it.userId == userId } }
@@ -124,20 +124,23 @@ class InMemoryUserRepository(
         true
     }
 
-    override fun addPoints(userId: String, points: Int, reason: String): PointsChange? = synchronized(lock) {
-        val user = findById(userId) ?: return null
+    override suspend fun addPoints(userId: String, points: Int, reason: String): PointsChange? = synchronized(lock) {
+        val user = userById(userId) ?: return null
         val updated = user.copy(points = (user.points + points).coerceAtLeast(0))
         replace(updated)
         _pointsHistory.update { listOf(PointsEntry(userId, points, reason, now())) + it }
         PointsChange(before = user, after = updated)
     }
 
-    override fun addBadge(userId: String, badge: Badge): Boolean = synchronized(lock) {
-        val user = findById(userId) ?: return false
+    override suspend fun addBadge(userId: String, badge: Badge): Boolean = synchronized(lock) {
+        val user = userById(userId) ?: return false
         if (badge in user.badges) return false
         replace(user.copy(badges = user.badges + badge))
         true
     }
+
+    // Lectura sin suspensión, para usarla dentro de las secciones sincronizadas
+    private fun userById(id: String): User? = _users.value.find { it.id == id }
 
     private fun replace(user: User) {
         _users.update { list -> list.map { if (it.id == user.id) user else it } }

@@ -8,5 +8,5 @@ import javax.inject.Inject
 class ConfirmAttendanceUseCase @Inject constructor(
     private val eventRepository: EventRepository
 ) {
-    operator fun invoke(eventId: String, userId: String): AttendanceResult = eventRepository.confirmAttendance(eventId, userId)
+    suspend operator fun invoke(eventId: String, userId: String): AttendanceResult = eventRepository.confirmAttendance(eventId, userId)
 }

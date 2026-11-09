@@ -98,16 +98,11 @@ class EventDetailViewModel(
         getUserById, toggleInterestUseCase, confirmAttendance, cancelAttendance, addComment
     )
 
-    private val _uiState = MutableStateFlow(
-        EventDetailUiState().withRepositoryData(
-            observeCurrentUser().value,
-            observeEvents().value,
-            observeAttendances().value,
-            observeInterests().value,
-            observeComments().value
-        )
-    )
+    private val _uiState = MutableStateFlow(EventDetailUiState())
     val uiState: StateFlow<EventDetailUiState> = _uiState.asStateFlow()
+
+    // Evita que un doble toque confirme o comente dos veces mientras la operación termina
+    private var isBusy = false
 
     init {
         viewModelScope.launch {
@@ -118,34 +113,52 @@ class EventDetailViewModel(
                 observeInterests(),
                 observeComments()
             ) { viewer, events, attendances, interests, comments ->
-                { state: EventDetailUiState -> state.withRepositoryData(viewer, events, attendances, interests, comments) }
-            }.collect { transform -> _uiState.update(transform) }
+                detailData(viewer, events, attendances, interests, comments)
+            }.collect { data ->
+                _uiState.update {
+                    it.copy(
+                        event = data.event,
+                        viewer = data.viewer,
+                        organizer = data.organizer,
+                        organizerEventCount = data.organizerEventCount,
+                        isAttending = data.isAttending,
+                        isCheckedIn = data.isCheckedIn,
+                        isInterested = data.isInterested,
+                        comments = data.comments
+                    )
+                }
+            }
         }
     }
 
     fun toggleInterest() {
         val viewer = observeCurrentUser().value ?: return
-        val interested = toggleInterestUseCase(eventId, viewer.id) ?: return
-        showMessage(if (interested) "Guardado en tus eventos de interés" else "Quitado de tus eventos de interés")
+        runAction("No se pudo actualizar tu interés") {
+            val interested = toggleInterestUseCase(eventId, viewer.id) ?: return@runAction
+            showMessage(if (interested) "Guardado en tus eventos de interés" else "Quitado de tus eventos de interés")
+        }
     }
 
     /** Confirma la asistencia o, si ya estaba confirmada, la cancela. */
     fun toggleAttendance() {
         val viewer = observeCurrentUser().value ?: return
         val state = _uiState.value
-        if (state.isAttending) {
-            when {
-                state.isCheckedIn -> showMessage("Ya registraste tu asistencia con QR; no se puede cancelar")
-                cancelAttendance(eventId, viewer.id) -> showMessage("Cancelaste tu asistencia")
-            }
+        if (state.isAttending && state.isCheckedIn) {
+            showMessage("Ya registraste tu asistencia con QR; no se puede cancelar")
             return
         }
-        when (confirmAttendance(eventId, viewer.id)) {
-            AttendanceResult.CONFIRMED -> showMessage("¡Asistencia confirmada! Te esperamos")
-            AttendanceResult.ALREADY_CONFIRMED -> showMessage("Ya confirmaste tu asistencia a este evento")
-            AttendanceResult.FULL -> showMessage(FULL_EVENT_MESSAGE)
-            AttendanceResult.CLOSED -> showMessage("El evento ya finalizó")
-            AttendanceResult.NOT_FOUND -> showMessage("Este evento ya no está disponible")
+        runAction("No se pudo actualizar tu asistencia") {
+            if (state.isAttending) {
+                if (cancelAttendance(eventId, viewer.id)) showMessage("Cancelaste tu asistencia")
+                return@runAction
+            }
+            when (confirmAttendance(eventId, viewer.id)) {
+                AttendanceResult.CONFIRMED -> showMessage("¡Asistencia confirmada! Te esperamos")
+                AttendanceResult.ALREADY_CONFIRMED -> showMessage("Ya confirmaste tu asistencia a este evento")
+                AttendanceResult.FULL -> showMessage(FULL_EVENT_MESSAGE)
+                AttendanceResult.CLOSED -> showMessage("El evento ya finalizó")
+                AttendanceResult.NOT_FOUND -> showMessage("Este evento ya no está disponible")
+            }
         }
     }
 
@@ -158,10 +171,12 @@ class EventDetailViewModel(
             showMessage("Escribe tu comentario antes de enviarlo")
             return
         }
-        if (addComment(eventId, viewer.id, text) != null) {
-            _uiState.update { it.copy(commentDraft = "", userMessage = "Comentario publicado") }
-        } else {
-            showMessage("No se pudo publicar el comentario")
+        runAction("No se pudo publicar el comentario") {
+            if (addComment(eventId, viewer.id, text) != null) {
+                _uiState.update { it.copy(commentDraft = "", userMessage = "Comentario publicado") }
+            } else {
+                showMessage("No se pudo publicar el comentario")
+            }
         }
     }
 
@@ -169,23 +184,45 @@ class EventDetailViewModel(
 
     private fun showMessage(message: String) = _uiState.update { it.copy(userMessage = message) }
 
-    private fun EventDetailUiState.withRepositoryData(
+    /** Ejecuta una acción del usuario; si falla (por ejemplo, sin conexión), muestra [errorMessage]. */
+    private fun runAction(errorMessage: String, action: suspend () -> Unit) {
+        if (isBusy) return
+        isBusy = true
+        viewModelScope.launch {
+            runCatching { action() }.onFailure { showMessage(errorMessage) }
+            isBusy = false
+        }
+    }
+
+    /** Lo que la pantalla muestra a partir de los datos observados. */
+    private class DetailData(
+        val event: CommunityEvent?,
+        val viewer: User?,
+        val organizer: User?,
+        val organizerEventCount: Int,
+        val isAttending: Boolean,
+        val isCheckedIn: Boolean,
+        val isInterested: Boolean,
+        val comments: List<CommentItem>
+    )
+
+    private suspend fun detailData(
         viewer: User?,
         events: List<CommunityEvent>,
         attendances: List<Attendance>,
         interests: List<Interest>,
         comments: List<Comment>
-    ): EventDetailUiState {
+    ): DetailData {
         val found = events.find { it.id == eventId }
         val visible = found?.takeIf {
             it.status == EventStatus.VERIFIED || it.status == EventStatus.FINISHED ||
                 viewer?.id == it.organizerId || viewer?.isModerator == true
         }
         val attendance = attendances.find { it.eventId == eventId && it.userId == viewer?.id }
-        return copy(
+        return DetailData(
             event = visible,
             viewer = viewer,
-            organizer = visible?.let { getUserById(it.organizerId) },
+            organizer = visible?.let { findUser(it.organizerId) },
             organizerEventCount = visible?.let { event ->
                 events.count { it.organizerId == event.organizerId && (it.status == EventStatus.VERIFIED || it.status == EventStatus.FINISHED) }
             } ?: 0,
@@ -195,9 +232,12 @@ class EventDetailViewModel(
             comments = if (visible == null) emptyList() else comments
                 .filter { it.eventId == eventId }
                 .sortedBy { it.createdAt }
-                .map { CommentItem(it, getUserById(it.authorId)) }
+                .map { CommentItem(it, findUser(it.authorId)) }
         )
     }
+
+    // Un autor que no se pudo cargar se muestra como cuenta eliminada en lugar de romper la pantalla
+    private suspend fun findUser(id: String): User? = runCatching { getUserById(id) }.getOrNull()
 
     companion object {
         const val FULL_EVENT_MESSAGE = "No hay cupos disponibles: el evento está lleno"

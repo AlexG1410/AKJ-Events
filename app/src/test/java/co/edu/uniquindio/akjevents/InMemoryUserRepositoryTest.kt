@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.data.demo.DemoCredentials
@@ -22,7 +23,7 @@ class InMemoryUserRepositoryTest {
     private val users = repos.users
 
     @Test
-    fun demoCredentialsOpenTheSession() {
+    fun demoCredentialsOpenTheSession() = runTest {
         assertNull(users.login(DemoCredentials.email, "ClaveIncorrecta1"))
         assertNull(users.currentUser.value)
 
@@ -36,7 +37,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun preloadedModeratorHasTheModeratorRole() {
+    fun preloadedModeratorHasTheModeratorRole() = runTest {
         val moderator = users.login(DemoCredentials.moderatorEmail, DemoCredentials.moderatorPassword)
 
         assertEquals(UserRole.MODERATOR, moderator?.role)
@@ -44,7 +45,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun registrationCreatesASpectatorAndRejectsTakenEmails() {
+    fun registrationCreatesASpectatorAndRejectsTakenEmails() = runTest {
         val location = Location(4.5296, -75.6431)
         val result = users.register("Ana Gómez", "ana@ejemplo.com", "Calarcá, Quindío", "Comunidad1", setOf(EventCategory.CULTURE), "Parque Bolívar", location)
 
@@ -60,7 +61,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun levelIsDerivedFromPointsAndLevelUpIsNotified() {
+    fun levelIsDerivedFromPointsAndLevelUpIsNotified() = runTest {
         assertEquals(UserLevel.ORGANIZER, users.findById(DEMO_USER)!!.level)
 
         repos.useCases.awardPoints(DEMO_USER, 20, "Prueba")
@@ -71,7 +72,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun levelThresholds() {
+    fun levelThresholds() = runTest {
         assertEquals(UserLevel.SPECTATOR, UserLevel.forPoints(99))
         assertEquals(UserLevel.PARTICIPANT, UserLevel.forPoints(100))
         assertEquals(UserLevel.ORGANIZER, UserLevel.forPoints(250))
@@ -79,7 +80,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun badgesAreAwardedOnlyOnce() {
+    fun badgesAreAwardedOnlyOnce() = runTest {
         repos.useCases.awardBadge(DEMO_USER, Badge.TEN_VERIFIED)
         repos.useCases.awardBadge(DEMO_USER, Badge.TEN_VERIFIED)
 
@@ -88,14 +89,14 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun moderatorsDoNotEarnPoints() {
+    fun moderatorsDoNotEarnPoints() = runTest {
         repos.useCases.awardPoints(MODERATOR, 50, "Prueba")
 
         assertEquals(0, users.findById(MODERATOR)!!.points)
     }
 
     @Test
-    fun profileUpdateKeepsEmailsUniqueAndMovesTheLogin() {
+    fun profileUpdateKeepsEmailsUniqueAndMovesTheLogin() = runTest {
         val user = users.findById(DEMO_USER)!!
 
         assertEquals(ProfileUpdateResult.EMAIL_IN_USE, users.updateProfile(user.copy(email = DemoCredentials.moderatorEmail)))
@@ -110,7 +111,7 @@ class InMemoryUserRepositoryTest {
     }
 
     @Test
-    fun deletingTheAccountClosesTheSession() {
+    fun deletingTheAccountClosesTheSession() = runTest {
         users.login(DemoCredentials.email, DemoCredentials.password)
 
         assertTrue(users.deleteAccount(DEMO_USER))

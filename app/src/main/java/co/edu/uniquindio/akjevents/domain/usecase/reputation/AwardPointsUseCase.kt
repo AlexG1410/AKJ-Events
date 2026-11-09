@@ -10,7 +10,7 @@ class AwardPointsUseCase @Inject constructor(
     private val userRepository: UserRepository,
     private val notificationRepository: NotificationRepository
 ) {
-    operator fun invoke(userId: String, points: Int, reason: String) {
+    suspend operator fun invoke(userId: String, points: Int, reason: String) {
         if (points == 0) return
         // Los moderadores no participan del sistema de reputación
         val user = userRepository.findById(userId) ?: return

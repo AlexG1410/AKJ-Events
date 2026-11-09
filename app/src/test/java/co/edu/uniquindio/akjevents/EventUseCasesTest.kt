@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents
 
+import kotlinx.coroutines.test.runTest
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.DEMO_USER
 import co.edu.uniquindio.akjevents.TestRepositories.Companion.MODERATOR
 import co.edu.uniquindio.akjevents.data.demo.SampleEvents
@@ -24,13 +25,13 @@ class EventUseCasesTest {
     private val repository = repos.events
     private val uc = repos.useCases
 
-    private fun attendance(id: String) = repository.findEvent(id)!!.attendanceCount
+    private suspend fun attendance(id: String) = repository.findEvent(id)!!.attendanceCount
 
     private fun isAttending(eventId: String, userId: String = DEMO_USER) =
         repository.attendances.value.any { it.eventId == eventId && it.userId == userId }
 
     @Test
-    fun onlyVerifiedEventsArePublic() {
+    fun onlyVerifiedEventsArePublic() = runTest {
         val events = repository.publicEvents.value
 
         assertEquals(8, events.size)
@@ -41,7 +42,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun hiddenEventsCannotBeModified() {
+    fun hiddenEventsCannotBeModified() = runTest {
         assertEquals(AttendanceResult.NOT_FOUND, uc.confirmAttendance("pendiente-privado", DEMO_USER))
         assertNull(uc.toggleInterest("rechazado-privado", DEMO_USER))
         assertEquals(AttendanceResult.CLOSED, uc.confirmAttendance("reforestacion-rio", DEMO_USER))
@@ -49,7 +50,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun confirmAddsOneAttendeeOnlyOnce() {
+    fun confirmAddsOneAttendeeOnlyOnce() = runTest {
         val before = attendance("ciclopaseo")
 
         assertEquals(AttendanceResult.CONFIRMED, uc.confirmAttendance("ciclopaseo", DEMO_USER))
@@ -60,7 +61,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun cancelRemovesTheAttendee() {
+    fun cancelRemovesTheAttendee() = runTest {
         val before = attendance("ciclopaseo")
         uc.confirmAttendance("ciclopaseo", DEMO_USER)
 
@@ -72,7 +73,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun fullEventRejectsConfirmation() {
+    fun fullEventRejectsConfirmation() = runTest {
         val before = attendance("encuentro-vecinal")
 
         assertEquals(AttendanceResult.FULL, uc.confirmAttendance("encuentro-vecinal", DEMO_USER))
@@ -82,7 +83,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun interestTogglesTheCounterAndRewardsTheOrganizer() {
+    fun interestTogglesTheCounterAndRewardsTheOrganizer() = runTest {
         val before = repository.findPublicEvent("feria-cultural")!!.interestCount
         val organizerPoints = repos.pointsOf("organizer-2")
 
@@ -96,7 +97,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun createdPendingEventIsStoredButNotPublicAndGivesPoints() {
+    fun createdPendingEventIsStoredButNotPublicAndGivesPoints() = runTest {
         val points = repos.pointsOf("organizer-1")
         val pending = SampleEvents.all.first().copy(id = "nuevo", organizerId = "organizer-1", status = EventStatus.PENDING)
 
@@ -110,7 +111,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun moderatorVerificationPublishesNotifiesAndRewards() {
+    fun moderatorVerificationPublishesNotifiesAndRewards() = runTest {
         val points = repos.pointsOf(DEMO_USER)
 
         assertTrue(uc.verifyEvent("huertos-urbanos", MODERATOR))
@@ -121,14 +122,14 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun onlyModeratorsCanVerifyOrReject() {
+    fun onlyModeratorsCanVerifyOrReject() = runTest {
         assertFalse(uc.verifyEvent("huertos-urbanos", DEMO_USER))
         assertFalse(uc.rejectEvent("huertos-urbanos", DEMO_USER, "Motivo"))
         assertEquals(EventStatus.PENDING, repository.findEvent("huertos-urbanos")!!.status)
     }
 
     @Test
-    fun repeatedVerificationAfterEditingDoesNotRepeatPointsButStillNotifies() {
+    fun repeatedVerificationAfterEditingDoesNotRepeatPointsButStillNotifies() = runTest {
         val before = repos.pointsOf(DEMO_USER)
         assertTrue(uc.verifyEvent("huertos-urbanos", MODERATOR))
         assertEquals(before + ReputationPoints.EVENT_VERIFIED, repos.pointsOf(DEMO_USER))
@@ -147,7 +148,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun initiallyVerifiedEventsDoNotReceiveAnotherVerificationReward() {
+    fun initiallyVerifiedEventsDoNotReceiveAnotherVerificationReward() = runTest {
         val event = repository.findEvent("cine-foro")!!
         val before = repos.pointsOf(DEMO_USER)
 
@@ -159,7 +160,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun editingCannotReduceCapacityBelowCurrentAttendanceEvenWithAlteredCounter() {
+    fun editingCannotReduceCapacityBelowCurrentAttendanceEvenWithAlteredCounter() = runTest {
         val event = repository.findEvent("cine-foro")!!
         assertTrue(event.attendanceCount > 0)
 
@@ -174,7 +175,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun rejectionRequiresAReasonAndNotifiesTheOrganizer() {
+    fun rejectionRequiresAReasonAndNotifiesTheOrganizer() = runTest {
         assertFalse(uc.rejectEvent("huertos-urbanos", MODERATOR, "   "))
 
         assertTrue(uc.rejectEvent("huertos-urbanos", MODERATOR, "Información insuficiente"))
@@ -187,7 +188,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun commentNotifiesTheEventAuthor() {
+    fun commentNotifiesTheEventAuthor() = runTest {
         val commenterPoints = repos.pointsOf("organizer-4")
 
         val comment = uc.addComment("cine-foro", "organizer-4", "¿Habrá crispetas?")
@@ -199,7 +200,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun ownCommentDoesNotNotifyAndHiddenEventsCannotBeCommented() {
+    fun ownCommentDoesNotNotifyAndHiddenEventsCannotBeCommented() = runTest {
         uc.addComment("cine-foro", DEMO_USER, "Los esperamos")
         assertTrue(repos.notificationsOf(DEMO_USER).none { it.type == NotificationType.NEW_COMMENT })
 
@@ -210,7 +211,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun onlyTheOrganizerOrAModeratorCanFinishAnEvent() {
+    fun onlyTheOrganizerOrAModeratorCanFinishAnEvent() = runTest {
         assertFalse(uc.finishEvent("cine-foro", "organizer-4"))
 
         assertTrue(uc.finishEvent("cine-foro", DEMO_USER))
@@ -225,7 +226,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun checkInWithTheEventCodeRegistersAttendanceAndPoints() {
+    fun checkInWithTheEventCodeRegistersAttendanceAndPoints() = runTest {
         val code = repository.findEvent("ciclopaseo")!!.checkInCode
         uc.confirmAttendance("ciclopaseo", DEMO_USER)
         val points = repos.pointsOf(DEMO_USER)
@@ -242,7 +243,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun checkInRejectsInvalidCodesAndOwnEvents() {
+    fun checkInRejectsInvalidCodesAndOwnEvents() = runTest {
         assertEquals(CheckInResult.InvalidCode, uc.checkIn("AKJ-NOEXISTE", DEMO_USER))
         assertTrue(uc.checkIn(repository.findEvent("cine-foro")!!.checkInCode, DEMO_USER) is CheckInResult.OwnEvent)
         // El código de un evento pendiente no sirve
@@ -250,7 +251,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun checkInWithoutConfirmingTakesASpotIfAvailable() {
+    fun checkInWithoutConfirmingTakesASpotIfAvailable() = runTest {
         val before = attendance("taller-kotlin")
 
         assertTrue(uc.checkIn(repository.findEvent("taller-kotlin")!!.checkInCode, DEMO_USER) is CheckInResult.Success)
@@ -260,7 +261,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun editingAnEventSendsItBackToReview() {
+    fun editingAnEventSendsItBackToReview() = runTest {
         val event = repository.findEvent("cine-foro")!!
 
         assertFalse(uc.updateEvent(event.copy(title = "Otro título"), "organizer-4"))
@@ -276,7 +277,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun deletingAnEventRemovesItsCommentsAndOnlyTheOwnerCanDoIt() {
+    fun deletingAnEventRemovesItsCommentsAndOnlyTheOwnerCanDoIt() = runTest {
         assertFalse(uc.deleteEvent("ciclopaseo", DEMO_USER))
 
         assertTrue(uc.deleteEvent("cine-foro", DEMO_USER))
@@ -287,7 +288,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun removingUserDataCleansTheirEventsAndParticipation() {
+    fun removingUserDataCleansTheirEventsAndParticipation() = runTest {
         val feriaBefore = attendance("feria-cultural")
 
         repository.removeUserData(DEMO_USER)
@@ -299,13 +300,13 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun checkInCodesAreUniqueAmongSampleEvents() {
+    fun checkInCodesAreUniqueAmongSampleEvents() = runTest {
         val codes = SampleEvents.all.map { it.checkInCode }
         assertEquals(codes.size, codes.toSet().size)
     }
 
     @Test
-    fun theRepositoryAloneOnlyStoresData() {
+    fun theRepositoryAloneOnlyStoresData() = runTest {
         val points = repos.pointsOf("organizer-1")
         val event = SampleEvents.all.first().copy(id = "directo", organizerId = "organizer-1", status = EventStatus.VERIFIED)
 
@@ -319,7 +320,7 @@ class EventUseCasesTest {
     }
 
     @Test
-    fun theUseCaseAlwaysCreatesEventsPendingOfReview() {
+    fun theUseCaseAlwaysCreatesEventsPendingOfReview() = runTest {
         uc.createEvent(SampleEvents.all.first().copy(id = "nuevo-verificado", organizerId = "organizer-1", status = EventStatus.VERIFIED))
 
         assertEquals(EventStatus.PENDING, repository.findEvent("nuevo-verificado")!!.status)

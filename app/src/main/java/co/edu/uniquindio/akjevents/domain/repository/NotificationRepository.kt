@@ -9,11 +9,11 @@ interface NotificationRepository {
     /** Todas las notificaciones; cada pantalla filtra las del usuario de la sesión. */
     val notifications: StateFlow<List<AppNotification>>
 
-    fun notify(userId: String, type: NotificationType, title: String, message: String, eventId: String? = null)
+    suspend fun notify(userId: String, type: NotificationType, title: String, message: String, eventId: String? = null)
 
-    fun setRead(notificationId: String, isRead: Boolean)
+    suspend fun setRead(notificationId: String, isRead: Boolean)
 
-    fun markAllAsRead(userId: String)
+    suspend fun markAllAsRead(userId: String)
 
-    fun deleteForUser(userId: String)
+    suspend fun deleteForUser(userId: String)
 }

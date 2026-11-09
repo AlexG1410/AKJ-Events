@@ -19,7 +19,7 @@ class VerifyEventUseCase @Inject constructor(
     private val awardPoints: AwardPointsUseCase,
     private val awardBadge: AwardBadgeUseCase
 ) {
-    operator fun invoke(eventId: String, moderatorId: String): Boolean {
+    suspend operator fun invoke(eventId: String, moderatorId: String): Boolean {
         val event = eventRepository.findEvent(eventId) ?: return false
         val isModerator = userRepository.findById(moderatorId)?.isModerator == true
         if (event.status != EventStatus.PENDING || !isModerator) return false
