@@ -2,13 +2,15 @@ package co.edu.uniquindio.akjevents.di
 
 import co.edu.uniquindio.akjevents.data.repository.InMemoryEventRepository
 import co.edu.uniquindio.akjevents.data.repository.InMemoryNotificationRepository
-import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRanker
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRepository
+import co.edu.uniquindio.akjevents.data.repository.local.DataStoreSessionPreferences
+import co.edu.uniquindio.akjevents.data.repository.remote.FirebaseUserRepository
 import co.edu.uniquindio.akjevents.domain.repository.EventRepository
 import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRanker
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRepository
+import co.edu.uniquindio.akjevents.domain.repository.SessionPreferencesRepository
 import co.edu.uniquindio.akjevents.domain.repository.UserRepository
 import dagger.Binds
 import dagger.Module
@@ -30,7 +32,11 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindUserRepository(impl: InMemoryUserRepository): UserRepository
+    abstract fun bindUserRepository(impl: FirebaseUserRepository): UserRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSessionPreferences(impl: DataStoreSessionPreferences): SessionPreferencesRepository
 
     @Binds
     @Singleton

@@ -43,10 +43,14 @@ class InMemoryUserRepository(
     private val passwords = initialPasswords.mapKeys { it.key.lowercase() }.toMutableMap()
 
     private val _users = MutableStateFlow(initialUsers)
-    override val users: StateFlow<List<User>> = _users.asStateFlow()
+    /** Todas las cuentas; solo para las pruebas. */
+    val users: StateFlow<List<User>> = _users.asStateFlow()
 
     private val _currentUser = MutableStateFlow(initialUsers.find { it.id == sessionUserId })
     override val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
+
+    // En memoria no hay nada que esperar al abrir la app
+    override val isSessionReady: StateFlow<Boolean> = MutableStateFlow(true).asStateFlow()
 
     private val _pointsHistory = MutableStateFlow(initialPointsHistory)
     override val pointsHistory: StateFlow<List<PointsEntry>> = _pointsHistory.asStateFlow()
@@ -64,6 +68,9 @@ class InMemoryUserRepository(
     override suspend fun logout() {
         _currentUser.value = null
     }
+
+    // En memoria no se envían correos
+    override suspend fun sendPasswordReset(email: String) = Unit
 
     override suspend fun register(
         name: String,
