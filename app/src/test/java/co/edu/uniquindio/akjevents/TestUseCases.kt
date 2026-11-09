@@ -21,6 +21,7 @@ import co.edu.uniquindio.akjevents.domain.usecase.event.ObserveEventsUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.ObservePublicEventsUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.SendNoticeUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.UpdateEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.image.UploadImagesUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.moderation.RejectEventUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.moderation.VerifyEventUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.notification.MarkAllNotificationsReadUseCase
@@ -46,8 +47,13 @@ class TestUseCases(
     events: EventRepository,
     users: UserRepository,
     notifications: NotificationRepository = InMemoryNotificationRepository(emptyList()),
-    val sessionPreferences: SessionPreferencesRepository = InMemorySessionPreferences()
+    val sessionPreferences: SessionPreferencesRepository = InMemorySessionPreferences(),
+    val images: TestImageRepository = TestImageRepository()
 ) {
+    // Fotos
+    val uploadImages = UploadImagesUseCase(images)
+
+
     // Sesión y usuarios
     val observeCurrentUser = ObserveCurrentUserUseCase(users)
     val login = LoginUseCase(users, sessionPreferences)

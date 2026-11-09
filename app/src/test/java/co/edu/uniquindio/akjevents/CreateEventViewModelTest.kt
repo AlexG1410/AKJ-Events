@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -29,7 +29,7 @@ class CreateEventViewModelTest {
     private val currentUserId = runBlocking { repos.users.register("Ana Gómez", "ana@ejemplo.com", "Armenia, Quindío", "Comunidad1", emptySet(), "Parque de la Vida", Location(4.5511, -75.6598)) as RegisterResult.Success }.user.id
     private val viewModel by lazy { createViewModel(repos) }
     private fun createViewModel(from: TestRepositories, eventId: String? = null) = from.useCases.let {
-        CreateEventViewModel(it.getEventById, it.observeCurrentUser, it.createEvent, it.updateEvent, TestResourceProvider, eventId = eventId, now = { now })
+        CreateEventViewModel(it.getEventById, it.observeCurrentUser, it.createEvent, it.updateEvent, it.uploadImages, TestResourceProvider, eventId = eventId, now = { now })
     }
     private val parqueDeLaVida = PickedLocation("Parque de la Vida, Av. Bolívar", Location(4.5511, -75.6598))
 
@@ -41,6 +41,7 @@ class CreateEventViewModelTest {
         onLocationPicked(parqueDeLaVida)
         onStartsAtChange(now.plusDays(2).withHour(9))
         onEndsAtChange(now.plusDays(2).withHour(12))
+        addImage(GALLERY_PHOTO)
     }
 
     private fun errorMessage() = (viewModel.uiState.value.result as? RequestResult.Failure)?.errorMessage
@@ -58,7 +59,9 @@ class CreateEventViewModelTest {
         assertEquals(EventStatus.PENDING, created.status)
         assertEquals("Taller de huertos urbanos", created.title)
         assertEquals(35, created.capacity)
-        assertEquals(listOf(viewModel.uiState.value.imageUrl), created.imageUrls)
+        // La foto de la galería se subió a la nube y el evento guarda su URL
+        assertEquals(listOf(GALLERY_PHOTO), repos.useCases.images.uploaded)
+        assertEquals(listOf("https://res.cloudinary.test/akj-events/events/1.jpg"), created.imageUrls)
         assertEquals(parqueDeLaVida.location, created.location)
         assertNull(repository.findPublicEvent(created.id))
         assertEquals(8, repository.publicEvents.value.size)
@@ -88,6 +91,10 @@ class CreateEventViewModelTest {
         assertEquals("Escribe la descripción del evento", errorMessage())
 
         viewModel.onDescriptionChange("Descripción")
+        viewModel.submit()
+        assertEquals("Agrega al menos una foto del evento", errorMessage())
+
+        viewModel.addImage(GALLERY_PHOTO)
         viewModel.submit()
         assertEquals("Indica el lugar o punto de encuentro", errorMessage())
 
@@ -155,13 +162,39 @@ class CreateEventViewModelTest {
     }
 
     @Test
-    fun changeImageUsesANewSeed() = runTest {
-        val before = viewModel.uiState.value.imageUrl
+    fun anEventNeedsAtLeastOnePhoto() = runTest {
+        fillValidForm()
+        viewModel.removeImage(0)
 
-        viewModel.changeImage()
+        viewModel.submit()
 
-        assertNotEquals(before, viewModel.uiState.value.imageUrl)
-        assertTrue(viewModel.uiState.value.imageUrl.startsWith("https://picsum.photos/seed/"))
+        assertEquals("Agrega al menos una foto del evento", errorMessage())
+        assertTrue(repository.findEventsByOrganizer(currentUserId).isEmpty())
+    }
+
+    @Test
+    fun acceptsUpToThreePhotosAndTheFirstIsTheMainOne() = runTest {
+        repeat(4) { viewModel.addImage("content://media/foto-$it") }
+
+        assertEquals(CreateEventViewModel.MAX_IMAGES, viewModel.uiState.value.images.size)
+        assertFalse(viewModel.uiState.value.canAddImage)
+
+        viewModel.removeImage(0)
+        assertEquals(listOf("content://media/foto-1", "content://media/foto-2"), viewModel.uiState.value.images)
+        assertTrue(viewModel.uiState.value.canAddImage)
+    }
+
+    @Test
+    fun ifThePhotosCannotBeUploadedTheEventIsNotSaved() = runTest {
+        fillValidForm()
+        repos.useCases.images.failUploads = true
+
+        viewModel.submit()
+
+        assertEquals("No se pudieron subir las fotos. Revisa tu conexión e intenta de nuevo", errorMessage())
+        assertTrue(repository.findEventsByOrganizer(currentUserId).isEmpty())
+        // La foto elegida se conserva para reintentar
+        assertEquals(listOf(GALLERY_PHOTO), viewModel.uiState.value.images)
     }
 
     @Test
@@ -223,5 +256,9 @@ class CreateEventViewModelTest {
         edit.submit()
         assertTrue(edit.uiState.value.result is RequestResult.Success)
         assertEquals(latestCount, demo.events.findEvent(original.id)!!.capacity)
+    }
+
+    private companion object {
+        const val GALLERY_PHOTO = "content://media/external/images/media/42"
     }
 }

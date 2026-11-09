@@ -19,7 +19,7 @@ class EditProfileViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repos = TestRepositories()
-    private val viewModel by lazy { repos.useCases.let { EditProfileViewModel(it.observeCurrentUser, it.updateProfile, it.deleteAccount, TestResourceProvider) } }
+    private val viewModel by lazy { repos.useCases.let { EditProfileViewModel(it.observeCurrentUser, it.updateProfile, it.deleteAccount, it.uploadImages, TestResourceProvider) } }
 
     @Test
     fun savesPersonalDataLocationAndInterests() = runTest {
@@ -35,6 +35,29 @@ class EditProfileViewModelTest {
         assertEquals("Calarcá, Quindío", user.city)
         assertEquals(Location(4.5296, -75.6431), user.location)
         assertTrue(EventCategory.ACADEMIC in user.interests)
+    }
+
+    @Test
+    fun aNewProfilePhotoIsUploadedAndSaved() = runTest {
+        viewModel.onPhotoPicked("content://media/external/images/media/7")
+
+        viewModel.save()
+
+        assertTrue(viewModel.uiState.value.result is RequestResult.Success)
+        assertEquals("https://res.cloudinary.test/akj-events/profiles/1.jpg", repos.users.findById(DEMO_USER)!!.profilePictureUrl)
+    }
+
+    @Test
+    fun ifThePhotoCannotBeUploadedTheProfileIsNotChanged() = runTest {
+        repos.useCases.images.failUploads = true
+        viewModel.onNameChange("Otro Nombre")
+        viewModel.onPhotoPicked("content://media/external/images/media/7")
+
+        viewModel.save()
+
+        assertEquals("No se pudo subir la foto. Revisa tu conexión e intenta de nuevo", (viewModel.uiState.value.result as RequestResult.Failure).errorMessage)
+        assertEquals("Camilo Rodríguez", repos.users.findById(DEMO_USER)!!.name)
+        assertNull(repos.users.findById(DEMO_USER)!!.profilePictureUrl)
     }
 
     @Test

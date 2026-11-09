@@ -363,11 +363,8 @@
     <string name="create_selected">Seleccionada</string>
     <string name="create_description_placeholder">Explica qué aprenderán o experimentarán las personas...</string>
     <string name="create_field_photo">Fotografía del evento *</string>
-    <string name="create_temporary_image">Imagen temporal</string>
     <string name="create_event_image">Imagen del evento</string>
     <string name="create_main_photo">Foto Principal</string>
-    <string name="create_change_image">Cambiar imagen</string>
-    <string name="create_random">Aleatoria</string>
     <string name="create_schedule">Fecha, Hora y Espacio</string>
     <string name="create_schedule_subtitle">Cuándo y dónde se reunirán</string>
     <string name="create_starts">Comienza *</string>
@@ -762,4 +759,19 @@
         <item quantity="many">%d activas</item>
         <item quantity="other">%d activas</item>
     </plurals>
+
+    <!-- Fotos: cámara, galería y subida a la nube (paso 5) -->
+    <string name="select_image">Seleccionar imagen</string>
+    <string name="take_photo">Tomar foto</string>
+    <string name="choose_from_gallery">Elegir de la galería</string>
+    <string name="camera_permission_required">Se necesita el permiso de cámara para tomar la foto. Puedes activarlo desde los Ajustes del dispositivo</string>
+    <string name="create_min_one_image">Mínimo 1 imagen obligatoria</string>
+    <string name="create_add_photo">Añadir foto</string>
+    <string name="create_photos_count">%1$d de %2$d fotos</string>
+    <string name="create_remove_photo">Quitar foto</string>
+    <string name="create_photo_number">Foto %1$d del evento</string>
+    <string name="create_error_image">Agrega al menos una foto del evento</string>
+    <string name="create_error_upload">No se pudieron subir las fotos. Revisa tu conexión e intenta de nuevo</string>
+    <string name="edit_profile_change_photo">Cambiar foto de perfil</string>
+    <string name="edit_profile_error_upload">No se pudo subir la foto. Revisa tu conexión e intenta de nuevo</string>
 </resources>

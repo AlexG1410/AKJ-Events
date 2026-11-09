@@ -364,11 +364,8 @@
     <string name="create_selected">Selected</string>
     <string name="create_description_placeholder">Explain what people will learn or experience...</string>
     <string name="create_field_photo">Event photo *</string>
-    <string name="create_temporary_image">Temporary image</string>
     <string name="create_event_image">Event image</string>
     <string name="create_main_photo">Main Photo</string>
-    <string name="create_change_image">Change image</string>
-    <string name="create_random">Random</string>
     <string name="create_schedule">Date, Time and Place</string>
     <string name="create_schedule_subtitle">When and where you will meet</string>
     <string name="create_starts">Starts *</string>
@@ -739,4 +736,19 @@
         <item quantity="one">%d active</item>
         <item quantity="other">%d active</item>
     </plurals>
+
+    <!-- Fotos: cámara, galería y subida a la nube (paso 5) -->
+    <string name="select_image">Select image</string>
+    <string name="take_photo">Take photo</string>
+    <string name="choose_from_gallery">Choose from gallery</string>
+    <string name="camera_permission_required">Camera permission is needed to take the photo. You can turn it on in the device Settings</string>
+    <string name="create_min_one_image">At least 1 image required</string>
+    <string name="create_add_photo">Add photo</string>
+    <string name="create_photos_count">%1$d of %2$d photos</string>
+    <string name="create_remove_photo">Remove photo</string>
+    <string name="create_photo_number">Event photo %1$d</string>
+    <string name="create_error_image">Add at least one photo of the event</string>
+    <string name="create_error_upload">Could not upload the photos. Check your connection and try again</string>
+    <string name="edit_profile_change_photo">Change profile photo</string>
+    <string name="edit_profile_error_upload">Could not upload the photo. Check your connection and try again</string>
 </resources>

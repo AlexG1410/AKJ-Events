@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -137,7 +138,7 @@ fun RoundIconButton(
     }
 }
 
-/** Foto de perfil o, mientras no haya carga de imágenes, las iniciales del usuario. */
+/** Foto de perfil o, si el usuario no ha subido una, sus iniciales. */
 @Composable
 fun UserAvatar(
     user: User,
@@ -153,7 +154,12 @@ fun UserAvatar(
             contentAlignment = Alignment.Center
         ) {
             if (user.profilePictureUrl != null) {
-                AsyncImage(model = user.profilePictureUrl, contentDescription = stringResource(R.string.user_photo_description, user.name), modifier = Modifier.size(size))
+                AsyncImage(
+                    model = user.profilePictureUrl,
+                    contentDescription = stringResource(R.string.user_photo_description, user.name),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(size)
+                )
             } else {
                 Text(user.initials, color = contentColor, fontSize = (size.value * 0.38f).sp, fontWeight = FontWeight.Bold)
             }

@@ -12,16 +12,17 @@ import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventCategory
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.Location
+import co.edu.uniquindio.akjevents.domain.repository.ImageFolder
 import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.CreateEventUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.GetEventByIdUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.UpdateEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.image.UploadImagesUseCase
 import co.edu.uniquindio.akjevents.navigation.MainRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
-import kotlin.random.Random
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,8 +39,11 @@ data class CreateEventUiState(
     val location: Location? = null,
     val limitCapacity: Boolean = false,
     val capacity: String = CreateEventViewModel.DEFAULT_CAPACITY.toString(),
-    // Aún no hay carga de imágenes: se usa una imagen temporal de picsum.photos
-    val imageUrl: String = "",
+    /**
+     * Fotos del evento; la primera es la principal. Las ya publicadas son URLs y las nuevas son URIs
+     * locales de la cámara o la galería, que se suben a la nube al enviar el formulario.
+     */
+    val images: List<String> = emptyList(),
     /** Edición de un evento existente (mockup 08) en lugar de creación (mockup 07). */
     val isEditing: Boolean = false,
     /** Estado del evento antes de editarlo; un rechazado se "reenvía". */
@@ -53,6 +57,8 @@ data class CreateEventUiState(
     val isScheduleComplete: Boolean get() = startsAt != null && endsAt != null && place.isNotBlank() && location != null
 
     val isBusy: Boolean get() = result is RequestResult.Loading || result is RequestResult.Success
+
+    val canAddImage: Boolean get() = images.size < CreateEventViewModel.MAX_IMAGES
 }
 
 /**
@@ -65,10 +71,10 @@ class CreateEventViewModel(
     private val observeCurrentUser: ObserveCurrentUserUseCase,
     private val createEvent: CreateEventUseCase,
     private val updateEvent: UpdateEventUseCase,
+    private val uploadImages: UploadImagesUseCase,
     private val resources: ResourceProvider,
     private val eventId: String? = null,
-    private val now: () -> LocalDateTime = LocalDateTime::now,
-    private val random: Random = Random.Default
+    private val now: () -> LocalDateTime = LocalDateTime::now
 ) : ViewModel() {
 
     /**
@@ -82,12 +88,15 @@ class CreateEventViewModel(
         observeCurrentUser: ObserveCurrentUserUseCase,
         createEvent: CreateEventUseCase,
         updateEvent: UpdateEventUseCase,
+        uploadImages: UploadImagesUseCase,
         resources: ResourceProvider
-    ) : this(getEventById, observeCurrentUser, createEvent, updateEvent, resources, savedStateHandle.get<String>(EVENT_ID_KEY))
+    ) : this(
+        getEventById, observeCurrentUser, createEvent, updateEvent, uploadImages, resources, savedStateHandle.get<String>(EVENT_ID_KEY)
+    )
 
     // Al editar, el formulario no se puede enviar hasta cargar el evento
     private val _uiState = MutableStateFlow(
-        CreateEventUiState(imageUrl = newImageUrl(), isEditing = eventId != null, canSubmit = eventId == null)
+        CreateEventUiState(isEditing = eventId != null, canSubmit = eventId == null)
     )
     val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
 
@@ -104,7 +113,7 @@ class CreateEventViewModel(
     private fun editState(event: CommunityEvent?): CreateEventUiState {
         val ownerId = observeCurrentUser().value?.id
         if (event == null || event.organizerId != ownerId || event.status == EventStatus.FINISHED) {
-            return CreateEventUiState(isEditing = true, canSubmit = false, imageUrl = newImageUrl())
+            return CreateEventUiState(isEditing = true, canSubmit = false)
         }
         return CreateEventUiState(
             title = event.title,
@@ -116,7 +125,7 @@ class CreateEventViewModel(
             location = event.location,
             limitCapacity = event.capacity != null,
             capacity = (event.capacity ?: DEFAULT_CAPACITY).toString(),
-            imageUrl = event.imageUrls.first(),
+            images = event.imageUrls,
             isEditing = true,
             originalStatus = event.status
         )
@@ -150,10 +159,13 @@ class CreateEventViewModel(
 
     fun decreaseCapacity() = changeCapacityBy(-1)
 
-    fun changeImage() = _uiState.update { state ->
-        var url: String
-        do url = newImageUrl() while (url == state.imageUrl)
-        state.copy(imageUrl = url)
+    /** Foto tomada con la cámara o elegida de la galería; se sube al enviar el formulario. */
+    fun addImage(uri: String) = _uiState.update {
+        if (it.canAddImage && uri !in it.images) it.copy(images = it.images + uri) else it
+    }
+
+    fun removeImage(index: Int) = _uiState.update {
+        if (index in it.images.indices) it.copy(images = it.images.filterIndexed { i, _ -> i != index }) else it
     }
 
     fun submit() {
@@ -172,15 +184,28 @@ class CreateEventViewModel(
             return
         }
 
+        _uiState.update { it.copy(result = RequestResult.Loading) }
+        viewModelScope.launch {
+            // Primero se suben las fotos nuevas; sin ellas el evento no se guarda
+            val imageUrls = runCatching { uploadImages(state.images, ImageFolder.EVENTS) }.getOrElse {
+                _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(R.string.create_error_upload))) }
+                return@launch
+            }
+            _uiState.update { it.copy(images = imageUrls) }
+            save(state, organizer.id, imageUrls)
+        }
+    }
+
+    private suspend fun save(state: CreateEventUiState, organizerId: String, imageUrls: List<String>) {
         val event = CommunityEvent(
             id = eventId ?: "evento-${UUID.randomUUID()}",
-            organizerId = organizer.id,
+            organizerId = organizerId,
             title = state.title.trim(),
             category = state.category!!,
             description = state.description.trim(),
             address = state.place.trim(),
             location = state.location!!,
-            imageUrls = listOf(state.imageUrl),
+            imageUrls = imageUrls,
             startsAt = state.startsAt!!,
             endsAt = state.endsAt!!,
             capacity = if (state.limitCapacity) state.capacity.toInt() else null,
@@ -188,25 +213,22 @@ class CreateEventViewModel(
             status = EventStatus.PENDING,
             createdAt = now()
         )
-        _uiState.update { it.copy(result = RequestResult.Loading) }
-        viewModelScope.launch {
-            val result = runCatching {
-                if (eventId == null) {
-                    createEvent(event)
-                    RequestResult.Success(resources.getString(R.string.create_submitted))
-                } else {
-                    // El cupo se compara con los asistentes que haya justo ahora, no con los de al abrir el formulario
-                    val attendees = getEventById(eventId)?.attendanceCount ?: 0
-                    when {
-                        event.capacity != null && event.capacity < attendees -> RequestResult.Failure(resources.getString(R.string.create_error_capacity_below_attendance))
-                        !updateEvent(event, organizer.id) -> RequestResult.Failure(resources.getString(R.string.create_error_save))
-                        state.originalStatus == EventStatus.REJECTED -> RequestResult.Success(resources.getString(R.string.create_resubmitted))
-                        else -> RequestResult.Success(resources.getString(R.string.create_updated))
-                    }
+        val result = runCatching {
+            if (eventId == null) {
+                createEvent(event)
+                RequestResult.Success(resources.getString(R.string.create_submitted))
+            } else {
+                // El cupo se compara con los asistentes que haya justo ahora, no con los de al abrir el formulario
+                val attendees = getEventById(eventId)?.attendanceCount ?: 0
+                when {
+                    event.capacity != null && event.capacity < attendees -> RequestResult.Failure(resources.getString(R.string.create_error_capacity_below_attendance))
+                    !updateEvent(event, organizerId) -> RequestResult.Failure(resources.getString(R.string.create_error_save))
+                    state.originalStatus == EventStatus.REJECTED -> RequestResult.Success(resources.getString(R.string.create_resubmitted))
+                    else -> RequestResult.Success(resources.getString(R.string.create_updated))
                 }
-            }.getOrElse { RequestResult.Failure(resources.getString(R.string.create_error_network)) }
-            _uiState.update { it.copy(result = result) }
-        }
+            }
+        }.getOrElse { RequestResult.Failure(resources.getString(R.string.create_error_network)) }
+        _uiState.update { it.copy(result = result) }
     }
 
     fun onFailureShown() = _uiState.update {
@@ -222,6 +244,7 @@ class CreateEventViewModel(
             state.title.isBlank() -> R.string.create_error_title
             state.category == null -> R.string.create_error_category
             state.description.isBlank() -> R.string.create_error_description
+            state.images.isEmpty() -> R.string.create_error_image
             state.place.isBlank() -> R.string.create_error_place
             state.location == null -> R.string.create_error_location
             startsAt == null || endsAt == null -> R.string.create_error_dates
@@ -237,14 +260,14 @@ class CreateEventViewModel(
         it.copy(capacity = capacity.toString())
     }
 
-    private fun newImageUrl(): String = "https://picsum.photos/seed/akj-${random.nextInt(100_000, 1_000_000)}/900/500"
-
     companion object {
         /** Nombre del argumento de [MainRoutes.EditEvent]. */
         private const val EVENT_ID_KEY = "eventId"
         const val MAX_TITLE_LENGTH = 80
         const val MAX_DESCRIPTION_LENGTH = 600
         const val DEFAULT_CAPACITY = 30
+        /** Fotos por evento, como en el mockup 07 ("1 de 3"). */
+        const val MAX_IMAGES = 3
         private const val MAX_CAPACITY_DIGITS = 5
         private const val MAX_CAPACITY = 99_999
     }

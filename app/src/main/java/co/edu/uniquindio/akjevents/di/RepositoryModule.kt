@@ -3,10 +3,12 @@ package co.edu.uniquindio.akjevents.di
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRanker
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRepository
 import co.edu.uniquindio.akjevents.data.repository.local.DataStoreSessionPreferences
+import co.edu.uniquindio.akjevents.data.repository.remote.CloudinaryImageRepository
 import co.edu.uniquindio.akjevents.data.repository.remote.FirebaseUserRepository
 import co.edu.uniquindio.akjevents.data.repository.remote.FirestoreEventRepository
 import co.edu.uniquindio.akjevents.data.repository.remote.FirestoreNotificationRepository
 import co.edu.uniquindio.akjevents.domain.repository.EventRepository
+import co.edu.uniquindio.akjevents.domain.repository.ImageRepository
 import co.edu.uniquindio.akjevents.domain.repository.NotificationRepository
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRanker
 import co.edu.uniquindio.akjevents.domain.repository.RecommendationRepository
@@ -20,8 +22,8 @@ import javax.inject.Singleton
 
 /**
  * Le indica a Hilt qué implementación usar para cada interfaz del dominio: Firebase para las cuentas,
- * los eventos y las notificaciones, y DataStore para la sesión. Las implementaciones en memoria quedan
- * para las pruebas unitarias.
+ * los eventos y las notificaciones, Cloudinary para las fotos y DataStore para la sesión. Las
+ * implementaciones en memoria quedan para las pruebas unitarias.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -42,6 +44,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindNotificationRepository(impl: FirestoreNotificationRepository): NotificationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindImageRepository(impl: CloudinaryImageRepository): ImageRepository
 
     @Binds
     @Singleton
