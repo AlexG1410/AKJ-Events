@@ -2,12 +2,13 @@
 
 Aplicación Android para descubrir, crear y participar en eventos comunitarios del Quindío. Es parte del proyecto de clase: una única `MainActivity` con Jetpack Compose, Material 3, `ViewModel` + `StateFlow` y Navigation Compose con rutas tipadas. Las pantallas replican los mockups de la carpeta `mockups/`.
 
-Estamos en la fase 3 (entrega final), que se hace por pasos. Las **cuentas ya usan Firebase**: registro, inicio de sesión, cierre de sesión y recuperación de contraseña con **Firebase Authentication**, y los perfiles en **Cloud Firestore** (colección `users`). La sesión se mantiene al cerrar la app si se marca «Recordar este dispositivo» (preferencia guardada con DataStore). Los eventos, comentarios, asistencias y notificaciones siguen en memoria hasta el paso 4.
+Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Firebase**: registro, inicio de sesión, cierre de sesión y recuperación de contraseña con **Firebase Authentication**, y los datos en **Cloud Firestore**: perfiles, historial de puntos, eventos, comentarios, asistencias, intereses y notificaciones. Los cambios se ven en tiempo real y los permisos se aplican en la base de datos con reglas de seguridad (`firestore.rules`). La sesión se mantiene al cerrar la app si se marca «Recordar este dispositivo» (preferencia guardada con DataStore).
 
 ## Cuentas
 
 - **Usuarios:** se crean desde la pantalla de Registro, que siempre crea cuentas con el rol Usuario.
 - **Moderadores (precargados):** en la consola de Firebase → Authentication → Usuarios → «Agregar usuario», se crea la cuenta con su correo y contraseña. La persona inicia sesión una vez (la app crea su perfil como Usuario) y luego, en Firestore → `users` → su documento, se cambia el campo `role` a `MODERATOR`.
+- **Datos de ejemplo:** los eventos de muestra y sus organizadores se cargan una vez con el script `seed/seed.mjs` (ver «Cómo ejecutar»). Esos organizadores solo tienen perfil, no cuenta: nadie inicia sesión con ellos.
 - **Recuperar contraseña:** Firebase envía al correo un enlace para crear una nueva contraseña. El idioma del correo se configura en Authentication → Plantillas.
 
 ## Qué incluye esta entrega
@@ -40,7 +41,6 @@ Estamos en la fase 3 (entrega final), que se hace por pasos. Las **cuentas ya us
 
 ## Qué está simulado
 
-- **Eventos y notificaciones en memoria:** `InMemoryEventRepository` e `InMemoryNotificationRepository` arrancan con los datos de `data/demo/` y se pierden al cerrar la app (pasan a Firestore en el paso 4). Mientras tanto, los organizadores de los eventos de ejemplo se muestran con sus datos de muestra.
 - **Mapa:** `core/component/SimulatedMap` dibuja un mapa del Eje Cafetero con coordenadas reales: se puede mover, acercar, ubicar eventos y elegir un punto. La búsqueda usa lugares de referencia locales (`SamplePlaces`) en lugar de un servicio de mapas.
 - **Filtros de ubicación y fecha:** "En mi ciudad" usa las coordenadas: respeta el municipio de los lugares conocidos del catálogo local y, para otros puntos, aproxima por el centro más cercano. No depende del texto de la dirección ni usa límites municipales reales. "Esta semana" muestra inicios desde el momento actual hasta antes de siete días después.
 - **QR:** los códigos QR son reales (librería ZXing), pero no se usa la cámara: el escaneo se simula escribiendo el código o eligiendo un evento confirmado.
@@ -57,7 +57,18 @@ Solo los eventos `VERIFIED` se muestran públicamente. Los rechazados y pendient
 
 El archivo `app/google-services.json` conecta la app con el proyecto de Firebase `akj---events`.
 
-**Probar con el emulador local de Firebase** (no toca el proyecto real): instala las herramientas con `npm install -g firebase-tools`, y desde la raíz del proyecto ejecuta `firebase emulators:start --only auth,firestore`. Luego conecta el teléfono con `adb reverse tcp:9099 tcp:9099` y `adb reverse tcp:8080 tcp:8080`, e instala la app con `./gradlew installDebug -PuseFirebaseEmulator=true -PfirebaseEmulatorHost=127.0.0.1`. La consola del emulador queda en http://127.0.0.1:4000, y allí aparecen las cuentas, los perfiles y los enlaces de recuperación de contraseña.
+**Probar con el emulador local de Firebase** (no toca el proyecto real): instala las herramientas con `npm install -g firebase-tools`, y desde la raíz del proyecto ejecuta `firebase emulators:start --only auth,firestore`. Luego conecta el teléfono con `adb reverse tcp:9099 tcp:9099` y `adb reverse tcp:8080 tcp:8080`, e instala la app con `./gradlew installDebug -PuseFirebaseEmulator=true -PfirebaseEmulatorHost=127.0.0.1`. La consola del emulador queda en http://127.0.0.1:4000, y allí aparecen las cuentas, los datos y los enlaces de recuperación de contraseña. El emulador usa las reglas de `firestore.rules` y arranca vacío: carga los datos de ejemplo cada vez que lo inicies (ver abajo).
+
+**Datos de ejemplo** (requiere Node.js): `cd seed`, `npm install` y luego:
+
+```
+FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 node seed.mjs                       # emulador local
+GOOGLE_APPLICATION_CREDENTIALS=<ruta a la clave> node seed.mjs             # proyecto real
+```
+
+Para el proyecto real, la clave se descarga en la consola de Firebase → Configuración del proyecto → Cuentas de servicio → «Generar nueva clave privada». Guárdala fuera del repositorio: da acceso total a la base de datos. Si la colección `events` ya tiene datos, el script no hace nada (con `--force` sobrescribe los ejemplos).
+
+**Reglas de seguridad en el proyecto real:** `firebase deploy --only firestore:rules` (después de `firebase login`).
 
 Desde la terminal, en la raíz del proyecto (`.\gradlew.bat` en PowerShell):
 
@@ -74,7 +85,7 @@ Dentro de `app/src/main/java/co/edu/uniquindio/akjevents/`:
 
 - `core/`: tema, componentes compartidos (barras, tarjetas, mapa simulado, QR) y utilidades (`RequestResult`, validación, formatos, búsqueda).
 - `domain/`: modelos (`CommunityEvent`, `User`, `Comment`, `AppNotification`, insignias, niveles, puntos...), las interfaces de los repositorios y los casos de uso (`domain/usecase/`), que aplican las reglas: permisos, puntos, insignias y notificaciones.
-- `data/`: los repositorios, que solo guardan y consultan datos: `FirebaseUserRepository` (Authentication + Firestore) y sus DTO en `data/remote/`, la preferencia de sesión con DataStore, los repositorios en memoria y los datos de demostración.
+- `data/`: los repositorios, que solo guardan y consultan datos: `FirebaseUserRepository` (Authentication + Firestore), `FirestoreEventRepository` y `FirestoreNotificationRepository`, con sus DTO en `data/remote/`; la preferencia de sesión con DataStore; los repositorios en memoria, que usan las pruebas unitarias, y los datos de demostración.
 - `di/`: los módulos de Hilt: `RepositoryModule` (qué implementación usar para cada repositorio), `FirebaseModule` (instancias de Firebase) y `CoroutinesModule`.
 - `features/`: una carpeta por pantalla, cada una con su `Screen` y su `ViewModel` (`@HiltViewModel`) con su `UiState`. Los ViewModels solo usan casos de uso, nunca los repositorios directamente.
 - `navigation/`: navegación principal, rutas tipadas y el `SessionViewModel` (rol y alertas sin leer).
@@ -86,7 +97,7 @@ Las dependencias las crea Hilt: pantalla (`hiltViewModel()`) → ViewModel → c
 1. ~~Repositorios y casos de uso `suspend`.~~
 2. ~~Internacionalización en inglés y español.~~
 3. ~~Firebase Authentication con recuperación de contraseña y sesión recordada.~~
-4. Eventos, comentarios, asistencias y notificaciones en Firestore.
+4. ~~Eventos, comentarios, asistencias y notificaciones en Firestore, con reglas de seguridad y datos de ejemplo.~~
 5. Imágenes de eventos y de perfil en la nube.
 6. Mapa real con Mapbox y permiso de ubicación.
 7. Sugerencia de categoría con IA (OpenRouter), siempre con opción de cambiarla.
