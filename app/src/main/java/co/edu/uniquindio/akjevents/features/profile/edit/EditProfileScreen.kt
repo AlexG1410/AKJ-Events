@@ -52,7 +52,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -122,13 +121,13 @@ fun EditProfileScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var confirmDelete by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    val cameraPermissionMessage = stringResource(R.string.camera_permission_required)
     val scope = rememberCoroutineScope()
     // Cámara o galería (guía 15); si se niega el permiso de cámara, la galería sigue disponible
     val imagePicker = rememberImagePicker(
         onImagePicked = { viewModel.onPhotoPicked(it.toString()) },
         onCameraDenied = {
-            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.camera_permission_required)) }
+            scope.launch { snackbarHostState.showSnackbar(cameraPermissionMessage) }
         }
     )
 
@@ -211,7 +210,7 @@ fun EditProfileScreen(
                 MapLocationRow(
                     address = state.address,
                     location = state.location,
-                    onClick = { state.location?.let { onPickLocation(PickedLocation(state.address, it)) } }
+                    onClick = { state.location?.let { onPickLocation(PickedLocation(state.address, it, state.city)) } }
                 )
             }
 

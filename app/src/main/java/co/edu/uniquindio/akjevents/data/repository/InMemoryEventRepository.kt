@@ -111,6 +111,7 @@ class InMemoryEventRepository(
         val event = publicEventById(eventId)
             ?: return if (eventById(eventId)?.status == EventStatus.FINISHED) AttendanceResult.CLOSED else AttendanceResult.NOT_FOUND
         when {
+            event.organizerId == userId -> AttendanceResult.OWN_EVENT
             isAttending(eventId, userId) -> AttendanceResult.ALREADY_CONFIRMED
             event.isFull -> AttendanceResult.FULL
             else -> {
@@ -132,6 +133,7 @@ class InMemoryEventRepository(
 
     override suspend fun registerCheckIn(eventId: String, userId: String): CheckInRegistration = synchronized(lock) {
         val event = publicEventById(eventId) ?: return CheckInRegistration.NOT_FOUND
+        if (event.organizerId == userId) return CheckInRegistration.OWN_EVENT
         val attendance = _attendances.value.find { it.eventId == eventId && it.userId == userId }
         when {
             attendance?.checkedIn == true -> return CheckInRegistration.ALREADY_CHECKED_IN

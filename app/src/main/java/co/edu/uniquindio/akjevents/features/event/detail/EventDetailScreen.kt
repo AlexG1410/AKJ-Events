@@ -150,7 +150,7 @@ fun EventDetailScreen(
             )
         },
         bottomBar = {
-            if (event != null && state.canParticipate) {
+            if (event != null && state.showAttendanceActions) {
                 AttendanceBar(
                     isInterested = state.isInterested,
                     isAttending = state.isAttending,
@@ -201,7 +201,15 @@ fun EventDetailScreen(
                 letterSpacing = (-0.5).sp
             )
             DateAndPlaceCard(event)
-            if (state.isAttending && state.canParticipate) {
+            if (state.isOwner && event.status == EventStatus.VERIFIED) {
+                Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(16.dp)) {
+                    Text(
+                        stringResource(if (state.isAttending && !state.isCheckedIn) R.string.detail_owner_previous_attendance else R.string.detail_attendance_own_event),
+                        color = MutedText, fontSize = 14.sp, modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+            if (state.isAttending && state.canConfirmAttendance) {
                 CheckInCard(isCheckedIn = state.isCheckedIn, onOpenCheckIn = { onOpenCheckIn(event.id) })
             }
             CapacityCard(event)

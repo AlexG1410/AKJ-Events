@@ -10,10 +10,13 @@ import co.edu.uniquindio.akjevents.data.repository.InMemoryUserRepository
  * Repositorios en memoria nuevos, con sus casos de uso conectados, para que cada prueba empiece con los datos de muestra.
  * Las notificaciones arrancan vacías y la sesión queda abierta con [sessionUserId] (el usuario de demostración).
  */
-class TestRepositories(sessionUserId: String? = SampleUsers.demoUser.id) {
+class TestRepositories(
+    sessionUserId: String? = SampleUsers.demoUser.id,
+    initialEvents: List<co.edu.uniquindio.akjevents.domain.model.CommunityEvent> = SampleEvents.all
+) {
     val notifications = InMemoryNotificationRepository(emptyList())
     val users = InMemoryUserRepository(SampleUsers.all, sessionUserId = sessionUserId)
-    val events = InMemoryEventRepository(SampleEvents.all)
+    val events = InMemoryEventRepository(initialEvents)
     val useCases = TestUseCases(events, users, notifications)
 
     fun notificationsOf(userId: String) = notifications.notifications.value.filter { it.userId == userId }

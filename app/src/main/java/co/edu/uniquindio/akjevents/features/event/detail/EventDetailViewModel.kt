@@ -54,6 +54,11 @@ data class EventDetailUiState(
     /** Confirmar asistencia y marcar interés solo aplica a eventos públicos y a usuarios (no moderadores). */
     val canParticipate: Boolean get() = event?.status == EventStatus.VERIFIED && viewer?.isModerator == false
 
+    val canConfirmAttendance: Boolean get() = canParticipate && !isOwner
+
+    /** Permite cancelar una inscripción propia anterior al bloqueo, pero nunca crearla de nuevo. */
+    val showAttendanceActions: Boolean get() = canParticipate && (!isOwner || (isAttending && !isCheckedIn))
+
     val canComment: Boolean get() = viewer != null && (event?.status == EventStatus.VERIFIED || event?.status == EventStatus.FINISHED)
 
     val canEdit: Boolean get() = isOwner && event?.status != EventStatus.FINISHED
@@ -148,6 +153,10 @@ class EventDetailViewModel(
     fun toggleAttendance() {
         val viewer = observeCurrentUser().value ?: return
         val state = _uiState.value
+        if (state.isOwner && !state.isAttending) {
+            showMessage(R.string.detail_attendance_own_event)
+            return
+        }
         if (state.isAttending && state.isCheckedIn) {
             showMessage(R.string.detail_cannot_cancel)
             return
@@ -163,6 +172,7 @@ class EventDetailViewModel(
                 AttendanceResult.FULL -> showMessage(R.string.detail_event_full)
                 AttendanceResult.CLOSED -> showMessage(R.string.detail_event_closed)
                 AttendanceResult.NOT_FOUND -> showMessage(R.string.detail_event_gone)
+                AttendanceResult.OWN_EVENT -> showMessage(R.string.detail_attendance_own_event)
             }
         }
     }

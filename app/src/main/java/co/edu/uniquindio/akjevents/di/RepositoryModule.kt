@@ -4,6 +4,8 @@ import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRanker
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRepository
 import co.edu.uniquindio.akjevents.data.repository.local.DataStoreSessionPreferences
 import co.edu.uniquindio.akjevents.data.repository.remote.CloudinaryImageRepository
+import co.edu.uniquindio.akjevents.data.repository.remote.AndroidGeocodingRepository
+import co.edu.uniquindio.akjevents.domain.repository.GeocodingRepository
 import co.edu.uniquindio.akjevents.data.repository.remote.FirebaseUserRepository
 import co.edu.uniquindio.akjevents.data.repository.remote.FirestoreEventRepository
 import co.edu.uniquindio.akjevents.data.repository.remote.FirestoreNotificationRepository
@@ -28,6 +30,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindGeocodingRepository(impl: AndroidGeocodingRepository): GeocodingRepository
 
     @Binds
     @Singleton

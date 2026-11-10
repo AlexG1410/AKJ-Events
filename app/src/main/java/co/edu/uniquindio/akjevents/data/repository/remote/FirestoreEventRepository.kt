@@ -183,6 +183,7 @@ class FirestoreEventRepository @Inject constructor(
             when {
                 event.status == EventStatus.FINISHED -> AttendanceResult.CLOSED
                 event.status != EventStatus.VERIFIED -> AttendanceResult.NOT_FOUND
+                event.organizerId == userId -> AttendanceResult.OWN_EVENT
                 alreadyAttending -> AttendanceResult.ALREADY_CONFIRMED
                 event.isFull -> AttendanceResult.FULL
                 else -> {
@@ -213,6 +214,7 @@ class FirestoreEventRepository @Inject constructor(
         return firestore.runTransaction { transaction ->
             val event = toEvent(transaction.get(eventReference))?.takeIf { it.status == EventStatus.VERIFIED }
                 ?: return@runTransaction CheckInRegistration.NOT_FOUND
+            if (event.organizerId == userId) return@runTransaction CheckInRegistration.OWN_EVENT
             val attendance = transaction.get(attendanceReference).toObject(AttendanceDto::class.java)
             when {
                 attendance?.checkedIn == true -> return@runTransaction CheckInRegistration.ALREADY_CHECKED_IN

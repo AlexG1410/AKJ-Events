@@ -14,13 +14,14 @@ Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Fireba
 ## Qué incluye esta entrega
 
 **Autenticación y roles**
-- **Splash**, **Login**, **Registro** (crea la cuenta y abre la sesión; el correo no se puede repetir y la dirección se elige obligatoriamente en el mapa simulado) y **Recuperar contraseña**.
+- **Splash**, **Login**, **Registro** (crea la cuenta y abre la sesión; el correo no se puede repetir y la ubicación se elige obligatoriamente en el mapa real) y **Recuperar contraseña**.
 - Al iniciar sesión, el usuario entra al feed y el moderador a su **panel de moderación**. La barra inferior cambia según el rol: el botón central es **Crear** para el usuario y **Moderar** para el moderador.
 
 **Usuario**
 - **Feed (Home):** eventos verificados, destacados por votos "Me interesa", búsqueda, filtro por categoría y **filtro por ubicación** (cerca de mí, a 5 km, o en mi ciudad), "Me interesa" y acceso al mapa.
 - **Mapa (explorar):** mapa real con Mapbox, marcadores agrupados de eventos verificados, filtros de cercanía, categoría y "esta semana", tarjeta del evento elegido con distancia y "Cómo llegar". Tocar una zona vacía oculta la tarjeta; para seleccionar eventos agrupados, primero se acerca el mapa.
 - **Detalle de evento:** información completa, **ubicación exacta en el mapa**, organizador, cupos, confirmar o cancelar asistencia, "Me interesa" y **comentarios**. El autor y los moderadores pueden ver eventos pendientes o rechazados (con su estado y el motivo).
+- **Asistencia del organizador:** no puede confirmar asistencia ni hacer check-in como participante de su propio evento. El detalle lo explica y oculta la inscripción; una inscripción anterior sin check-in puede cancelarse para liberar el cupo, sin posibilidad de reinscribirse. No se borran registros históricos automáticamente. La validación existe en casos de uso y repositorios Android (incluida la transacción de Firestore), pero no sustituye reglas de seguridad del servidor.
 - **Crear y editar evento:** título, categoría, descripción, **hasta 3 fotos** (cámara o galería; la primera es la principal), fechas, lugar, **punto en el mapa** y cupo opcional. Todo evento nuevo o editado queda pendiente de verificación.
 - **Mis eventos:** pestañas por estado. Según el estado se puede editar, eliminar, reenviar un rechazado, **marcar como finalizado**, mostrar el **QR de asistencia**, ver los inscritos y enviarles un aviso.
 - **Notificaciones:** comentarios en mis eventos, verificación o rechazo (con el motivo), avisos de organizadores, eventos finalizados, insignias y subidas de nivel. Se marcan como leídas o no leídas y abren el evento relacionado.
@@ -41,7 +42,7 @@ Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Fireba
 
 ## Qué está simulado
 
-- **Selección y detalle de ubicación:** usan `core/component/MapBox`. El selector conserva el punto del formulario, permite elegir y volver a elegir por toque y confirmar las coordenadas; arrastrar solo mueve la cámara. El detalle muestra un mapa de solo lectura. La búsqueda y las etiquetas de dirección/ciudad siguen usando `SamplePlaces`, no geocodificación real; son aproximaciones locales y pueden no corresponder fuera de su cobertura.
+- **Búsqueda de lugares:** el buscador del selector usa `SamplePlaces` (referencias locales), no búsqueda remota. El mapa y la geocodificación inversa sí son reales. Solo se usa una dirección del catálogo como respaldo al elegir expresamente uno de sus lugares; no se asigna una ciudad local a cualquier punto del mundo.
 - **Filtros de ubicación y fecha:** "En mi ciudad" usa las coordenadas: respeta el municipio de los lugares conocidos del catálogo local y, para otros puntos, aproxima por el centro más cercano. No depende del texto de la dirección ni usa límites municipales reales. "Esta semana" muestra inicios desde el momento actual hasta antes de siete días después.
 - **QR:** los códigos QR son reales (librería ZXing), pero no se usa la cámara: el escaneo se simula escribiendo el código o eligiendo un evento confirmado.
 - **Imágenes de ejemplo:** los eventos de muestra usan fotos de picsum.photos. Las fotos que suben los usuarios sí van a la nube (ver «Fotos en la nube»).
@@ -60,9 +61,23 @@ Gradle genera `mapbox_access_token` como recurso con `resValues = true`. Cada in
 
 **Pasos 7, 9 y 10 implementados en código:** botón «Mi ubicación actual» en mapas interactivos, solicitud conjunta de permisos aproximado/preciso (cualquiera basta), comprobación al regresar a primer plano y alternativa manual con acceso a Ajustes si se deniega. Una petición centra la cámara en la primera posición recibida; en el selector también actualiza el punto elegido, sin seguimiento continuo. Si no llega posición en 15 segundos se muestra un aviso. En el emulador se configura la ubicación en Extended Controls → Location. El filtro «Cerca de mí» y las distancias siguen tomando la ubicación guardada del perfil, no el GPS. El mapa interactivo solicita prioridad de gestos sobre el scroll; el detalle permite desplazar la pantalla sin mover el mapa.
 
-**Pendiente:** geocodificación, búsqueda real de direcciones, personalización visual adicional y comprobación manual completa de permisos/GPS y retorno del selector en registro, perfil y eventos. No se necesita habilitar otro servicio ni añadir claves para estos cambios.
+### Dirección y ciudad del punto elegido (guía 16, actividad 1 adaptada)
 
-`MapBoxSmokeTest` contiene tres pruebas instrumentadas aisladas, sin escrituras en Firebase: carga real y selección de un evento local por ID, selección/reselección de coordenadas por toque y bloqueo de selección en modo de solo lectura. Las tres pasaron en Pixel_9a; requieren Internet y token válido. No verifican agrupación, GPS/permisos ni navegación completa. También pasaron 141 pruebas unitarias y `assembleDebug`. Con el conjunto actual de Kotlin/Compose y Mapbox se observan advertencias de destino de composables en anotaciones y efectos del mapa; la compilación y estas pruebas pasan, pero debe revisarse la compatibilidad antes de dar por cerrada la integración. No se volvió a ejecutar Lint: sus dos errores anteriores se mantienen aplazados.
+Mapbox sigue mostrando el mapa; `AndroidGeocodingRepository` usa **`android.location.Geocoder`**, con inyección en Hilt y el flujo pantalla → `PickLocationViewModel` → `ReverseGeocodeUseCase` → repositorio. No se activó facturación ni se añadieron claves/dependencias. Se eligió este proveedor en lugar de la API de Mapbox porque [guardar sus resultados requiere geocodificación permanente](https://docs.mapbox.com/api/search/geocoding/#storing-geocoding-results), con tarjeta registrada o contrato empresarial. Esta adaptación no reproduce literalmente el proveedor de la actividad del profesor.
+
+- Al elegir un punto, usar GPS o elegir una referencia local, se consulta su dirección y municipio/región. Arrastrar solo cambia la cámara. Una dirección existente se conserva al reabrir; «Consultar dirección» permite actualizarla voluntariamente.
+- La selección espera 350 ms antes de consultar; las respuestas de selecciones anteriores y las cancelaciones no sobrescriben la selección actual ni una dirección escrita manualmente. La consulta no cambia las coordenadas por las del edificio más cercano.
+- Se muestran carga, resultado aproximado, ausencia de dirección y error. Durante la consulta se puede usar «Editar dirección» o «Usar coordenadas». No se promete exactitud ni cobertura universal; revisar antes de confirmar.
+- «Editar dirección» permite escribir dirección y ciudad sin mover el punto, incluso sin servicio. No se elige automáticamente la ciudad más próxima del catálogo si el proveedor no devuelve municipio. Registro/perfil siguen requiriendo ciudad: si solo se confirman coordenadas sin ella, debe completarse desde el selector.
+- `PickedLocation` y el resultado JSON de navegación transportan también la ciudad. Se aceptan resultados antiguos y se limpia el resultado sin desconectar el `StateFlow`, permitiendo volver a elegir. Registro/perfil conservan la ciudad obtenida, incluso fuera del Eje Cafetero; los documentos existentes no se migran automáticamente.
+- Crear/editar eventos actualiza la dirección rellenada por el mapa al reseleccionar, pero conserva un punto de encuentro modificado a mano. El detalle muestra la dirección guardada, sin nuevas consultas ni cambios de esquema en Firestore.
+- La API asíncrona se usa desde Android 13; en Android 9–12 se usa la API anterior en IO. Se solicita un timeout de 10 s, aunque en esas versiones antiguas una llamada bloqueante del proveedor puede tardar más en retornar. Siempre queda disponible la alternativa manual. Ver [limitaciones oficiales de Geocoder](https://developer.android.com/reference/android/location/Geocoder): depende del servicio instalado y no garantiza disponibilidad, precisión ni idioma.
+
+**Pendiente:** búsqueda real de direcciones, personalización visual adicional y comprobación manual completa de permisos/GPS y retorno del selector en registro, perfil y eventos en el teléfono. El filtro «En mi ciudad» continúa usando la aproximación local descrita arriba, no la ciudad devuelta por geocodificación ni límites municipales.
+
+`MapBoxSmokeTest` contiene tres pruebas instrumentadas aisladas, sin escrituras en Firebase: carga real y selección de un evento local por ID, selección/reselección de coordenadas por toque y bloqueo de selección en modo de solo lectura. Se repitieron correctamente en Pixel_9a. `GeocodingSmokeTest` pasó otras cuatro: consulta real del servicio Android para un punto público, mapeo de dirección/municipio, confirmar una dirección encontrada en la UI y edición manual durante una consulta pendiente. Se revisó una captura del selector. No verifican agrupación, GPS/permisos ni navegación autenticada completa. Las advertencias de destino Compose de Mapbox y la deprecación de la regla Compose usada en instrumentación siguen pendientes.
+
+Última comprobación (10 de noviembre de 2026, tras corregir inscripción propia y mensajes de permiso de cámara): **165 pruebas unitarias aprobadas**, `assembleDebug` y `lintDebug` correctos. Lint reporta **0 errores, 59 advertencias y 1 sugerencia**, sin supresiones ni baseline. Los mensajes de cámara en crear evento y editar perfil usan `stringResource` (guía 14). Las cinco pruebas nuevas cubren bloqueo del organizador en asistencia/check-in, ausencia de puntos o cupos consumidos, UI state, cancelación de inscripción antigua y exclusión del check-in pendiente. No se repitieron pruebas instrumentadas ni el recorrido visual de estos últimos cambios: no había dispositivo conectado. No hubo escrituras ni despliegues de Firebase.
 
 ## Fotos en la nube
 
@@ -130,7 +145,7 @@ Las dependencias las crea Hilt: pantalla (`hiltViewModel()`) → ViewModel → c
 3. ~~Firebase Authentication con recuperación de contraseña y sesión recordada.~~
 4. ~~Eventos, comentarios, asistencias y notificaciones en Firestore, con reglas de seguridad y datos de ejemplo.~~
 5. ~~Fotos de eventos y de perfil con cámara o galería, subidas a Cloudinary.~~
-6. Mapa real con Mapbox y permiso de ubicación: Explorar, selector y detalle integrados; GPS opcional implementado, pendiente de comprobación completa en dispositivo. Direcciones/geocodificación siguen pendientes.
+6. Mapa real con Mapbox y permiso de ubicación: Explorar, selector y detalle integrados; GPS opcional y geocodificación inversa con Geocoder de Android. Pendientes búsqueda remota, mejoras visuales y validación completa en teléfono.
 7. Sugerencia de categoría con IA (OpenRouter), siempre con opción de cambiarla.
 8. APK release distribuido con Firebase App Distribution.
 9. Documentación de los servicios, bibliotecas y herramientas usadas.

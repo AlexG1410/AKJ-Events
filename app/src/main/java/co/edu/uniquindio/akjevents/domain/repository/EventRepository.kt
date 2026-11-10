@@ -7,10 +7,10 @@ import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.Interest
 import kotlinx.coroutines.flow.StateFlow
 
-enum class AttendanceResult { CONFIRMED, ALREADY_CONFIRMED, FULL, CLOSED, NOT_FOUND }
+enum class AttendanceResult { CONFIRMED, ALREADY_CONFIRMED, FULL, CLOSED, NOT_FOUND, OWN_EVENT }
 
 /** Resultado de guardar un check-in; los puntos los suma el caso de uso. */
-enum class CheckInRegistration { REGISTERED, ALREADY_CHECKED_IN, FULL, NOT_FOUND }
+enum class CheckInRegistration { REGISTERED, ALREADY_CHECKED_IN, FULL, NOT_FOUND, OWN_EVENT }
 
 /**
  * Fuente de los eventos y de la participación de los usuarios (asistencia, interés y comentarios).
@@ -65,13 +65,13 @@ interface EventRepository {
     /** Borra el evento con sus comentarios, asistencias e intereses. */
     suspend fun deleteEvent(eventId: String): Boolean
 
-    /** Suma un asistente si hay cupo y el usuario no había confirmado antes. */
+    /** Suma un asistente si hay cupo y el usuario no había confirmado antes; excluye al organizador. */
     suspend fun confirmAttendance(eventId: String, userId: String): AttendanceResult
 
     /** Devuelve false si el usuario no tenía asistencia confirmada o ya hizo check-in. */
     suspend fun cancelAttendance(eventId: String, userId: String): Boolean
 
-    /** Registra la asistencia presencial; quien llega sin haber confirmado ocupa un cupo, si queda alguno. */
+    /** Registra asistencia presencial de participantes, nunca del organizador; ocupa un cupo si hace falta. */
     suspend fun registerCheckIn(eventId: String, userId: String): CheckInRegistration
 
     /** Marca o desmarca "Me interesa". Devuelve el nuevo estado, o null si el evento no es público. */

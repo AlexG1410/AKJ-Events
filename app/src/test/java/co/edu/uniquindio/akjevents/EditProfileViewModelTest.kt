@@ -38,6 +38,15 @@ class EditProfileViewModelTest {
     }
 
     @Test
+    fun keepsGeocodedCityOutsideLocalCatalog() = runTest {
+        val picked = PickedLocation("Calle 10", Location(4.711, -74.0721), "Bogotá, D. C.")
+        viewModel.onLocationPicked(picked)
+        viewModel.save()
+        assertEquals(picked.city, repos.users.findById(DEMO_USER)!!.city)
+        assertEquals(picked.address, repos.users.findById(DEMO_USER)!!.address)
+    }
+
+    @Test
     fun aNewProfilePhotoIsUploadedAndSaved() = runTest {
         viewModel.onPhotoPicked("content://media/external/images/media/7")
 

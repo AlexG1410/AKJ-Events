@@ -99,12 +99,14 @@ class CreateEventViewModel(
         CreateEventUiState(isEditing = eventId != null, canSubmit = eventId == null)
     )
     val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
+    private var lastMapAddress: String? = null
 
     init {
         if (eventId != null) {
             viewModelScope.launch {
                 val event = runCatching { getEventById(eventId) }.getOrNull()
                 _uiState.value = editState(event)
+                lastMapAddress = event?.address
             }
         }
     }
@@ -144,9 +146,12 @@ class CreateEventViewModel(
 
     fun onPlaceChange(place: String) = _uiState.update { it.copy(place = place) }
 
-    /** Punto elegido en el mapa; si aún no hay lugar escrito, se usa la dirección del mapa. */
-    fun onLocationPicked(picked: PickedLocation) = _uiState.update {
-        it.copy(location = picked.location, place = it.place.ifBlank { picked.address })
+    /** Actualiza la dirección automática al reseleccionar, pero respeta un punto de encuentro escrito. */
+    fun onLocationPicked(picked: PickedLocation) {
+        _uiState.update {
+            it.copy(location = picked.location, place = if (it.place.isBlank() || it.place == lastMapAddress) picked.address else it.place)
+        }
+        lastMapAddress = picked.address
     }
 
     fun onLimitCapacityChange(limit: Boolean) = _uiState.update { it.copy(limitCapacity = limit) }

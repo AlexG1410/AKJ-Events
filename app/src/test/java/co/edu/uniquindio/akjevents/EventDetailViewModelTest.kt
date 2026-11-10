@@ -28,6 +28,45 @@ class EventDetailViewModelTest {
     }
 
     @Test
+    fun organizerCannotRegisterButCanStillShowInterest() = runTest {
+        val event = repository.findPublicEvent("ciclopaseo")!!
+        val owner = TestRepositories(event.organizerId)
+        val vm = detail(event.id, owner)
+        assertTrue(vm.uiState.value.isOwner)
+        assertTrue(vm.uiState.value.canParticipate)
+        assertFalse(vm.uiState.value.canConfirmAttendance)
+        assertFalse(vm.uiState.value.showAttendanceActions)
+        val before = owner.events.attendances.value
+        vm.toggleAttendance()
+        assertEquals(before, owner.events.attendances.value)
+        assertEquals(TestResourceProvider.getString(R.string.detail_attendance_own_event), vm.uiState.value.userMessage)
+        vm.toggleInterest()
+        assertTrue(vm.uiState.value.isInterested)
+    }
+
+    @Test
+    fun organizerCanCancelLegacyRegistrationButCannotRegisterAgain() = runTest {
+        // La feria ya tiene una asistencia de DEMO_USER. Simula un registro anterior al bloqueo.
+        val event = repository.findPublicEvent("feria-cultural")!!
+        val legacy = TestRepositories(initialEvents = repository.events.value.map {
+            if (it.id == event.id) it.copy(organizerId = DEMO_USER) else it
+        })
+        val vm = detail(event.id, legacy)
+        val count = legacy.events.findEvent(event.id)!!.attendanceCount
+        assertTrue(vm.uiState.value.isOwner)
+        assertTrue(vm.uiState.value.isAttending)
+        assertTrue(vm.uiState.value.showAttendanceActions)
+        assertFalse(vm.uiState.value.canConfirmAttendance)
+        vm.toggleAttendance()
+        assertFalse(vm.uiState.value.isAttending)
+        assertFalse(vm.uiState.value.showAttendanceActions)
+        assertEquals(count - 1, legacy.events.findEvent(event.id)!!.attendanceCount)
+        vm.toggleAttendance()
+        assertFalse(vm.uiState.value.isAttending)
+        assertEquals(count - 1, legacy.events.findEvent(event.id)!!.attendanceCount)
+    }
+
+    @Test
     fun loadsVerifiedEventWithItsOrganizer() = runTest {
         val state = detail("ciclopaseo").uiState.value
 

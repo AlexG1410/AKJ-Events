@@ -32,7 +32,7 @@ sealed interface MainRoutes {
 
     /** Elegir un punto en el mapa; devuelve el resultado a la pantalla anterior. */
     @Serializable
-    data class PickLocation(val latitude: Double, val longitude: Double, val address: String = "") : MainRoutes
+    data class PickLocation(val latitude: Double, val longitude: Double, val address: String = "", val city: String = "") : MainRoutes
 
     @Serializable
     data object Map : MainRoutes

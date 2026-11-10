@@ -89,7 +89,7 @@ class EditProfileViewModel @Inject constructor(
     }
 
     fun onLocationPicked(picked: PickedLocation) = _uiState.update {
-        it.copy(location = picked.location, address = picked.address, city = SamplePlaces.nearestCity(picked.location).name)
+        it.copy(location = picked.location, address = picked.address, city = picked.city ?: SamplePlaces.nearestCity(picked.location).name)
     }
 
     /** Foto tomada con la cámara o elegida de la galería (guía 15). */

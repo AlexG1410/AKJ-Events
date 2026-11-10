@@ -28,6 +28,7 @@ class CheckInUseCase @Inject constructor(
         val event = eventRepository.findPublicEventByCheckInCode(code.trim().uppercase()) ?: return CheckInResult.InvalidCode
         if (event.organizerId == userId) return CheckInResult.OwnEvent(event)
         return when (eventRepository.registerCheckIn(event.id, userId)) {
+            CheckInRegistration.OWN_EVENT -> CheckInResult.OwnEvent(event)
             CheckInRegistration.ALREADY_CHECKED_IN -> CheckInResult.AlreadyCheckedIn(event)
             CheckInRegistration.FULL -> CheckInResult.Full(event)
             CheckInRegistration.NOT_FOUND -> CheckInResult.InvalidCode

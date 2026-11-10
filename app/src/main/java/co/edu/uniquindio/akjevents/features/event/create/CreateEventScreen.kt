@@ -92,7 +92,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -196,13 +195,13 @@ fun CreateEventScreen(
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var showHelp by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    val cameraPermissionMessage = stringResource(R.string.camera_permission_required)
     val scope = rememberCoroutineScope()
     // Cámara o galería (guía 15); si se niega el permiso de cámara, la galería sigue disponible
     val imagePicker = rememberImagePicker(
         onImagePicked = { viewModel.addImage(it.toString()) },
         onCameraDenied = {
-            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.camera_permission_required)) }
+            scope.launch { snackbarHostState.showSnackbar(cameraPermissionMessage) }
         }
     )
 

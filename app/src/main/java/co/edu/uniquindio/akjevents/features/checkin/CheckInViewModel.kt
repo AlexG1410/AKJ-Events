@@ -96,7 +96,7 @@ class CheckInViewModel(
             combine(observeCurrentUser(), observePublicEvents(), observeAttendances(), ::Triple).collect { (user, events, attendances) ->
                 val pendingIds = attendances.filter { it.userId == user?.id && !it.checkedIn }.map { it.eventId }.toSet()
                 _uiState.update { state ->
-                    state.copy(user = user, pendingEvents = events.filter { it.id in pendingIds }.sortedBy { it.startsAt })
+                    state.copy(user = user, pendingEvents = events.filter { it.id in pendingIds && it.organizerId != user?.id }.sortedBy { it.startsAt })
                 }
             }
         }

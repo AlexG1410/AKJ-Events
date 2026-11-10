@@ -17,6 +17,7 @@ import androidx.navigation.toRoute
 import co.edu.uniquindio.akjevents.core.component.AppBottomBar
 import co.edu.uniquindio.akjevents.core.component.BottomDestination
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
+import co.edu.uniquindio.akjevents.core.util.PickedLocationCodec
 import co.edu.uniquindio.akjevents.domain.model.Location
 import co.edu.uniquindio.akjevents.features.auth.login.LoginScreen
 import co.edu.uniquindio.akjevents.features.auth.recover.RecoverPasswordScreen
@@ -144,7 +145,7 @@ fun AppNavigation(session: SessionViewModel = hiltViewModel()) {
                 },
                 onPickLocation = { current -> navController.fromTop(entry) { navigate(pickLocationRoute(current, defaultCenter)) } },
                 pickedLocation = picked?.let(::decodePickedLocation),
-                onPickedLocationConsumed = { entry.savedStateHandle.remove<String>(PICKED_LOCATION_KEY) },
+                onPickedLocationConsumed = { entry.savedStateHandle.set<String?>(PICKED_LOCATION_KEY, null) },
                 bottomBar = { bottomBar(BottomDestination.CREATE) }
             )
         }
@@ -155,14 +156,14 @@ fun AppNavigation(session: SessionViewModel = hiltViewModel()) {
                 onEventSubmitted = { navController.fromTop(entry) { popBackStack() } },
                 onPickLocation = { current -> navController.fromTop(entry) { navigate(pickLocationRoute(current, defaultCenter)) } },
                 pickedLocation = picked?.let(::decodePickedLocation),
-                onPickedLocationConsumed = { entry.savedStateHandle.remove<String>(PICKED_LOCATION_KEY) },
+                onPickedLocationConsumed = { entry.savedStateHandle.set<String?>(PICKED_LOCATION_KEY, null) },
                 bottomBar = { bottomBar(null) }
             )
         }
         composable<MainRoutes.PickLocation> { entry ->
             val route = entry.toRoute<MainRoutes.PickLocation>()
             PickLocationScreen(
-                initial = PickedLocation(route.address, Location(route.latitude, route.longitude)),
+                initial = PickedLocation(route.address, Location(route.latitude, route.longitude), route.city),
                 onBack = { navController.fromTop(entry) { popBackStack() } },
                 onConfirm = { picked ->
                     navController.fromTop(entry) {
@@ -216,7 +217,7 @@ fun AppNavigation(session: SessionViewModel = hiltViewModel()) {
                 onSaved = { navController.fromTop(entry) { popBackStack() } },
                 onPickLocation = { current -> navController.fromTop(entry) { navigate(pickLocationRoute(current, defaultCenter)) } },
                 pickedLocation = picked?.let(::decodePickedLocation),
-                onPickedLocationConsumed = { entry.savedStateHandle.remove<String>(PICKED_LOCATION_KEY) },
+                onPickedLocationConsumed = { entry.savedStateHandle.set<String?>(PICKED_LOCATION_KEY, null) },
                 onAccountDeleted = { navController.backToLogin() }
             )
         }
@@ -294,16 +295,9 @@ private fun NavHostController.backToLogin() {
 
 private fun pickLocationRoute(current: PickedLocation?, defaultCenter: Location): MainRoutes.PickLocation {
     val location = current?.location ?: defaultCenter
-    return MainRoutes.PickLocation(location.latitude, location.longitude, current?.address.orEmpty())
+    return MainRoutes.PickLocation(location.latitude, location.longitude, current?.address.orEmpty(), current?.city.orEmpty())
 }
 
-// El SavedStateHandle guarda tipos simples: el punto viaja como "latitud|longitud|dirección"
-private fun encodePickedLocation(picked: PickedLocation): String =
-    "${picked.location.latitude}|${picked.location.longitude}|${picked.address}"
+private fun encodePickedLocation(picked: PickedLocation): String = PickedLocationCodec.encode(picked)
 
-private fun decodePickedLocation(encoded: String): PickedLocation? {
-    val parts = encoded.split("|", limit = 3)
-    val latitude = parts.getOrNull(0)?.toDoubleOrNull() ?: return null
-    val longitude = parts.getOrNull(1)?.toDoubleOrNull() ?: return null
-    return PickedLocation(parts.getOrNull(2).orEmpty(), Location(latitude, longitude))
-}
+private fun decodePickedLocation(encoded: String): PickedLocation? = PickedLocationCodec.decode(encoded)

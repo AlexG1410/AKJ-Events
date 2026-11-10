@@ -115,11 +115,11 @@ class RegisterViewModel @Inject constructor(
     fun locationForPicker(): PickedLocation {
         val state = _uiState.value
         val center = state.location ?: SamplePlaces.cityNamed(state.city)?.location ?: SamplePlaces.cities.first().location
-        return PickedLocation(state.address, center)
+        return PickedLocation(state.address, center, state.city)
     }
 
     fun onLocationPicked(picked: PickedLocation) = _uiState.update {
-        it.copy(address = picked.address, location = picked.location, city = SamplePlaces.cityForLocation(picked.location).name)
+        it.copy(address = picked.address, location = picked.location, city = picked.city ?: SamplePlaces.cityForLocation(picked.location).name)
     }
 
     fun onPasswordChange(password: String) = _uiState.update { it.copy(password = password) }

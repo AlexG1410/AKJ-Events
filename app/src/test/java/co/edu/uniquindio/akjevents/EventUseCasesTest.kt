@@ -31,6 +31,31 @@ class EventUseCasesTest {
         repository.attendances.value.any { it.eventId == eventId && it.userId == userId }
 
     @Test
+    fun organizerCannotConfirmOwnEventOrConsumeCapacity() = runTest {
+        val event = repository.findPublicEvent("ciclopaseo")!!
+        val before = repository.attendances.value
+        assertEquals(AttendanceResult.OWN_EVENT, uc.confirmAttendance(event.id, event.organizerId))
+        assertEquals(AttendanceResult.OWN_EVENT, repository.confirmAttendance(event.id, event.organizerId))
+        assertEquals(event.attendanceCount, attendance(event.id))
+        assertEquals(before, repository.attendances.value)
+    }
+
+    @Test
+    fun organizerCannotCheckInDirectlyOrEarnParticipantRewards() = runTest {
+        val event = repository.findPublicEvent("ciclopaseo")!!
+        val points = repos.pointsOf(event.organizerId)
+        val before = repository.attendances.value
+        assertTrue(uc.checkIn(event.checkInCode, event.organizerId) is CheckInResult.OwnEvent)
+        assertEquals(
+            co.edu.uniquindio.akjevents.domain.repository.CheckInRegistration.OWN_EVENT,
+            repository.registerCheckIn(event.id, event.organizerId)
+        )
+        assertEquals(points, repos.pointsOf(event.organizerId))
+        assertEquals(before, repository.attendances.value)
+        assertEquals(event.attendanceCount, attendance(event.id))
+    }
+
+    @Test
     fun onlyVerifiedEventsArePublic() = runTest {
         val events = repository.publicEvents.value
 

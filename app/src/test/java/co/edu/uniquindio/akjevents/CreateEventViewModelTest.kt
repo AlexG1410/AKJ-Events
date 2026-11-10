@@ -217,6 +217,18 @@ class CreateEventViewModelTest {
     }
 
     @Test
+    fun reselectionReplacesAutomaticAddressButNotHandwrittenMeetingPlace() = runTest {
+        viewModel.onLocationPicked(parqueDeLaVida)
+        val next = PickedLocation("Calle 10", Location(4.711, -74.0721), "Bogotá, D. C.")
+        viewModel.onLocationPicked(next)
+        assertEquals(next.address, viewModel.uiState.value.place)
+        viewModel.onPlaceChange("Entrada junto a la tienda")
+        viewModel.onLocationPicked(parqueDeLaVida)
+        assertEquals("Entrada junto a la tienda", viewModel.uiState.value.place)
+        assertEquals(parqueDeLaVida.location, viewModel.uiState.value.location)
+    }
+
+    @Test
     fun pickedLocationFillsAnEmptyPlace() = runTest {
         viewModel.onLocationPicked(parqueDeLaVida)
 

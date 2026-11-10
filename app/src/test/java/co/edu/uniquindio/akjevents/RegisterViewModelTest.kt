@@ -100,17 +100,33 @@ class RegisterViewModelTest {
     fun mapSelectionUpdatesCityAndCanBeChangedWithoutLosingOtherFields() = runTest {
         fillForm("Comunidad1")
         viewModel.onCityChange("Armenia, Quindío")
-        assertEquals(picked, viewModel.locationForPicker())
+        assertEquals(picked.copy(city = "Armenia, Quindío"), viewModel.locationForPicker())
         val other = PickedLocation("Parque Bolívar de Calarcá", Location(4.5296, -75.6431))
 
         viewModel.onLocationPicked(other)
 
         assertEquals("Calarcá, Quindío", viewModel.uiState.value.city)
-        assertEquals(other, viewModel.locationForPicker())
+        assertEquals(other.copy(city = "Calarcá, Quindío"), viewModel.locationForPicker())
         assertEquals("Ana Gómez", viewModel.uiState.value.fullName)
         assertEquals("Comunidad1", viewModel.uiState.value.password)
         assertTrue(viewModel.uiState.value.isFormValid)
         viewModel.register()
         assertEquals(other.location, users.currentUser.value!!.location)
+    }
+
+    @Test fun realCityOutsideLocalCatalogIsKeptWhenRegistering() = runTest {
+        fillForm("Comunidad1")
+        val real = PickedLocation("Calle 10", Location(4.711, -74.0721), "Bogotá, D. C.")
+        viewModel.onLocationPicked(real)
+        assertEquals(real, viewModel.locationForPicker())
+        viewModel.register()
+        assertEquals(real.city, users.currentUser.value!!.city)
+    }
+
+    @Test fun unresolvedCityIsNotReplacedWithAnInventedLocalCity() = runTest {
+        fillForm("Comunidad1")
+        viewModel.onLocationPicked(PickedLocation("Punto", Location(37.422, -122.084), ""))
+        assertEquals("", viewModel.uiState.value.city)
+        assertFalse(viewModel.uiState.value.isFormValid)
     }
 }

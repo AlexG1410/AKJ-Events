@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -28,7 +30,9 @@ import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material.icons.outlined.PanTool
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -44,6 +48,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -52,6 +57,8 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -77,6 +84,7 @@ import co.edu.uniquindio.akjevents.core.theme.WarmBackground
 import co.edu.uniquindio.akjevents.core.theme.WarmText
 import co.edu.uniquindio.akjevents.core.util.PickedLocation
 import co.edu.uniquindio.akjevents.domain.model.Location
+import co.edu.uniquindio.akjevents.data.demo.Place
 import java.util.Locale
 import kotlinx.coroutines.launch
 
@@ -103,11 +111,17 @@ fun PickLocationScreen(
     viewModel: PickLocationViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    var cameraCenter by remember { mutableStateOf(initial.location) }
+    var cameraCenter by remember(initial.location) { mutableStateOf(state.selected) }
     var centerRequest by remember { mutableIntStateOf(0) }
+    var showAddressEditor by rememberSaveable { mutableStateOf(false) }
     fun select(location: Location) {
         viewModel.onCenterChange(location)
         cameraCenter = location
+        centerRequest++
+    }
+    fun selectPlace(place: Place) {
+        viewModel.onPlaceSelected(place)
+        cameraCenter = place.location
         centerRequest++
     }
     val clipboard = LocalClipboard.current
@@ -132,7 +146,7 @@ fun PickLocationScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Tag(
-                    text = state.city.substringBefore(","),
+                    text = state.city.substringBefore(",").ifBlank { stringResource(R.string.pick_city_unknown) },
                     icon = Icons.Outlined.LocationCity,
                     container = SecondaryFixed,
                     content = OnSecondaryFixedVariant
@@ -148,7 +162,7 @@ fun PickLocationScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = {
                     focusManager.clearFocus()
-                    state.suggestions.firstOrNull()?.let { select(it.location) }
+                    state.suggestions.firstOrNull()?.let { selectPlace(it) }
                 }),
                 trailingContent = if (state.query.isNotEmpty()) {
                     {
@@ -165,7 +179,7 @@ fun PickLocationScreen(
                     Surface(
                         onClick = {
                             focusManager.clearFocus()
-                            select(place.location)
+                            selectPlace(place)
                         },
                         shape = CircleShape,
                         color = if (place.name == state.placeName) PrimaryFixed else SurfaceContainer
@@ -210,15 +224,31 @@ fun PickLocationScreen(
             val copiedMessage = stringResource(R.string.pick_coordinates_copied)
             SelectionCard(
                 state = state,
+                onRetry = viewModel::retryAddress,
+                onUseCoordinates = viewModel::useCoordinates,
+                onEditAddress = { showAddressEditor = true },
                 onCopy = {
                     scope.launch {
                         clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(coordinatesLabel, state.selected.coordinatesText())))
                         snackbarHostState.showSnackbar(copiedMessage)
                     }
                 },
-                onConfirm = { onConfirm(viewModel.result()) }
+                onConfirm = {
+                    if (state.addressLookup != AddressLookupState.LOADING) onConfirm(viewModel.result())
+                }
             )
         }
+    }
+    if (showAddressEditor) {
+        AddressEditor(
+            address = if (state.addressLookup in setOf(AddressLookupState.COORDINATES, AddressLookupState.ERROR, AddressLookupState.NOT_FOUND)) "" else state.address,
+            city = state.city,
+            onDismiss = { showAddressEditor = false },
+            onSave = { address, city ->
+                viewModel.onManualAddress(address, city)
+                showAddressEditor = false
+            }
+        )
     }
 }
 
@@ -226,7 +256,14 @@ private fun Location.coordinatesText() =
     "Lat: ${"%.4f".format(Locale.US, latitude)}, Lon: ${"%.4f".format(Locale.US, longitude)}"
 
 @Composable
-private fun SelectionCard(state: PickLocationUiState, onCopy: () -> Unit, onConfirm: () -> Unit) {
+private fun SelectionCard(
+    state: PickLocationUiState,
+    onCopy: () -> Unit,
+    onConfirm: () -> Unit,
+    onRetry: () -> Unit,
+    onUseCoordinates: () -> Unit,
+    onEditAddress: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -242,8 +279,8 @@ private fun SelectionCard(state: PickLocationUiState, onCopy: () -> Unit, onConf
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(stringResource(R.string.pick_selected_point), color = Terracotta, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-                Text(state.placeName ?: state.address, color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 2)
-                Text(state.city, color = MutedText, fontSize = 12.sp)
+                Text(state.address, color = WarmText, fontSize = 16.sp, fontWeight = FontWeight.SemiBold, maxLines = 2)
+                Text(state.city.ifBlank { stringResource(R.string.pick_city_unknown) }, color = MutedText, fontSize = 12.sp)
             }
         }
         Row(
@@ -258,22 +295,75 @@ private fun SelectionCard(state: PickLocationUiState, onCopy: () -> Unit, onConf
                 Icon(Icons.Outlined.ContentCopy, contentDescription = stringResource(R.string.pick_copy_coordinates), tint = Terracotta, modifier = Modifier.size(20.dp))
             }
         }
-        if (state.placeName != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth().background(SecondaryFixed.copy(alpha = 0.5f), RoundedCornerShape(12.dp)).padding(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(Icons.Outlined.VerifiedUser, contentDescription = null, tint = OnSecondaryFixedVariant, modifier = Modifier.size(18.dp))
-                Text(stringResource(R.string.pick_public_place), color = OnSecondaryFixedVariant, fontSize = 12.sp)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (state.addressLookup == AddressLookupState.LOADING) {
+                CircularProgressIndicator(Modifier.size(16.dp), color = Terracotta, strokeWidth = 2.dp)
+            }
+            Text(
+                stringResource(when (state.addressLookup) {
+                    AddressLookupState.LOADING -> R.string.pick_address_loading
+                    AddressLookupState.FOUND -> R.string.pick_address_found
+                    AddressLookupState.NOT_FOUND -> R.string.pick_address_not_found
+                    AddressLookupState.ERROR -> R.string.pick_address_error
+                    AddressLookupState.MANUAL -> R.string.pick_address_manual
+                    AddressLookupState.COORDINATES -> R.string.pick_address_coordinates_only
+                    AddressLookupState.SAVED -> R.string.pick_address_saved
+                }),
+                color = MutedText, fontSize = 11.sp, modifier = Modifier.weight(1f)
+            )
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            TextButton(onClick = onEditAddress) { Text(stringResource(R.string.pick_edit_address), color = Terracotta) }
+            if (state.addressLookup == AddressLookupState.LOADING) {
+                TextButton(onClick = onUseCoordinates) { Text(stringResource(R.string.pick_use_coordinates), color = Terracotta) }
+            } else {
+                TextButton(onClick = onRetry) { Text(stringResource(R.string.pick_lookup_address), color = Terracotta) }
             }
         }
-        Text(stringResource(R.string.pick_local_address_note), color = MutedText, fontSize = 11.sp)
         PrimaryButton(
             text = stringResource(R.string.pick_confirm),
             onClick = onConfirm,
+            enabled = state.addressLookup != AddressLookupState.LOADING,
             leadingIcon = Icons.Outlined.CheckCircle,
             containerColor = Terracotta
         )
     }
+}
+
+@Composable
+private fun AddressEditor(address: String, city: String, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+    var editedAddress by rememberSaveable { mutableStateOf(address) }
+    var editedCity by rememberSaveable { mutableStateOf(city) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.pick_edit_address)) },
+        text = {
+            Column(
+                modifier = Modifier.imePadding().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(stringResource(R.string.pick_manual_address_help))
+                val addressLabel = stringResource(R.string.pick_address_label)
+                Text(addressLabel, color = WarmText, fontWeight = FontWeight.SemiBold)
+                FormTextField(
+                    value = editedAddress, onValueChange = { editedAddress = it },
+                    placeholder = addressLabel, leadingIcon = Icons.Outlined.LocationOn,
+                    modifier = Modifier.semantics { contentDescription = addressLabel }
+                )
+                val cityLabel = stringResource(R.string.pick_city_label)
+                Text(cityLabel, color = WarmText, fontWeight = FontWeight.SemiBold)
+                FormTextField(
+                    value = editedCity, onValueChange = { editedCity = it },
+                    placeholder = cityLabel, leadingIcon = Icons.Outlined.LocationCity,
+                    modifier = Modifier.semantics { contentDescription = cityLabel }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(editedAddress, editedCity) }, enabled = editedAddress.isNotBlank() && editedCity.isNotBlank()) {
+                Text(stringResource(R.string.pick_save_address))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.pick_cancel_address)) } }
+    )
 }

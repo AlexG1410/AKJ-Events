@@ -19,8 +19,17 @@ class CheckInViewModelTest {
 
     private val repos = TestRepositories()
 
-    private fun checkInViewModel(eventId: String?, showMyQr: Boolean) = repos.useCases.let {
+    private fun checkInViewModel(eventId: String?, showMyQr: Boolean, source: TestRepositories = repos) = source.useCases.let {
         CheckInViewModel(eventId, showMyQr, it.observeCurrentUser, it.observePublicEvents, it.observeAttendances, it.getPublicEventById, it.getUserById, it.checkIn, TestResourceProvider)
+    }
+
+    @Test
+    fun ownEventWithLegacyAttendanceIsNotOfferedForCheckIn() = runTest {
+        val event = repos.events.findPublicEvent("feria-cultural")!!
+        val legacy = TestRepositories(initialEvents = repos.events.events.value.map {
+            if (it.id == event.id) it.copy(organizerId = DEMO_USER) else it
+        })
+        assertTrue(checkInViewModel(null, false, legacy).uiState.value.pendingEvents.isEmpty())
     }
 
     @Test
