@@ -37,12 +37,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -59,14 +60,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.R
-import co.edu.uniquindio.akjevents.core.component.CenterPin
+import co.edu.uniquindio.akjevents.core.component.MapBox
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
 import co.edu.uniquindio.akjevents.core.component.PrimaryButton
 import co.edu.uniquindio.akjevents.core.component.ScreenHeader
-import co.edu.uniquindio.akjevents.core.component.SimulatedMap
 import co.edu.uniquindio.akjevents.core.component.Tag
-import co.edu.uniquindio.akjevents.core.component.rememberSimulatedMapState
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.OnSecondaryFixedVariant
 import co.edu.uniquindio.akjevents.core.theme.PrimaryFixed
@@ -95,7 +94,7 @@ private val SearchStyle = FormFieldStyle(
     textStartPadding = 48.dp
 )
 
-/** Mockup 09: el usuario mueve el mapa y el pin central marca el punto elegido. */
+/** Mockup 09 adaptado al toque para seleccionar de la guía 16; arrastrar solo mueve la cámara. */
 @Composable
 fun PickLocationScreen(
     initial: PickedLocation,
@@ -104,16 +103,17 @@ fun PickLocationScreen(
     viewModel: PickLocationViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
-    val mapState = rememberSimulatedMapState(center = initial.location, latSpan = 0.03)
+    var cameraCenter by remember { mutableStateOf(initial.location) }
+    var centerRequest by remember { mutableIntStateOf(0) }
+    fun select(location: Location) {
+        viewModel.onCenterChange(location)
+        cameraCenter = location
+        centerRequest++
+    }
     val clipboard = LocalClipboard.current
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
-    // El punto elegido sigue al centro del mapa
-    LaunchedEffect(mapState) {
-        snapshotFlow { mapState.center }.collect(viewModel::onCenterChange)
-    }
 
     Scaffold(
         containerColor = WarmBackground,
@@ -148,7 +148,7 @@ fun PickLocationScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = {
                     focusManager.clearFocus()
-                    state.suggestions.firstOrNull()?.let { mapState.moveTo(it.location) }
+                    state.suggestions.firstOrNull()?.let { select(it.location) }
                 }),
                 trailingContent = if (state.query.isNotEmpty()) {
                     {
@@ -165,7 +165,7 @@ fun PickLocationScreen(
                     Surface(
                         onClick = {
                             focusManager.clearFocus()
-                            mapState.moveTo(place.location)
+                            select(place.location)
                         },
                         shape = CircleShape,
                         color = if (place.name == state.placeName) PrimaryFixed else SurfaceContainer
@@ -182,16 +182,19 @@ fun PickLocationScreen(
                 }
             }
 
-            SimulatedMap(
-                state = mapState,
-                onTap = { mapState.moveTo(it) },
+            MapBox(
+                center = cameraCenter,
+                centerRequest = centerRequest,
+                zoom = 16.0,
+                selectedPoint = state.selected,
+                onPointClick = viewModel::onCenterChange,
+                onUserLocation = { select(it) },
                 modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp)
             ) {
-                CenterPin(label = "Ubicación seleccionada")
                 Row(
                     modifier = Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(12.dp)
+                        .padding(bottom = 36.dp)
                         .shadow(2.dp, CircleShape)
                         .background(Color.White, CircleShape)
                         .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -265,6 +268,7 @@ private fun SelectionCard(state: PickLocationUiState, onCopy: () -> Unit, onConf
                 Text(stringResource(R.string.pick_public_place), color = OnSecondaryFixedVariant, fontSize = 12.sp)
             }
         }
+        Text(stringResource(R.string.pick_local_address_note), color = MutedText, fontSize = 11.sp)
         PrimaryButton(
             text = stringResource(R.string.pick_confirm),
             onClick = onConfirm,

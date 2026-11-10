@@ -8,7 +8,11 @@ plugins {
     alias(libs.plugins.devtools.ksp)
     alias(libs.plugins.google.gms.google.services)
 }
-
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
 android {
     namespace = "co.edu.uniquindio.akjevents"
     compileSdk {
@@ -34,12 +38,13 @@ android {
 
         // Cloudinary (imágenes en la nube): el nombre de la nube y el preset sin firma van en local.properties,
         // que no se sube al repositorio (cloudinary.cloudName y cloudinary.uploadPreset)
-        val localProperties = Properties().apply {
-            val file = rootProject.file("local.properties")
-            if (file.exists()) file.inputStream().use(::load)
-        }
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${localProperties.getProperty("cloudinary.cloudName", "")}\"")
         buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"${localProperties.getProperty("cloudinary.uploadPreset", "")}\"")
+        resValue("string", "mapbox_access_token", localProperties.getProperty("MAPBOX_ACCESS_TOKEN", ""))
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+
     }
 
     buildTypes {
@@ -56,6 +61,7 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        resValues = true
     }
 }
 
@@ -98,4 +104,6 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.mapbox.android)
+    implementation(libs.mapbox.compose)
 }

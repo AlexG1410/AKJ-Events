@@ -172,7 +172,11 @@ class CreateEventViewModel(
         val state = _uiState.value
         if (state.isBusy) return
         val organizer = observeCurrentUser().value
-        if (organizer == null || !state.canSubmit) {
+        if (organizer == null) {
+            _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(R.string.create_error_session_unavailable))) }
+            return
+        }
+        if (!state.canSubmit) {
             _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(R.string.create_error_not_allowed))) }
             return
         }

@@ -29,7 +29,7 @@ data class PickLocationUiState(
 )
 
 /**
- * Elige un punto moviendo el mapa simulado: el punto seleccionado es el centro del mapa.
+ * Conserva el punto elegido por toque, lugar de referencia o ubicación del dispositivo.
  * La búsqueda usa lugares de referencia locales en lugar de un servicio de geocodificación.
  */
 @HiltViewModel
@@ -60,7 +60,7 @@ class PickLocationViewModel(
         )
     }
 
-    /** El mapa se movió: el nuevo centro es el punto elegido. */
+    /** El usuario eligió otro punto; mover solamente la cámara no cambia esta selección. */
     fun onCenterChange(location: Location) = _uiState.update { it.copy(selected = location).resolved() }
 
     fun result(): PickedLocation = _uiState.value.let { PickedLocation(it.address, it.selected) }

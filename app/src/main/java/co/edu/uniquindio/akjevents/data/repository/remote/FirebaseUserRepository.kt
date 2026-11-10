@@ -1,5 +1,6 @@
 package co.edu.uniquindio.akjevents.data.repository.remote
 
+import android.util.Log
 import co.edu.uniquindio.akjevents.data.demo.SamplePlaces
 import co.edu.uniquindio.akjevents.data.remote.user.PointsEntryDto
 import co.edu.uniquindio.akjevents.data.remote.user.UserDto
@@ -231,7 +232,13 @@ class FirebaseUserRepository @Inject constructor(
     }
 
     private fun profileUpdates(uid: String): Flow<User?> = callbackFlow {
-        val registration = usersCollection.document(uid).addSnapshotListener { snapshot, _ ->
+        val registration = usersCollection.document(uid).addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                // No registrar el UID, correo, contenido del perfil ni el mensaje completo del servicio.
+                Log.w("AKJUserProfile", "Profile listener failed: ${error.code}")
+            } else if (snapshot != null && !snapshot.exists()) {
+                Log.w("AKJUserProfile", "Authenticated account has no profile document")
+            }
             trySend(snapshot?.toUser())
         }
         awaitClose { registration.remove() }

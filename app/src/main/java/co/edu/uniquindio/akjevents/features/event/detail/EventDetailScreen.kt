@@ -85,12 +85,10 @@ import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
-import co.edu.uniquindio.akjevents.core.component.MapMarker
+import co.edu.uniquindio.akjevents.core.component.MapBox
 import co.edu.uniquindio.akjevents.core.component.MessageEffect
-import co.edu.uniquindio.akjevents.core.component.SimulatedMap
 import co.edu.uniquindio.akjevents.core.component.StatusBadge
 import co.edu.uniquindio.akjevents.core.component.UserAvatar
-import co.edu.uniquindio.akjevents.core.component.rememberSimulatedMapState
 import co.edu.uniquindio.akjevents.core.component.style
 import co.edu.uniquindio.akjevents.core.theme.ErrorColor
 import co.edu.uniquindio.akjevents.core.theme.MutedText
@@ -637,7 +635,6 @@ private fun CheckInCard(isCheckedIn: Boolean, onOpenCheckIn: () -> Unit) {
 
 @Composable
 private fun LocationSection(event: CommunityEvent, distanceKm: Double?, onDirections: () -> Unit) {
-    val mapState = rememberSimulatedMapState(center = event.location, latSpan = 0.02)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(stringResource(R.string.detail_exact_location), color = WarmText, fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
         Column(
@@ -648,10 +645,10 @@ private fun LocationSection(event: CommunityEvent, distanceKm: Double?, onDirect
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            SimulatedMap(
-                state = mapState,
-                markers = listOf(MapMarker(event.id, event.location, stringResource(event.category.labelRes), event.category.style.icon, Terracotta)),
-                selectedMarkerId = event.id,
+            MapBox(
+                center = event.location,
+                zoom = 15.5,
+                events = listOf(event),
                 interactive = false,
                 modifier = Modifier.fillMaxWidth().height(160.dp)
             )

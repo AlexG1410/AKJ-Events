@@ -68,6 +68,25 @@ class CreateEventViewModelTest {
     }
 
     @Test
+    fun missingSessionDoesNotUploadOrSaveAndCanRetryAfterLogin() = runTest {
+        fillValidForm()
+        repos.users.logout()
+
+        viewModel.submit()
+
+        assertEquals(TestResourceProvider.getString(R.string.create_error_session_unavailable), errorMessage())
+        assertTrue(repos.useCases.images.uploaded.isEmpty())
+        assertTrue(repository.findEventsByOrganizer(currentUserId).isEmpty())
+        assertEquals("Taller de huertos urbanos", viewModel.uiState.value.title)
+
+        repos.users.login("ana@ejemplo.com", "Comunidad1")
+        viewModel.submit()
+
+        assertTrue(viewModel.uiState.value.result is RequestResult.Success)
+        assertEquals(1, repository.findEventsByOrganizer(currentUserId).size)
+    }
+
+    @Test
     fun unlimitedCapacityIsSavedAsNull() = runTest {
         fillValidForm()
         viewModel.onCapacityChange("0")

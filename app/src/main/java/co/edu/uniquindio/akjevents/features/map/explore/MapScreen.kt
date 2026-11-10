@@ -45,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -73,10 +74,8 @@ import co.edu.uniquindio.akjevents.core.component.FilterPill
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
 import co.edu.uniquindio.akjevents.core.component.MainTopBar
-import co.edu.uniquindio.akjevents.core.component.MapMarker
-import co.edu.uniquindio.akjevents.core.component.SimulatedMap
+import co.edu.uniquindio.akjevents.core.component.MapBox
 import co.edu.uniquindio.akjevents.core.component.VerifiedBadge
-import co.edu.uniquindio.akjevents.core.component.rememberSimulatedMapState
 import co.edu.uniquindio.akjevents.core.component.style
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.OnSecondaryContainer
@@ -122,12 +121,13 @@ fun MapScreen(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     val userLocation = state.user?.location ?: Location(4.5339, -75.6811)
-    val mapState = rememberSimulatedMapState(center = userLocation, latSpan = 0.03)
+    var cameraCenter by remember(userLocation) { mutableStateOf(userLocation) }
+    var centerRequest by remember { mutableIntStateOf(0) }
     var showCategories by remember { mutableStateOf(false) }
 
     // Al elegir otro evento, el mapa lo centra
-    LaunchedEffect(state.selectedEventId) {
-        state.selectedEvent?.let { mapState.moveTo(it.location) }
+    LaunchedEffect(state.selectedEvent?.id, state.selectedEvent?.location) {
+        state.selectedEvent?.let { cameraCenter = it.location }
     }
 
     Scaffold(
@@ -165,7 +165,8 @@ fun MapScreen(
                         isSelected = state.nearbyOnly,
                         onClick = {
                             viewModel.toggleNearby()
-                            mapState.moveTo(userLocation)
+                            cameraCenter = userLocation
+                            centerRequest++
                         }
                     )
                 }
@@ -205,16 +206,13 @@ fun MapScreen(
                 }
             }
 
-            SimulatedMap(
-                state = mapState,
-                markers = state.events.map { event ->
-                    val style = event.category.style
-                    MapMarker(event.id, event.location, event.title.shortLabel(), style.icon, style.containerColor, style.contentColor)
-                },
-                selectedMarkerId = state.selectedEventId,
+            MapBox(
+                center = cameraCenter,
+                centerRequest = centerRequest,
+                events = state.events,
                 onMarkerClick = viewModel::selectEvent,
-                userLocation = userLocation,
-                modifier = Modifier.fillMaxWidth().height(380.dp).padding(horizontal = 16.dp)
+                onMapClick = { viewModel.selectEvent(null) },
+                modifier = Modifier.fillMaxWidth().height(380.dp).padding(horizontal = 16.dp).clip(RoundedCornerShape(16.dp))
             ) {
                 Surface(
                     onClick = onOpenList,
@@ -249,19 +247,13 @@ fun MapScreen(
             } else {
                 EmptyState(
                     icon = Icons.Outlined.SearchOff,
-                    title = stringResource(R.string.map_empty_title),
-                    message = stringResource(R.string.map_empty_message),
+                    title = stringResource(if (state.events.isEmpty()) R.string.map_empty_title else R.string.map_select_marker_title),
+                    message = stringResource(if (state.events.isEmpty()) R.string.map_empty_message else R.string.map_select_marker_message),
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
             }
         }
     }
-}
-
-/** Las primeras palabras del título, para que el marcador no tape el mapa. */
-private fun String.shortLabel(): String {
-    val words = split(" ")
-    return if (words.size <= 2) this else words.take(2).joinToString(" ")
 }
 
 @Composable

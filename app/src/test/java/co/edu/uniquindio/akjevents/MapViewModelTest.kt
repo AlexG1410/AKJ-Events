@@ -9,6 +9,7 @@ import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.features.map.explore.MapViewModel
 import java.time.LocalDateTime
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -58,5 +59,30 @@ class MapViewModelTest {
         viewModel.onQueryChange("encuentro")
 
         assertEquals(listOf("visible"), viewModel.uiState.value.events.map { it.id })
+    }
+
+    @Test
+    fun markersOnlyUsePublicEventsAndSelectionCanBeDismissed() = runTest {
+        val visible = event("visible", now.plusDays(1))
+        val repository = InMemoryEventRepository(initialEvents = listOf(
+            visible,
+            visible.copy(id = "pendiente", status = EventStatus.PENDING),
+            visible.copy(id = "rechazado", status = EventStatus.REJECTED, rejectionReason = "Revisar información"),
+            visible.copy(id = "finalizado", status = EventStatus.FINISHED)
+        ))
+        val viewModel = TestUseCases(repository, repos.users).let {
+            MapViewModel(it.observePublicEvents, it.observeCurrentUser, now = { now })
+        }
+
+        assertEquals(listOf("visible"), viewModel.uiState.value.events.map { it.id })
+        viewModel.selectEvent("visible")
+        assertEquals("visible", viewModel.uiState.value.selectedEvent?.id)
+        viewModel.selectEvent(null)
+        assertNull(viewModel.uiState.value.selectedEvent)
+        // Un filtro que deja el mapa vacío tampoco conserva una tarjeta anterior.
+        viewModel.selectEvent("visible")
+        viewModel.selectCategory(EventCategory.CULTURE)
+        assertEquals(emptyList<String>(), viewModel.uiState.value.events.map { it.id })
+        assertNull(viewModel.uiState.value.selectedEvent)
     }
 }

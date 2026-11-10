@@ -47,38 +47,43 @@ El repositorio actual incluye los mockups en `mockups/`. Las versiones de texto 
 
 ## 3. Organización del proyecto y del código
 
-El proyecto base usa una sola `MainActivity` que aloja Compose y separa responsabilidades. Tome esta distribución como referencia y compruebe los paquetes existentes antes de crear otros:
+El proyecto actual usa una sola `MainActivity` que aloja Compose, Hilt para inyección de dependencias y casos de uso para las operaciones de dominio. Conserve esta distribución y compruebe los paquetes existentes antes de crear otros:
 
 ```text
 app/src/main/java/co/edu/uniquindio/akjevents/
+├── AKJEventsApp.kt      # Application con Hilt
 ├── MainActivity.kt
 ├── core/
 │   ├── component/       # composables reutilizables
 │   ├── theme/           # color, tipografía y tema
 │   └── util/            # utilidades compartidas
 ├── navigation/          # destinos tipados y grafo principal
+├── di/                  # módulos Hilt: repositorios, Firebase, red, recursos y corrutinas
 ├── domain/
 │   ├── model/           # entidades, categorías, roles y estados
-│   └── repository/      # contratos de repositorios
+│   ├── repository/      # contratos de repositorios
+│   └── usecase/         # reglas de negocio y operaciones por funcionalidad
 ├── data/
-│   ├── demo/            # datos y credenciales locales de demostración
-│   └── repository/      # implementaciones de repositorios
+│   ├── demo/            # datos de ejemplo y catálogo local de lugares
+│   ├── remote/          # DTO de Firestore y API de Cloudinary
+│   └── repository/      # en memoria para pruebas; local/ (DataStore) y remote/ (servicios)
 └── features/            # pantallas y ViewModels por funcionalidad
 ```
 
 - Conserve el código existente si cumple los requisitos y funciona. Evite componentes duplicados o mover paquetes por una preferencia personal.
 - Coloque la presentación en `*Screen.kt`. Para formularios y operaciones con estado, use `*ViewModel.kt` y `UiState` siguiendo las guías; la pantalla observa el estado y envía acciones.
-- Ponga entidades compartidas en `domain/model`; deje las fuentes de datos e integraciones externas en `data` cuando se implementen. No concentre interfaz, persistencia y reglas de negocio en un solo composable.
+- Ponga entidades compartidas en `domain/model`, reglas de negocio en `domain/usecase` y fuentes de datos e integraciones externas en `data`. Los ViewModels usan casos de uso, no repositorios directamente. Conserve el flujo pantalla → ViewModel → caso de uso → interfaz de repositorio → implementación.
+- Use `@HiltViewModel`, constructores inyectados y `hiltViewModel()` siguiendo el código existente. Vincule implementaciones en `di/RepositoryModule.kt`; no vuelva a crear repositorios compartidos manualmente en las pantallas. Mantenga las operaciones `suspend` y sus llamadas desde corrutinas, sin bloquear el hilo principal; no oculte la cancelación como un error de negocio.
 - Coloque en `core/component` únicamente componentes que se reutilicen; los específicos van en su `feature`. Respete la configuración existente de Gradle y el catálogo de versiones al añadir dependencias.
 
 ### Criterios incorporados de las guías 14–16
 
-- Textos de interfaz, accesibilidad y mensajes: usar recursos en `res/values/strings.xml` (inglés) y `res/values-es/strings.xml` (español), con todas las claves en el archivo predeterminado. Resolverlos con `stringResource` en Compose; para ViewModels, la guía propone una interfaz `ResourceProvider`, comprobable con dobles de prueba y sin depender de un contexto de Activity. No traducir contenido introducido por usuarios como si fuera texto fijo de la aplicación.
+- Textos de interfaz, accesibilidad y mensajes: usar recursos en `res/values/strings.xml` (inglés) y `res/values-es/strings.xml` (español), con todas las claves en el archivo predeterminado. Resolverlos con `stringResource` en Compose y las utilidades existentes `ResourceProvider`, `UiText` y `Labels` donde corresponda. No introducir un contexto de Activity en ViewModels. Conservar argumentos y plurales equivalentes entre idiomas y `res/xml/locales_config.xml`. No traducir contenido introducido por usuarios como si fuera texto fijo de la aplicación.
 - Permisos: solicitarlos desde la UI al usar la función, mantener alternativas cuando se denieguen y explicar cómo habilitarlos desde Ajustes. Elegir una imagen con `GetContent` no requiere permisos de almacenamiento. Para el flujo de cámara de la guía, usar `TakePicture`, URI temporal con `FileProvider` y conservar ese URI frente a recreaciones; no presentar el URI temporal como almacenamiento remoto definitivo.
 - Mapas: adaptar el componente reutilizable de Mapbox a eventos y conservar callbacks y estado en las pantallas/ViewModels. Admitir ubicación aproximada o precisa, volver a comprobar permisos al regresar a primer plano y permitir selección manual sin GPS. Mapbox usa longitud/latitud; el modelo `Location` usa latitud/longitud. La geocodificación inversa debe iniciarse desde el ViewModel, con estados de carga y error, dejando la integración externa en `data`.
 - Configuración: la guía 16 usa Mapbox 11.22.0 con variantes `-ndk27`, repositorio Maven de Mapbox y token público `pk.` desde `local.properties`, generado como recurso mediante Gradle. No subirlo al repositorio: este token público sí termina en el APK y no debe confundirse con una clave secreta de servidor. Mapbox puede funcionar con eventos en memoria, sin esperar un backend.
-- Los ejemplos 14–15 presuponen Hilt, casos de uso y otras piezas que no forman parte de la estructura actual. Las guías 12–13 no se han revisado aquí: antes de introducir esa reorganización, consultar las fuentes correspondientes y proponer la adaptación, sin reemplazar la navegación tipada existente.
-- Estado al revisar las guías 14–16: incorporación documental, no implementación. La app conserva textos en Kotlin, imágenes de evento temporales y mapas simulados; siguen pendientes traducciones, selección real de fotos, carga remota, permisos de cámara/ubicación y Mapbox con geocodificación real.
+- Los ejemplos 14–15 presuponen Hilt y casos de uso, que ya existen en el proyecto actualizado. El código y el README también hacen referencia a las guías 12–13 y 18–20; sus fuentes no se revisaron en esta actualización documental. Antes de atribuirles reglas nuevas, consultar los documentos concretos y registrar sus enlaces verificados en la tabla.
+- Estado actual: inglés/español, selector de cámara/galería, permiso de cámara y subida a Cloudinary están implementados en código. Mapbox está integrado en Explorar, selector y detalle (pasos 5–10); los permisos aproximado/preciso y GPS opcional están implementados, pendientes de verificación completa en dispositivo. Geocodificación sigue pendiente. No confundir el permiso de cámara para fotos con un escáner QR real.
 
 ## 4. Rutas y navegación
 
@@ -104,5 +109,38 @@ Al implementar una pantalla, consulte **su** imagen, su HTML y el sistema de dis
 4. Si intervienen autenticación, mapas, almacenamiento de imágenes, notificaciones u otros servicios, indique la configuración necesaria. No publique credenciales reales, tokens ni claves en el repositorio; las credenciales locales de demostración deben estar claramente identificadas como datos sin valor de seguridad.
 5. Compruebe que compile con Gradle y, para cambios visibles, recorra el flujo en emulador o dispositivo si está disponible. Diga exactamente qué verificó y qué no pudo verificar.
 6. Informe archivos cambiados, comportamiento conseguido, guía aplicada y pendientes. No afirme que una entrega está «al 100 %» sin contrastarla con su rúbrica.
+
+## 7. Estado técnico y precauciones de la fase 3
+
+Estado revisado el **9 de noviembre de 2026**, hasta el commit `351416e`. Esta sección describe el código disponible, no certifica la configuración ni el funcionamiento de los proyectos remotos.
+
+### Integraciones actuales
+
+- **Cuentas:** `FirebaseUserRepository` usa Firebase Authentication para registro, login, logout y recuperación por correo; guarda perfiles e historial de puntos en Firestore. El cambio de correo requiere un enlace de confirmación. Los moderadores se crean y asignan desde la consola según el README; no suponga que las antiguas credenciales locales existen en Firebase ni permita elegir el rol Moderador desde Registro.
+- **Sesión:** `DataStoreSessionPreferences` conserva «Recordar este dispositivo» y `RestoreSessionUseCase` decide si mantener la sesión al abrir la app. Respete la espera de inicialización antes de decidir la navegación.
+- **Eventos y participación:** `FirestoreEventRepository` escucha eventos, comentarios, asistencias e intereses en tiempo real. Usa transacciones para conteos y cupos. `FirestoreNotificationRepository` guarda avisos internos por usuario; no es una integración de notificaciones push con FCM. Las implementaciones en memoria se conservan para pruebas, no son la fuente activa de la app.
+- **Fotos:** `ImagePickerBottomSheet` y `rememberImagePicker` se reutilizan en perfil y eventos. Se admiten hasta tres fotos por evento y una foto de perfil. `UploadImagesUseCase` y `CloudinaryImageRepository` suben las nuevas imágenes mediante Retrofit, reducidas a 1600 px por lado y JPEG de calidad 85; se guardan URLs públicas en Firestore. La subida depende de `cloudinary.cloudName` y `cloudinary.uploadPreset` en `local.properties`. Actualmente se usa un preset sin firma; no hay clave secreta en Android ni debe añadirse.
+- **Recomendaciones:** Inicio y la pantalla completa mantienen una fuente compartida. `LocalRecommendationRanker` es un algoritmo local determinista, no IA, conectado mediante Hilt a los repositorios actuales. Conservar sus filtros, revalidación, límite de 24 candidatos y respaldo local. `RecommendationRanker` es el punto de sustitución futura por un servicio del servidor con la clave protegida. «Eventos Destacados» conserva el orden por votos. La sugerencia de categoría con IA del plan del README es una función distinta y también está pendiente.
+- **Entorno de prueba:** existen `firebase.json`, `firestore.rules` y `seed/seed.mjs`. Consultar el README para usar los emuladores de Auth/Firestore y cargar ejemplos. Por defecto la app apunta al proyecto real: no ejecutar escrituras de prueba, carga de datos, borrados ni despliegues sin autorización explícita. No guardar claves de cuentas de servicio en el repositorio.
+- **Costo:** el proyecto debe mantenerse dentro de opciones gratuitas, incluido un eventual despliegue. No activar facturación, planes pagos ni servicios con cargos automáticos sin acuerdo del usuario. Las cuotas gratuitas no equivalen a disponibilidad ilimitada ni garantizada.
+- **Mapbox:** `core/component/MapBox.kt` muestra eventos filtrados, agrupa marcadores y devuelve IDs/puntos por callbacks; no consulta repositorios. `LocationPermission.kt` gestiona permisos opcionales y el botón GPS. El selector usa toque para elegir (arrastrar no cambia la selección) y GPS puede actualizar el punto elegido; el detalle no es interactivo. El token público `MAPBOX_ACCESS_TOKEN` de `local.properties` se genera como recurso en Gradle. Conservar logotipo/atribución y las rutas existentes. «Cerca de mí» y las distancias siguen usando la ubicación del perfil, no la del dispositivo. Falta verificar completamente GPS/permisos/retorno a formularios en ejecución.
+
+### Pendientes y riesgos conocidos
+
+- Explorar, selector y detalle tienen mapa real; la búsqueda y las etiquetas de dirección/ciudad usan `SamplePlaces`, con aproximaciones que no son geocodificación real. GPS está implementado pero falta verificar sus escenarios en dispositivo. El QR se genera con ZXing, pero el escaneo sigue simulado. No presentar el catálogo local como geocodificación ni el escáner simulado como lectura de cámara real. La IA remota y la distribución release con Firebase App Distribution tampoco están implementadas.
+- **Seguridad de Firestore:** las reglas actuales permiten a usuarios autenticados modificar puntos/insignias de otros perfiles y conteos de eventos sin validar completamente la acción correspondiente. No asumir que los casos de uso del cliente protegen la base de datos frente a solicitudes externas; antes de publicación pública, reforzar reglas y/o operaciones de servidor y probarlas con usuarios de distintos roles.
+- **Imágenes:** el preset sin firma requiere restricciones contra abuso. Se guarda la URL, pero no hay gestión de borrado remoto de imágenes reemplazadas o descartadas. No afirmar que borrar una foto o cuenta libera automáticamente espacio en Cloudinary ni que subir archivos y guardar Firestore sea una operación atómica.
+- **Eliminación de cuenta:** se limpian datos antes de confirmar el borrado en Authentication. Si Firebase exige un login reciente o falla una operación intermedia, puede quedar una eliminación parcial; revisar reautenticación, orden de operaciones y recuperación antes de considerarlo un flujo robusto.
+- **Documentación:** contrastar README y documentos del feature con el código; pueden conservar descripciones de etapas anteriores. No reemplazar avances actuales por implementaciones locales siguiendo documentación desactualizada.
+
+### Última comprobación local
+
+- Tras incorporar pasos 7, 9 y 10: `testDebugUnitTest` con **141 pruebas aprobadas** y `assembleDebug` correcto. `MapBoxSmokeTest` pasó sus **3 pruebas** en Pixel_9a: marcador por ID, selección/reselección de coordenadas y no selección en modo de solo lectura. No verifican permisos/GPS ni el retorno completo a formularios. Lint no se volvió a ejecutar; sus errores previos siguen aplazados. Las advertencias del destino Compose también aparecen en los efectos y anotaciones nuevos del mapa.
+- Resultados del bloque anterior (referencia histórica):
+- `testDebugUnitTest`: **139 pruebas aprobadas**, sin fallos, tras el primer bloque de Mapbox.
+- `assembleDebug`: APK generado.
+- `lintDebug`: **2 errores, 54 advertencias y 1 sugerencia** en la ejecución con el primer bloque de Mapbox. Los errores son `LocalContextGetResourceValueCall` en `CreateEventScreen.kt:205` y `EditProfileScreen.kt:131`, al obtener el mensaje de permiso de cámara. Las líneas pueden cambiar: buscar el identificador de Lint al corregirlos. No desactivar Lint ni crear una baseline para ocultarlos.
+- `MapBoxSmokeTest` pasó en emulador: carga real de Mapbox y selección de un marcador por ID con un evento local, sin acceso a Firebase. La agrupación y la navegación completa desde Explorar siguen sin verificación de ejecución. El compilador advierte sobre el destino Compose al usar `PointAnnotationGroup` con las versiones actuales; no ocultar esa advertencia ni confundir el smoke test con una validación completa.
+- No se verificaron las operaciones contra Firebase/Cloudinary reales. Volver a ejecutar las comprobaciones tras cambios: estos resultados no son una garantía permanente ni pruebas de integración de esos servicios.
 
 Este archivo explica **cómo** trabajar en AKJ Events; la tarea y rúbrica actuales determinan **qué** construir ahora.

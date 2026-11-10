@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Inglés en values/ y español en values-es/: toda clave debe estar en los dos (StringsTranslationTest lo comprueba). -->
 <resources>
+    <string name="map_select_marker_title">Elige un evento en el mapa</string>
+    <string name="map_select_marker_message">Toca un marcador para ver su información. Si ves un grupo con un número, acerca el mapa para separar los eventos.</string>
 
     <!-- 00_core -->
     <string name="category_sports">Deportes</string>
@@ -228,7 +230,13 @@
     <string name="map_see_event">Ver evento</string>
     <string name="pick_title">Seleccionar ubicación</string>
     <string name="pick_search_placeholder">Buscar parque, plaza o lugar...</string>
-    <string name="pick_hint">Mueve el mapa o toca un punto</string>
+    <string name="pick_hint">Toca el mapa para elegir un punto</string>
+    <string name="map_device_location">Mi ubicación actual</string>
+    <string name="pick_local_address_note">La dirección y ciudad usan referencias locales, no una búsqueda real de direcciones. Confirma las coordenadas en el mapa.</string>
+    <string name="map_location_unavailable">No se recibió una posición actual. Revisa la ubicación del dispositivo o elige un punto manualmente.</string>
+    <string name="map_location_permission_help">La ubicación es opcional. Puedes elegir un punto manualmente o habilitar la ubicación aproximada o precisa en Ajustes. Si no aparece una posición, comprueba que la ubicación del dispositivo esté activada.</string>
+    <string name="map_open_settings">Abrir ajustes</string>
+    <string name="map_continue_manual">Elegir manualmente</string>
     <string name="pick_coordinates">Coordenadas</string>
     <string name="pick_coordinates_copied">Coordenadas copiadas</string>
     <string name="pick_selected_point">PUNTO SELECCIONADO</string>
@@ -394,6 +402,7 @@
     <string name="action_next">Siguiente</string>
     <string name="action_accept">Aceptar</string>
     <string name="create_error_not_allowed">No puedes modificar este evento</string>
+    <string name="create_error_session_unavailable">Tu perfil de usuario no está disponible. Revisa la conexión; si el problema continúa, vuelve a iniciar sesión. El evento no se ha enviado.</string>
     <string name="create_error_save">No se pudieron guardar los cambios</string>
     <string name="create_error_network">No se pudo enviar el evento. Revisa tu conexión e intenta de nuevo</string>
     <string name="create_error_title">Escribe el título del evento</string>

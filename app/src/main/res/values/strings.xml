@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Inglés en values/ y español en values-es/: toda clave debe estar en los dos (StringsTranslationTest lo comprueba). -->
 <resources>
+    <string name="map_select_marker_title">Choose an event on the map</string>
+    <string name="map_select_marker_message">Tap a marker to see its details. If you see a group with a number, zoom in to separate the events.</string>
     <string name="app_name" translatable="false">AKJ Events</string>
 
     <!-- 00_core -->
@@ -229,7 +231,13 @@
     <string name="map_see_event">See event</string>
     <string name="pick_title">Select location</string>
     <string name="pick_search_placeholder">Search for a park, square or place...</string>
-    <string name="pick_hint">Move the map or tap a point</string>
+    <string name="pick_hint">Tap the map to select a point</string>
+    <string name="map_device_location">My current location</string>
+    <string name="pick_local_address_note">Address and city use local references, not real address lookup. Confirm the coordinates on the map.</string>
+    <string name="map_location_unavailable">No current position received. Check device location or select a point manually.</string>
+    <string name="map_location_permission_help">Location is optional. You can select a point manually or enable approximate or precise location in Settings. If no position appears, check that device location is enabled.</string>
+    <string name="map_open_settings">Open settings</string>
+    <string name="map_continue_manual">Select manually</string>
     <string name="pick_coordinates">Coordinates</string>
     <string name="pick_coordinates_copied">Coordinates copied</string>
     <string name="pick_selected_point">SELECTED POINT</string>
@@ -395,6 +403,7 @@
     <string name="action_next">Next</string>
     <string name="action_accept">OK</string>
     <string name="create_error_not_allowed">You can\'t modify this event</string>
+    <string name="create_error_session_unavailable">Your user profile is unavailable. Check your connection; if the problem persists, sign in again. The event has not been submitted.</string>
     <string name="create_error_save">Could not save the changes</string>
     <string name="create_error_network">Could not submit the event. Check your connection and try again</string>
     <string name="create_error_title">Write the event title</string>
