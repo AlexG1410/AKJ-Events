@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 enum class CheckInTab { SCAN, MY_QR }
 
@@ -39,12 +40,12 @@ data class CheckInUiState(
     val organizer: User? = null,
     val errorMessage: String? = null,
     /** El código se está validando; evita enviarlo dos veces. */
-    val isValidating: Boolean = false
+    val isValidating: Boolean = false,
+    val expectedEventId: String? = null
 )
 
 /**
- * Mockup 16. En esta fase no se usa la cámara (no se piden permisos): el escaneo se simula
- * escribiendo el código que muestra el QR del organizador o eligiendo un evento confirmado.
+ * Cámara real desde la UI; entrada manual alternativa. Elegir un evento no simula su lectura.
  */
 @HiltViewModel
 class CheckInViewModel(
@@ -79,19 +80,13 @@ class CheckInViewModel(
     private val _uiState = MutableStateFlow(
         CheckInUiState(
             user = observeCurrentUser().value,
-            tab = if (showMyQr) CheckInTab.MY_QR else CheckInTab.SCAN
+            tab = if (showMyQr) CheckInTab.MY_QR else CheckInTab.SCAN,
+            expectedEventId = preselectedEventId
         )
     )
     val uiState: StateFlow<CheckInUiState> = _uiState.asStateFlow()
 
     init {
-        // Al llegar desde el detalle de un evento, su código queda escrito
-        if (preselectedEventId != null) {
-            viewModelScope.launch {
-                val code = runCatching { getPublicEventById(preselectedEventId)?.checkInCode }.getOrNull()
-                if (code != null) _uiState.update { it.copy(code = code) }
-            }
-        }
         viewModelScope.launch {
             combine(observeCurrentUser(), observePublicEvents(), observeAttendances(), ::Triple).collect { (user, events, attendances) ->
                 val pendingIds = attendances.filter { it.userId == user?.id && !it.checkedIn }.map { it.eventId }.toSet()
@@ -106,11 +101,23 @@ class CheckInViewModel(
 
     fun onCodeChange(code: String) = _uiState.update { it.copy(code = code.uppercase().take(MAX_CODE_LENGTH), errorMessage = null) }
 
-    /** Simula leer el QR del organizador de ese evento. */
-    fun scanEvent(event: CommunityEvent) {
-        onCodeChange(event.checkInCode)
+    /** Selecciona qué evento se espera; la UI debe abrir la cámara, no rellenar su código. */
+    fun selectEventForScan(event: CommunityEvent) {
+        _uiState.update { it.copy(expectedEventId = event.id, code = "", errorMessage = null) }
+    }
+
+    fun onScannedCode(code: String?) {
+        if (_uiState.value.isValidating || _uiState.value.result is CheckInResult.Success) return
+        if (code == null) { showError(resources.getString(R.string.qr_cancelled)); return }
+        val normalized = code.trim().uppercase(java.util.Locale.ROOT)
+        if (!Regex("AKJ-[A-Z0-9]{6}").matches(normalized)) {
+            showError(resources.getString(R.string.check_in_error_invalid)); return
+        }
+        onCodeChange(normalized)
         validate()
     }
+
+    fun onScannerMessage(message: String) = showError(message)
 
     fun validate() {
         val user = observeCurrentUser().value ?: return
@@ -124,27 +131,36 @@ class CheckInViewModel(
         val pointsBefore = user.points
         _uiState.update { it.copy(isValidating = true, errorMessage = null) }
         viewModelScope.launch {
-            val result = runCatching { checkIn(code, user.id) }.getOrElse {
+            val result = runCatching { checkIn(code, user.id, state.expectedEventId) }.getOrElse {
+                if (it is CancellationException) throw it
                 showError(resources.getString(R.string.check_in_error_generic))
+                return@launch
+            }
+            if (observeCurrentUser().value?.id != user.id) {
+                _uiState.update { it.copy(isValidating = false, result = null, code = "") }
                 return@launch
             }
             when (result) {
                 is CheckInResult.Success -> {
-                    val organizer = runCatching { getUserById(result.event.organizerId) }.getOrNull()
+                    val organizer = runCatching { getUserById(result.event.organizerId) }.getOrElse {
+                        if (it is CancellationException) throw it
+                        null
+                    }
                     _uiState.update {
-                        it.copy(result = result, pointsBefore = pointsBefore, organizer = organizer, errorMessage = null, isValidating = false)
+                        it.copy(result = result, pointsBefore = result.pointsBefore ?: pointsBefore, organizer = organizer, errorMessage = null, isValidating = false)
                     }
                 }
                 is CheckInResult.AlreadyCheckedIn -> showError(resources.getString(R.string.check_in_error_already, result.event.title))
                 is CheckInResult.Full -> showError(resources.getString(R.string.check_in_error_full, result.event.title))
                 is CheckInResult.OwnEvent -> showError(resources.getString(R.string.check_in_error_own_event))
                 CheckInResult.InvalidCode -> showError(resources.getString(R.string.check_in_error_invalid))
+                CheckInResult.WrongEvent -> showError(resources.getString(R.string.qr_wrong_event))
             }
         }
     }
 
-    /** Vuelve a la cámara simulada para otro check-in. */
-    fun reset() = _uiState.update { it.copy(result = null, code = "", errorMessage = null) }
+    /** La cámara solo se abre mediante una acción explícita. */
+    fun reset() = _uiState.update { it.copy(result = null, code = "", errorMessage = null, expectedEventId = null) }
 
     private fun showError(message: String) = _uiState.update { it.copy(errorMessage = message, result = null, isValidating = false) }
 

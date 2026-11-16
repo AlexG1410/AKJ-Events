@@ -31,12 +31,12 @@ import co.edu.uniquindio.akjevents.domain.model.RecommendedEvent
 
 /** La misma tarjeta en el resumen de Inicio y en la pantalla completa. */
 @Composable
-fun RecommendedEventCard(item: RecommendedEvent, onOpen: () -> Unit, modifier: Modifier = Modifier) {
+fun RecommendedEventCard(item: RecommendedEvent, onOpen: () -> Unit, modifier: Modifier = Modifier, galleryMode: PhotoGalleryMode = PhotoGalleryMode.HORIZONTAL_ROW) {
     val event = item.event
     Surface(onClick = onOpen, modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = Color.White, shadowElevation = 1.dp) {
         Column {
             Box(Modifier.fillMaxWidth().height(130.dp)) {
-                EventImage(event, Modifier.fillMaxSize())
+                EventPhotoGallery(event, Modifier.fillMaxSize(), galleryMode)
             }
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

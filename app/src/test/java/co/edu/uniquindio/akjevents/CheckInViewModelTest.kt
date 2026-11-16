@@ -45,7 +45,11 @@ class CheckInViewModelTest {
         val viewModel = checkInViewModel(null, false)
         val points = repos.pointsOf(DEMO_USER)
 
-        viewModel.scanEvent(viewModel.uiState.value.pendingEvents.single())
+        val event = viewModel.uiState.value.pendingEvents.single()
+        viewModel.selectEventForScan(event)
+        assertNull(viewModel.uiState.value.result)
+        assertEquals("", viewModel.uiState.value.code)
+        viewModel.onScannedCode(event.checkInCode)
 
         val state = viewModel.uiState.value
         assertTrue(state.result is CheckInResult.Success)
@@ -69,10 +73,31 @@ class CheckInViewModelTest {
     }
 
     @Test
-    fun aPreselectedEventFillsItsCodeAndMyQrCanOpenFirst() = runTest {
-        val code = repos.events.findEvent("ciclopaseo")!!.checkInCode
-
-        assertEquals(code, checkInViewModel("ciclopaseo", false).uiState.value.code)
+    fun aPreselectedEventDoesNotSimulateAReadingAndMyQrCanOpenFirst() = runTest {
+        assertEquals("", checkInViewModel("ciclopaseo", false).uiState.value.code)
+        assertEquals("ciclopaseo", checkInViewModel("ciclopaseo", false).uiState.value.expectedEventId)
         assertEquals(CheckInTab.MY_QR, checkInViewModel(null, true).uiState.value.tab)
+    }
+
+    @Test fun cancelledInvalidAndOtherEventCodesDoNotAwardPoints() = runTest {
+        val vm = checkInViewModel("feria-cultural", false)
+        val before = repos.pointsOf(DEMO_USER)
+        vm.onScannedCode(null)
+        assertEquals(TestResourceProvider.getString(R.string.qr_cancelled), vm.uiState.value.errorMessage)
+        vm.onScannedCode("https://example.test/not-an-event")
+        assertNull(vm.uiState.value.result)
+        vm.onScannedCode(repos.events.findEvent("ciclopaseo")!!.checkInCode)
+        assertEquals(TestResourceProvider.getString(R.string.qr_wrong_event), vm.uiState.value.errorMessage)
+        assertEquals(before, repos.pointsOf(DEMO_USER))
+    }
+
+    @Test fun repeatedCameraCallbackAfterSuccessIsIgnored() = runTest {
+        val vm = checkInViewModel("feria-cultural", false)
+        val code = repos.events.findEvent("feria-cultural")!!.checkInCode
+        val before = repos.pointsOf(DEMO_USER)
+        vm.onScannedCode(code)
+        vm.onScannedCode(code)
+        assertEquals(before + ReputationPoints.CHECK_IN, repos.pointsOf(DEMO_USER))
+        assertTrue(vm.uiState.value.result is CheckInResult.Success)
     }
 }

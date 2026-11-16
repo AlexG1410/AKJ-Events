@@ -13,8 +13,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -28,12 +28,12 @@ import co.edu.uniquindio.akjevents.core.component.ScreenHeader
 import co.edu.uniquindio.akjevents.core.component.SectionTitle
 import co.edu.uniquindio.akjevents.core.theme.MutedText
 import co.edu.uniquindio.akjevents.core.theme.WarmBackground
+import co.edu.uniquindio.akjevents.domain.model.RecommendationSource
 
 @Composable
 fun RecommendationsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, viewModel: RecommendationsViewModel) {
     val state by viewModel.uiState.collectAsState()
     val feed = viewModel.visibleFeed(state.feed)
-    LaunchedEffect(Unit) { viewModel.refresh() }
     Scaffold(containerColor = WarmBackground) { innerPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(innerPadding),
@@ -41,13 +41,17 @@ fun RecommendationsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, vie
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { ScreenHeader(title = stringResource(R.string.recommendations_title), onBack = onBack, subtitle = stringResource(R.string.recommendations_subtitle)) }
+            item {
+                if (!state.isLoading && feed.items.isNotEmpty()) RecommendationSourceLabel(feed.source)
+                TextButton(onClick = viewModel::refresh, enabled = !state.isLoading) { Text(stringResource(R.string.recommendations_refresh)) }
+            }
             when {
                 state.isLoading -> item { CircularProgressIndicator() }
                 feed.items.isEmpty() -> item { RecommendationsEmpty() }
                 else -> {
                     if (!feed.hasPersonalization) item { DiscoveryHint() }
                     items(feed.items, key = { it.event.id }) { item ->
-                        RecommendedEventCard(item, onOpen = {
+                        RecommendedEventCard(item, galleryMode = co.edu.uniquindio.akjevents.core.component.PhotoGalleryMode.LIST, onOpen = {
                             if (viewModel.visibleFeed(state.feed).items.any { it.event.id == item.event.id }) onOpenEvent(item.event.id)
                             else viewModel.refresh()
                         })
@@ -62,9 +66,9 @@ fun RecommendationsScreen(onBack: () -> Unit, onOpenEvent: (String) -> Unit, vie
 fun RecommendationsPreview(viewModel: RecommendationsViewModel, onViewAll: () -> Unit, onOpenEvent: (String) -> Unit) {
     val state by viewModel.uiState.collectAsState()
     val feed = viewModel.visibleFeed(state.feed)
-    LaunchedEffect(Unit) { viewModel.refresh() }
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         SectionTitle(stringResource(R.string.recommendations_title), modifier = Modifier.padding(horizontal = 16.dp), action = stringResource(R.string.action_see_all), onAction = onViewAll)
+        if (!state.isLoading && feed.items.isNotEmpty()) RecommendationSourceLabel(feed.source, Modifier.padding(horizontal = 16.dp))
         when {
             state.isLoading -> CircularProgressIndicator(modifier = Modifier.padding(horizontal = 16.dp))
             feed.items.isEmpty() -> RecommendationsEmpty(Modifier.padding(horizontal = 16.dp))
@@ -81,6 +85,11 @@ fun RecommendationsPreview(viewModel: RecommendationsViewModel, onViewAll: () ->
             }
         }
     }
+}
+
+@Composable
+internal fun RecommendationSourceLabel(source: RecommendationSource, modifier: Modifier = Modifier) {
+    Text(stringResource(if (source == RecommendationSource.REMOTE) R.string.recommendations_source_remote else R.string.recommendations_source_local), modifier, color = MutedText, fontSize = 12.sp)
 }
 
 @Composable

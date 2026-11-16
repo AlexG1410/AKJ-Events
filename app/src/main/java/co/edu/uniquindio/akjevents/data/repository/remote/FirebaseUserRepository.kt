@@ -151,7 +151,12 @@ class FirebaseUserRepository @Inject constructor(
             interests = updated.interests,
             profilePictureUrl = updated.profilePictureUrl
         )
-        usersCollection.document(saved.id).set(UserDto.fromDomain(saved)).await()
+        // No sobrescribir puntos/insignias/rol con una lectura vieja mientras otro dispositivo hace check-in.
+        usersCollection.document(saved.id).update(mapOf(
+            "name" to saved.name, "city" to saved.city, "address" to saved.address,
+            "latitude" to saved.location.latitude, "longitude" to saved.location.longitude,
+            "interests" to saved.interests.map { it.name }, "profilePictureUrl" to saved.profilePictureUrl
+        )).await()
 
         val newEmail = updated.email.trim()
         if (newEmail.equals(existing.email, ignoreCase = true)) return ProfileUpdateResult.UPDATED

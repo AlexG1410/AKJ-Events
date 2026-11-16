@@ -110,6 +110,8 @@ fun CheckInScreen(
     val state by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
     val user = state.user
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val openScanner = rememberQrScanner(viewModel::onScannedCode, viewModel::onScannerMessage)
 
     Scaffold(containerColor = WarmBackground, contentWindowInsets = WindowInsets.safeDrawing) { innerPadding ->
         if (user == null) return@Scaffold
@@ -141,7 +143,15 @@ fun CheckInScreen(
                             onScanAgain = viewModel::reset
                         )
                     } else {
-                        ScannerBox()
+                        PrimaryButton(
+                            text = stringResource(R.string.qr_open_camera),
+                            onClick = openScanner,
+                            leadingIcon = Icons.Outlined.QrCodeScanner,
+                            enabled = !state.isValidating,
+                            containerColor = Sage
+                        )
+                        Text(stringResource(R.string.qr_camera_prompt), color = MutedText, fontSize = 13.sp)
+                        androidx.compose.material3.TextButton(onClick = { context.openQrSettings() }) { Text(stringResource(R.string.qr_open_settings)) }
                         FormTextField(
                             value = state.code,
                             onValueChange = viewModel::onCodeChange,
@@ -163,9 +173,13 @@ fun CheckInScreen(
                                 viewModel.validate()
                             },
                             leadingIcon = Icons.Outlined.QrCodeScanner,
-                            containerColor = Terracotta
+                            containerColor = Terracotta,
+                            isLoading = state.isValidating
                         )
-                        PendingEvents(events = state.pendingEvents, onScan = viewModel::scanEvent)
+                        if (!state.isValidating) PendingEvents(events = state.pendingEvents, onScan = { event ->
+                            viewModel.selectEventForScan(event)
+                            openScanner()
+                        })
                     }
                 }
             }
@@ -195,31 +209,6 @@ private fun TabOption(text: String, icon: ImageVector, isSelected: Boolean, onCl
             Icon(icon, contentDescription = null, tint = if (isSelected) Terracotta else MutedText, modifier = Modifier.size(18.dp))
             Text("  $text", color = if (isSelected) Terracotta else MutedText, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
         }
-    }
-}
-
-/** Visor de "cámara" del mockup; el código se escribe o se elige abajo. */
-@Composable
-private fun ScannerBox() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp)
-            .background(Brush.verticalGradient(listOf(Color(0xFF3A332E), Color(0xFF1E1B18))), RoundedCornerShape(20.dp)),
-        contentAlignment = Alignment.Center
-    ) {
-        Box(Modifier.size(130.dp).border(3.dp, Sage.copy(alpha = 0.8f), RoundedCornerShape(16.dp)), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Outlined.QrCode2, contentDescription = null, tint = Honey, modifier = Modifier.size(48.dp))
-                Text(stringResource(R.string.check_in_waiting), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            }
-        }
-        Text(
-            stringResource(R.string.check_in_type_code),
-            color = Color.White.copy(alpha = 0.85f),
-            fontSize = 12.sp,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(10.dp)
-        )
     }
 }
 

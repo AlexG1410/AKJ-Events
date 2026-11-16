@@ -5,9 +5,10 @@ import co.edu.uniquindio.akjevents.domain.model.RecommendationFeed
 import co.edu.uniquindio.akjevents.domain.model.RecommendationRequest
 import kotlinx.coroutines.flow.Flow
 
-/** Un futuro adaptador llamará a una función del servidor, nunca al modelo con una clave en Android. */
+/** El adaptador remoto llama al Worker; nunca contiene claves del proveedor. */
 fun interface RecommendationRanker {
     suspend fun rank(request: RecommendationRequest): List<RankedRecommendation>
+    val usesRemoteService: Boolean get() = false
 }
 
 interface RecommendationRepository {

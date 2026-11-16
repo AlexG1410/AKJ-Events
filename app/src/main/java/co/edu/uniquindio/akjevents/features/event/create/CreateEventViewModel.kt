@@ -17,6 +17,9 @@ import co.edu.uniquindio.akjevents.domain.usecase.auth.ObserveCurrentUserUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.CreateEventUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.GetEventByIdUseCase
 import co.edu.uniquindio.akjevents.domain.usecase.event.UpdateEventUseCase
+import co.edu.uniquindio.akjevents.domain.usecase.event.SuggestEventCategoryUseCase
+import co.edu.uniquindio.akjevents.domain.repository.CategorySuggestionException
+import co.edu.uniquindio.akjevents.domain.repository.CategorySuggestionFailure
 import co.edu.uniquindio.akjevents.domain.usecase.image.UploadImagesUseCase
 import co.edu.uniquindio.akjevents.navigation.MainRoutes
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +31,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+
+enum class CategorySuggestionStatus { IDLE, WAITING, LOADING, READY, ERROR }
 
 data class CreateEventUiState(
     val title: String = "",
@@ -50,6 +59,9 @@ data class CreateEventUiState(
     val originalStatus: EventStatus? = null,
     /** False si el evento a editar no existe o no pertenece al usuario. */
     val canSubmit: Boolean = true,
+    val suggestedCategory: EventCategory? = null,
+    val suggestionStatus: CategorySuggestionStatus = CategorySuggestionStatus.IDLE,
+    val suggestionError: String? = null,
     val result: RequestResult? = null
 ) {
     // Pasos del indicador superior (1. Info, 2. Fecha, 3. Cupos)
@@ -59,6 +71,10 @@ data class CreateEventUiState(
     val isBusy: Boolean get() = result is RequestResult.Loading || result is RequestResult.Success
 
     val canAddImage: Boolean get() = images.size < CreateEventViewModel.MAX_IMAGES
+
+    val canSuggestCategory: Boolean get() = canSubmit && !isBusy &&
+        title.trim().length >= SuggestEventCategoryUseCase.MIN_TITLE_LENGTH &&
+        description.trim().length >= SuggestEventCategoryUseCase.MIN_DESCRIPTION_LENGTH
 }
 
 /**
@@ -73,6 +89,7 @@ class CreateEventViewModel(
     private val updateEvent: UpdateEventUseCase,
     private val uploadImages: UploadImagesUseCase,
     private val resources: ResourceProvider,
+    private val suggestCategory: SuggestEventCategoryUseCase,
     private val eventId: String? = null,
     private val now: () -> LocalDateTime = LocalDateTime::now
 ) : ViewModel() {
@@ -89,9 +106,10 @@ class CreateEventViewModel(
         createEvent: CreateEventUseCase,
         updateEvent: UpdateEventUseCase,
         uploadImages: UploadImagesUseCase,
-        resources: ResourceProvider
+        resources: ResourceProvider,
+        suggestCategory: SuggestEventCategoryUseCase
     ) : this(
-        getEventById, observeCurrentUser, createEvent, updateEvent, uploadImages, resources, savedStateHandle.get<String>(EVENT_ID_KEY)
+        getEventById, observeCurrentUser, createEvent, updateEvent, uploadImages, resources, suggestCategory, savedStateHandle.get<String>(EVENT_ID_KEY)
     )
 
     // Al editar, el formulario no se puede enviar hasta cargar el evento
@@ -100,11 +118,22 @@ class CreateEventViewModel(
     )
     val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
     private var lastMapAddress: String? = null
+    private var suggestionJob: Job? = null
+    private var suggestionVersion = 0
+    // En edición no se consulta ni se reemplaza la categoría guardada automáticamente.
+    private var categoryChosen = eventId != null
+    private val suggestionCache = linkedMapOf<Pair<String, String>, EventCategory>()
 
     init {
         if (eventId != null) {
             viewModelScope.launch {
-                val event = runCatching { getEventById(eventId) }.getOrNull()
+                val event = try {
+                    getEventById(eventId)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    null
+                }
                 _uiState.value = editState(event)
                 lastMapAddress = event?.address
             }
@@ -133,12 +162,84 @@ class CreateEventViewModel(
         )
     }
 
-    fun onTitleChange(title: String) = _uiState.update { it.copy(title = title.take(MAX_TITLE_LENGTH)) }
+    fun onTitleChange(title: String) {
+        val value = title.take(MAX_TITLE_LENGTH)
+        if (value == _uiState.value.title) return
+        _uiState.update { it.copy(title = value) }
+        onSuggestionInputChanged()
+    }
 
-    fun selectCategory(category: EventCategory) = _uiState.update { it.copy(category = category) }
+    fun selectCategory(category: EventCategory) {
+        categoryChosen = true
+        cancelSuggestion()
+        _uiState.update { it.copy(category = category) }
+    }
 
-    fun onDescriptionChange(description: String) =
-        _uiState.update { it.copy(description = description.take(MAX_DESCRIPTION_LENGTH)) }
+    fun onDescriptionChange(description: String) {
+        val value = description.take(MAX_DESCRIPTION_LENGTH)
+        if (value == _uiState.value.description) return
+        _uiState.update { it.copy(description = value) }
+        onSuggestionInputChanged()
+    }
+
+    private fun onSuggestionInputChanged() {
+        cancelSuggestion()
+        if (!categoryChosen) scheduleSuggestion(1_500)
+    }
+
+    /** Consulta explícita disponible también tras elegir una categoría manual o al editar. */
+    fun requestCategorySuggestion() {
+        if (_uiState.value.suggestionStatus == CategorySuggestionStatus.LOADING) return
+        cancelSuggestion()
+        scheduleSuggestion(0)
+    }
+
+    fun acceptCategorySuggestion() {
+        _uiState.value.suggestedCategory?.let(::selectCategory)
+    }
+
+    private fun cancelSuggestion() {
+        suggestionVersion++
+        suggestionJob?.cancel()
+        _uiState.update { it.copy(suggestedCategory = null, suggestionStatus = CategorySuggestionStatus.IDLE, suggestionError = null) }
+    }
+
+    private fun scheduleSuggestion(waitMs: Long) {
+        val state = _uiState.value
+        if (!state.canSuggestCategory) return
+        val input = state.title.trim() to state.description.trim()
+        val version = suggestionVersion
+        val userId = observeCurrentUser().value?.id
+        _uiState.update { it.copy(suggestionStatus = CategorySuggestionStatus.WAITING) }
+        suggestionJob = viewModelScope.launch {
+            delay(waitMs)
+            _uiState.update { it.copy(suggestionStatus = CategorySuggestionStatus.LOADING) }
+            try {
+                val suggestion = suggestionCache[input] ?: suggestCategory(input.first, input.second)
+                ensureActive()
+                if (version != suggestionVersion) return@launch
+                if (observeCurrentUser().value?.id != userId) {
+                    cancelSuggestion()
+                    return@launch
+                }
+                // Caché pequeña, solo durante la vida del formulario. No se persiste contenido.
+                if (suggestionCache.size >= 8) suggestionCache.remove(suggestionCache.keys.first())
+                suggestionCache[input] = suggestion
+                _uiState.update { it.copy(suggestedCategory = suggestion, suggestionStatus = CategorySuggestionStatus.READY) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                if (version != suggestionVersion) return@launch
+                val message = when ((error as? CategorySuggestionException)?.failure) {
+                    CategorySuggestionFailure.NOT_CONFIGURED -> R.string.ai_category_not_configured
+                    CategorySuggestionFailure.SESSION -> R.string.ai_category_session
+                    CategorySuggestionFailure.RATE_LIMIT -> R.string.ai_category_rate_limit
+                    else -> R.string.ai_category_error
+                }
+                _uiState.update { it.copy(suggestionStatus = CategorySuggestionStatus.ERROR, suggestionError = resources.getString(message)) }
+            }
+        }
+    }
 
     fun onStartsAtChange(startsAt: LocalDateTime) = _uiState.update { it.copy(startsAt = startsAt) }
 
@@ -193,10 +294,12 @@ class CreateEventViewModel(
             return
         }
 
+        cancelSuggestion()
         _uiState.update { it.copy(result = RequestResult.Loading) }
         viewModelScope.launch {
             // Primero se suben las fotos nuevas; sin ellas el evento no se guarda
             val imageUrls = runCatching { uploadImages(state.images, ImageFolder.EVENTS) }.getOrElse {
+                if (it is CancellationException) throw it
                 _uiState.update { it.copy(result = RequestResult.Failure(resources.getString(R.string.create_error_upload))) }
                 return@launch
             }
@@ -236,7 +339,10 @@ class CreateEventViewModel(
                     else -> RequestResult.Success(resources.getString(R.string.create_updated))
                 }
             }
-        }.getOrElse { RequestResult.Failure(resources.getString(R.string.create_error_network)) }
+        }.getOrElse {
+            if (it is CancellationException) throw it
+            RequestResult.Failure(resources.getString(R.string.create_error_network))
+        }
         _uiState.update { it.copy(result = result) }
     }
 

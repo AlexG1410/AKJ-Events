@@ -1,6 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Inglés en values/ y español en values-es/: toda clave debe estar en los dos (StringsTranslationTest lo comprueba). -->
 <resources>
+    <string name="qr_open_camera">Scan QR with camera</string>
+    <string name="qr_camera_prompt">Scan the organizer’s event QR. Back cancels without checking in.</string>
+    <string name="qr_camera_denied">Camera permission is required to scan. You can enter the event code manually or enable the camera in Settings.</string>
+    <string name="qr_cancelled">Scan cancelled. No check-in was submitted.</string>
+    <string name="qr_wrong_event">This QR belongs to another event. Scan the selected event’s QR.</string>
+    <string name="qr_scanner_unavailable">Camera could not be opened. You can enter the code manually.</string>
+    <string name="qr_open_settings">Open app settings</string>
+    <string name="gallery_position">Photo %1$d of %2$d</string>
+    <string name="gallery_image_description">%1$s. Photo %2$d of %3$d</string>
+    <string name="gallery_next">Next photo</string>
+    <string name="gallery_previous">Previous photo</string>
+    <string name="gallery_pause">Pause photo slideshow</string>
+    <string name="gallery_resume">Resume photo slideshow</string>
+    <string name="ai_reason_language">en</string>
+    <string name="recommendations_refresh">Refresh recommendations</string>
+    <string name="recommendations_source_remote">Ordered with remote AI</string>
+    <string name="recommendations_source_local">Local recommendations · AI unavailable or refresh on cooldown</string>
+    <string name="ai_category_title">Category suggestion with AI</string>
+    <string name="ai_category_hint">Enter at least 5 title characters and 20 description characters. Only this text is sent to the AI service. You can always choose a category manually.</string>
+    <string name="ai_category_waiting">Waiting for you to finish typing…</string>
+    <string name="ai_category_loading">Finding a category…</string>
+    <string name="ai_category_result">AI suggests: %1$s. Review before accepting.</string>
+    <string name="ai_category_accept">Use suggestion</string>
+    <string name="ai_category_request">Suggest category</string>
+    <string name="ai_category_error">AI is unavailable or returned an invalid response. Retry or choose a category manually.</string>
+    <string name="ai_category_not_configured">AI service is not configured yet. Choose a category manually.</string>
+    <string name="ai_category_session">Your session could not be verified. Sign in again or choose a category manually.</string>
+    <string name="ai_category_rate_limit">AI request limit reached. Try later or choose a category manually.</string>
     <string name="map_select_marker_title">Choose an event on the map</string>
     <string name="map_select_marker_message">Tap a marker to see its details. If you see a group with a number, zoom in to separate the events.</string>
     <string name="app_name" translatable="false">AKJ Events</string>
@@ -209,7 +237,7 @@
     <string name="location_filter_city">In my city</string>
     <string name="distance_away">" • %1$s away"</string>
     <string name="recommendations_title">Recommended for you</string>
-    <string name="recommendations_subtitle">Local selection based on your preferences and activity</string>
+    <string name="recommendations_subtitle">Based on your preferences and activity</string>
     <string name="action_see_all">See all</string>
     <string name="recommendations_starter">To start, we show you nearby and varied options. Choose interests in your profile or mark “I\'m interested” to refine the selection.</string>
     <string name="recommendations_empty_title">No new recommendations</string>
@@ -263,7 +291,7 @@
     <string name="pick_confirm">Confirm location</string>
     <string name="pick_point_on_map">Point on the map, %1$s</string>
     <string name="check_in_title">Attendance Check-in</string>
-    <string name="check_in_subtitle">Simulated QR reader</string>
+    <string name="check_in_subtitle">Scan the event QR code</string>
     <string name="check_in_validate">Validate code</string>
     <string name="check_in_tab_scan">Scan QR</string>
     <string name="check_in_tab_my_qr">Show my QR</string>

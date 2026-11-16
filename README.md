@@ -44,8 +44,20 @@ Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Fireba
 
 - **Búsqueda de lugares:** el buscador del selector usa `SamplePlaces` (referencias locales), no búsqueda remota. El mapa y la geocodificación inversa sí son reales. Solo se usa una dirección del catálogo como respaldo al elegir expresamente uno de sus lugares; no se asigna una ciudad local a cualquier punto del mundo.
 - **Filtros de ubicación y fecha:** "En mi ciudad" usa las coordenadas: respeta el municipio de los lugares conocidos del catálogo local y, para otros puntos, aproxima por el centro más cercano. No depende del texto de la dirección ni usa límites municipales reales. "Esta semana" muestra inicios desde el momento actual hasta antes de siete días después.
-- **QR:** los códigos QR son reales (librería ZXing), pero no se usa la cámara: el escaneo se simula escribiendo el código o eligiendo un evento confirmado.
+- **QR:** ya no es simulado: ZXing Embedded abre la cámara y decodifica offline; se conserva entrada manual. Elegir un evento abre el escáner y exige su código, no fabrica una lectura. El usuario reportó lectura con cámara en Moto G15 y confirmación/+15/historial; saldo del reintento y misma cuenta en otro dispositivo siguen pendientes.
 - **Imágenes de ejemplo:** los eventos de muestra usan fotos de picsum.photos. Las fotos que suben los usuarios sí van a la nube (ver «Fotos en la nube»).
+
+## Galerías y check-in: actualización local
+
+Las fotos mantienen el orden de `imageUrls` y la primera como portada. Destacados y vista previa de recomendaciones usan flechas para no interferir con el swipe entre eventos; la lista completa permite deslizar fotos; Próximos usa un control compacto. El detalle permite swipe y avance circular cada 5 s, con pausa/reanudación, pausa al tocar y detención fuera de vista/segundo plano o con animaciones desactivadas. Se reutilizan Compose Foundation (BOM actual) y Coil, sin cambiar subidas ni esquema Firestore.
+
+`CheckInUseCase` usa `FirestoreCheckInRepository`: asistencia, saldo (+15 para usuario, 0 para moderador) e historial determinista se confirman en una transacción. Los reintentos no vuelven a premiar; una carrera se confirma con lecturas de servidor, nunca con éxito offline supuesto. Insignias/avisos son secundarios. Se conserva acceso sin inscripción si hay cupo, prohibición de evento propio y ausencia de ventana horaria explícita. Los check-ins históricos parciales no se reparan automáticamente.
+
+**Verificación 15/11:** debug compila, 196 unitarias y 2 instrumentadas de cancelación aprobadas; 5 de emulador Firestore y 42 Worker aprobadas nuevamente. Histórico 11/11: 10 instrumentadas de galerías/QR/navegación y Lint 0 errores/61 advertencias/1 sugerencia, no repetidos ahora. El agente no modificó reglas ni hizo despliegues/escrituras de producción. Las reglas actuales aún permiten modificaciones manipuladas de reputación/conteos: la transacción no sustituye seguridad de servidor. Ver [pruebas manuales y reproducción](docs/PRUEBAS_GALERIAS_QR.md) y [auditoría](docs/FASE3_AUDITORIA.md).
+
+Para probar estos cambios, recompilar e instalar Android en ambos teléfonos. No se requiere redesplegar Worker, cambiar reglas/índices ni activar facturación. El usuario reportó éxito de ambas IA con revisión `ai-dual-2026-11-11-2`; 429/503 intermitentes siguen pendientes de diagnóstico. Inicio → Ver todos reutiliza una clasificación en prueba simulada contada; el número de POST de producción no se ha medido.
+
+**Actualización 15/11:** Moto G15: QR y swipe/autoplay del detalle reportados por el usuario. El mensaje de reintento ya registrado no certifica todavía saldo invariable; capturas de 117/146 no son un antes/después. Se corrigió el subtítulo QR en ambos idiomas y se sustituyó Cancelar asistencia por estado deshabilitado tras check-in, conforme a la prohibición ya existente; cancelar antes sigue permitido. Evidencia/pendientes en la guía de pruebas. Para compartir todos los cambios previos, ver [selección sugerida de commit](docs/REVISION_COMMIT_FASE3.md).
 
 ## Mapbox: integración incremental
 
@@ -92,14 +104,38 @@ cloudinary.uploadPreset=<preset sin firma>
 
 El preset se crea en Cloudinary → Settings → Upload → Upload presets, con *Signing mode* = Unsigned. Sin estos datos la app funciona, pero no puede guardar fotos nuevas.
 
+## Sugerencia de categoría con IA
+
+Crear/editar evento incluye una sugerencia de categoría mediante un Worker de Cloudflare que verifica ID tokens de Firebase y consulta únicamente `openrouter/free`. El usuario reportó un POST real 200 con sugerencia visible y otro 502 por respuesta de proveedor HTTP 200. La revisión local `ai-dual-2026-11-11-2` distingue los motivos de rechazo; falta desplegarla y comprobar estabilidad. No confundir esta función con ordenar eventos existentes.
+
+La consulta automática espera 1,5 s sin cambios, con al menos 5 caracteres de título y 20 de descripción. La sugerencia requiere aceptación explícita; elegir una categoría manualmente cancela la consulta y detiene nuevas consultas automáticas. Al editar se conserva la categoría guardada y se consulta solo con el botón. Si falla la IA, el formulario sigue permitiendo selección manual y publicación normal.
+
+Para conectar el servicio desplegado, agregar su URL pública a `local.properties`:
+
+```properties
+ai.baseUrl=https://akj-events-ai.TU-SUBDOMINIO.workers.dev/
+```
+
+**La clave de OpenRouter nunca va en Android.** Se guarda como secreto `OPENROUTER_API_KEY` en el Worker. Instrucciones desde «Crear aplicación», límites gratuitos, privacidad, pruebas y limitaciones de autenticación/cuotas en [`worker/README.md`](worker/README.md). Sin URL, la app compila y explica que se debe elegir categoría manualmente. No se ha activado facturación ni se han desplegado servicios desde este cambio.
+
+### Recomendaciones de eventos con IA
+
+Inicio y «Recomendados para ti» comparten ViewModel y repositorio. Hilt conecta ahora `RemoteRecommendationRanker` a `POST /recommend-events`; `LocalRecommendationRanker` sigue como respaldo ante error, cuota, respuesta inválida o espera de actualización. Las pantallas indican «Ordenados con IA remota» o «Recomendaciones locales» sin presentar el respaldo como IA. «Eventos Destacados» conserva el orden por votos.
+
+Se mantienen filtros de elegibilidad, preselección de 24 candidatos, hasta 20 interacciones, validación de IDs/motivos y revalidación de sesión/contexto. Solo se envían textos breves de eventos, categorías, actividad e idioma; no perfil, dirección ni coordenadas. Caché remota 5 minutos, respaldo 60 segundos y máximo un intento por usuario/minuto en el repositorio; la cuota del Worker/OpenRouter se comparte con categorías. No hay consultas duplicadas solo por abrir la pantalla completa. Detalles y prueba remota/respaldo en [`features/recommendations/README.md`](app/src/main/java/co/edu/uniquindio/akjevents/features/recommendations/README.md).
+
+Estado: ambas rutas están preparadas y probadas localmente; recomendaciones remotas requieren desplegar primero el Worker y recompilar Android después. La matriz de entrega y sus pendientes están en [`docs/FASE3_AUDITORIA.md`](docs/FASE3_AUDITORIA.md).
+
 Solo los eventos `VERIFIED` se muestran públicamente. Los rechazados y pendientes no aparecen en el feed ni en el mapa.
 
 ## Cómo ejecutar la app
 
 1. En Android Studio, selecciona **Open** y abre la carpeta del proyecto (la que contiene `settings.gradle.kts`).
-2. Espera a que termine **Gradle Sync**. El proyecto usa JDK 17, Gradle 9.6 y Android SDK 37; instala los componentes que Android Studio indique.
+2. En **Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK**, selecciona el JDK integrado de Android Studio (`jbr`). Espera a que termine **Gradle Sync**. El proyecto usa Gradle 9.6 y Android SDK 37; instala los componentes que Android Studio indique. La compilación local se comprobó con el JBR 25 incluido en Android Studio.
 3. Elige un emulador o dispositivo con Android 9 (API 28) o superior y pulsa **Run 'app'**.
 4. Crea una cuenta desde Registro o inicia sesión con una cuenta existente.
+
+**Si la terminal muestra `JAVA_HOME is set to an invalid directory`:** la variable apunta a una instalación de Java inexistente. Configura `JAVA_HOME` en las variables de entorno de tu usuario con la carpeta del JDK integrado de tu instalación de Android Studio (por ejemplo, `C:\Program Files\Android\Android Studio\jbr`, sin añadir `\bin`). Cierra y vuelve a abrir Android Studio y la terminal para cargar el cambio. No guardes rutas de Java específicas de tu equipo en `gradle.properties`.
 
 El archivo `app/google-services.json` conecta la app con el proyecto de Firebase `akj---events`.
 
@@ -146,6 +182,6 @@ Las dependencias las crea Hilt: pantalla (`hiltViewModel()`) → ViewModel → c
 4. ~~Eventos, comentarios, asistencias y notificaciones en Firestore, con reglas de seguridad y datos de ejemplo.~~
 5. ~~Fotos de eventos y de perfil con cámara o galería, subidas a Cloudinary.~~
 6. Mapa real con Mapbox y permiso de ubicación: Explorar, selector y detalle integrados; GPS opcional y geocodificación inversa con Geocoder de Android. Pendientes búsqueda remota, mejoras visuales y validación completa en teléfono.
-7. Sugerencia de categoría con IA (OpenRouter), siempre con opción de cambiarla.
+7. Dos funciones separadas: sugerencia de categoría y recomendaciones de eventos con IA. Worker/Android locales preparados, con selección manual y respaldo local respectivamente. Actualizar Worker y validar revisión nueva con OpenRouter real; ver `worker/README.md`.
 8. APK release distribuido con Firebase App Distribution.
 9. Documentación de los servicios, bibliotecas y herramientas usadas.

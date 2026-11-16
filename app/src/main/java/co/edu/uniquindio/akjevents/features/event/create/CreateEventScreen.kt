@@ -56,6 +56,7 @@ import androidx.compose.material.icons.outlined.SportsSoccer
 import androidx.compose.material.icons.outlined.TheaterComedy
 import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -567,6 +568,7 @@ private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventVi
                     )
                 }
             }
+            CategorySuggestion(state, viewModel::requestCategorySuggestion, viewModel::acceptCategorySuggestion)
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -593,6 +595,34 @@ private fun BasicInfoSection(state: CreateEventUiState, viewModel: CreateEventVi
         }
 
         EventImagePicker(images = state.images, canAdd = state.canAddImage, onAdd = onAddImage, onRemove = viewModel::removeImage)
+    }
+}
+
+/** La IA solo propone: ni el éxito ni un error cambian la categoría seleccionada. */
+@Composable
+internal fun CategorySuggestion(state: CreateEventUiState, onRequest: () -> Unit, onAccept: () -> Unit) {
+    Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(8.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.ai_category_title), color = Terracotta, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.ai_category_hint), color = MutedText, fontSize = 12.sp)
+            when (state.suggestionStatus) {
+                CategorySuggestionStatus.WAITING -> Text(stringResource(R.string.ai_category_waiting), color = MutedText, fontSize = 12.sp)
+                CategorySuggestionStatus.LOADING -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = Terracotta)
+                    Text(stringResource(R.string.ai_category_loading), color = MutedText, fontSize = 12.sp)
+                }
+                CategorySuggestionStatus.READY -> state.suggestedCategory?.let {
+                    Text(stringResource(R.string.ai_category_result, stringResource(it.labelRes)), color = WarmText, fontSize = 13.sp)
+                    TextButton(onClick = onAccept, enabled = !state.isBusy) { Text(stringResource(R.string.ai_category_accept)) }
+                }
+                CategorySuggestionStatus.ERROR -> Text(state.suggestionError.orEmpty(), color = MutedText, fontSize = 12.sp)
+                CategorySuggestionStatus.IDLE -> Unit
+            }
+            TextButton(onClick = onRequest, enabled = state.canSuggestCategory &&
+                state.suggestionStatus != CategorySuggestionStatus.LOADING && state.suggestionStatus != CategorySuggestionStatus.WAITING) {
+                Text(stringResource(R.string.ai_category_request))
+            }
+        }
     }
 }
 

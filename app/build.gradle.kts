@@ -41,6 +41,9 @@ android {
         buildConfigField("String", "CLOUDINARY_CLOUD_NAME", "\"${localProperties.getProperty("cloudinary.cloudName", "")}\"")
         buildConfigField("String", "CLOUDINARY_UPLOAD_PRESET", "\"${localProperties.getProperty("cloudinary.uploadPreset", "")}\"")
         resValue("string", "mapbox_access_token", localProperties.getProperty("MAPBOX_ACCESS_TOKEN", ""))
+        // Solo la URL pública. OPENROUTER_API_KEY se guarda exclusivamente como secreto del Worker.
+        val aiBaseUrl = localProperties.getProperty("ai.baseUrl", "").replace("\\", "\\\\").replace("\"", "\\\"")
+        buildConfigField("String", "AI_BASE_URL", "\"$aiBaseUrl\"")
         ndk {
             abiFilters += listOf("arm64-v8a", "x86_64")
         }
@@ -70,6 +73,7 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
@@ -89,6 +93,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.zxing.core)
+    implementation(libs.zxing.embedded)
     // Inyección de dependencias (guía 12)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

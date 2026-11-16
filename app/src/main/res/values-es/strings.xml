@@ -1,6 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Inglés en values/ y español en values-es/: toda clave debe estar en los dos (StringsTranslationTest lo comprueba). -->
 <resources>
+    <string name="qr_open_camera">Escanear QR con cámara</string>
+    <string name="qr_camera_prompt">Escanea el QR del evento del organizador. Atrás cancela sin registrar asistencia.</string>
+    <string name="qr_camera_denied">Se necesita permiso de cámara para escanear. Puedes escribir el código del evento o habilitar la cámara en Ajustes.</string>
+    <string name="qr_cancelled">Escaneo cancelado. No se envió ningún check-in.</string>
+    <string name="qr_wrong_event">Este QR pertenece a otro evento. Escanea el QR del evento seleccionado.</string>
+    <string name="qr_scanner_unavailable">No se pudo abrir la cámara. Puedes escribir el código manualmente.</string>
+    <string name="qr_open_settings">Abrir ajustes de la aplicación</string>
+    <string name="gallery_position">Foto %1$d de %2$d</string>
+    <string name="gallery_image_description">%1$s. Foto %2$d de %3$d</string>
+    <string name="gallery_next">Foto siguiente</string>
+    <string name="gallery_previous">Foto anterior</string>
+    <string name="gallery_pause">Pausar avance de fotos</string>
+    <string name="gallery_resume">Reanudar avance de fotos</string>
+    <string name="ai_reason_language">es</string>
+    <string name="recommendations_refresh">Actualizar recomendaciones</string>
+    <string name="recommendations_source_remote">Ordenados con IA remota</string>
+    <string name="recommendations_source_local">Recomendaciones locales · IA no disponible o actualización en espera</string>
+    <string name="ai_category_title">Sugerencia de categoría con IA</string>
+    <string name="ai_category_hint">Escribe al menos 5 caracteres de título y 20 de descripción. Solo este texto se envía al servicio de IA. Siempre puedes elegir la categoría manualmente.</string>
+    <string name="ai_category_waiting">Esperando a que termines de escribir…</string>
+    <string name="ai_category_loading">Buscando una categoría…</string>
+    <string name="ai_category_result">La IA sugiere: %1$s. Revisa antes de aceptar.</string>
+    <string name="ai_category_accept">Usar sugerencia</string>
+    <string name="ai_category_request">Sugerir categoría</string>
+    <string name="ai_category_error">La IA no está disponible o devolvió una respuesta inválida. Reintenta o elige la categoría manualmente.</string>
+    <string name="ai_category_not_configured">El servicio de IA aún no está configurado. Elige la categoría manualmente.</string>
+    <string name="ai_category_session">No se pudo verificar tu sesión. Vuelve a iniciar sesión o elige la categoría manualmente.</string>
+    <string name="ai_category_rate_limit">Se alcanzó el límite de consultas de IA. Intenta más tarde o elige la categoría manualmente.</string>
     <string name="map_select_marker_title">Elige un evento en el mapa</string>
     <string name="map_select_marker_message">Toca un marcador para ver su información. Si ves un grupo con un número, acerca el mapa para separar los eventos.</string>
 
@@ -208,7 +236,7 @@
     <string name="location_filter_city">En mi ciudad</string>
     <string name="distance_away">" • a %1$s"</string>
     <string name="recommendations_title">Recomendados para ti</string>
-    <string name="recommendations_subtitle">Selección local según tus preferencias y actividad</string>
+    <string name="recommendations_subtitle">Según tus preferencias y actividad</string>
     <string name="action_see_all">Ver todos</string>
     <string name="recommendations_starter">Para empezar, te mostramos opciones cercanas y variadas. Elige intereses en tu perfil o marca «Me interesa» para afinar la selección.</string>
     <string name="recommendations_empty_title">No hay nuevas recomendaciones</string>
@@ -262,7 +290,7 @@
     <string name="pick_confirm">Confirmar ubicación</string>
     <string name="pick_point_on_map">Punto en el mapa, %1$s</string>
     <string name="check_in_title">Check-in de Asistencia</string>
-    <string name="check_in_subtitle">Lector de QR simulado</string>
+    <string name="check_in_subtitle">Escanea el QR del evento</string>
     <string name="check_in_validate">Validar código</string>
     <string name="check_in_tab_scan">Escanear QR</string>
     <string name="check_in_tab_my_qr">Mostrar mi QR</string>
