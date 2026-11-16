@@ -49,7 +49,7 @@ class FirestoreCheckInRepository @Inject constructor(
                 tx.update(userRef, "points", updated.points)
                 // Las reglas existentes solo permiten create, no update de historial: un ID previo
                 // provoca rechazo y rollback de toda la transacción, nunca un segundo premio.
-                tx.set(historyRef, PointsEntryDto.fromDomain(PointsEntry(userId, earned, PointsReason.CHECK_IN, createdAt, event.title)))
+                tx.set(historyRef, PointsEntryDto.fromDomain(PointsEntry(userId, earned, PointsReason.CHECK_IN, createdAt, event.title)).copy(eventId = eventId))
             }
             CheckInCommit(CheckInRegistration.REGISTERED, event, earned, user, updated)
         }.await() } catch (error: FirebaseFirestoreException) {

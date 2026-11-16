@@ -137,7 +137,9 @@ Respuesta: `{"items":[{"eventId":"id-existente","reason":"Por tus intereses depo
 
 Android filtra datos de sus repositorios Firebase: verificados, futuros, con cupo, ajenos al usuario y sin inscripción. Resuelve únicamente IDs recibidos y revalida a la vuelta. **El Worker no lee Firestore**: valida el contrato y pertenencia de salida a candidatos, pero no certifica que un cliente manipulado haya enviado candidatos reales/elegibles. No tiene acceso administrativo, herramientas ni capacidad de escribir publicaciones.
 
-### Orden de despliegue y prueba en Pixel
+### Estado actual y procedimiento de despliegue (solo si se decide actualizar)
+
+Actualización de documentación 15/11: el equipo reportó desplegada `ai-dual-2026-11-11-2` y éxito real de categoría y etiquetas remota/local en Pixel. No se requiere redesplegar por los cambios Android de eliminación/reglas. El agente no verificó producción en esta pasada. 429/503 intermitentes siguen abiertos hasta tener diagnóstico de la misma petición. Los pasos siguientes son una referencia operativa futura, **no una acción autorizada de esta etapa local**.
 
 1. Worker existente → **Editar código**, pegar el archivo completo **`worker/src/index.js`** y pulsar **Implementar** en Producción; conservar las variables/secreto.
 2. GET de cualquiera de las dos rutas: 405 y encabezado `X-AKJ-Worker-Revision: ai-dual-2026-11-11-2`.

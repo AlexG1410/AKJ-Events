@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Inglés en values/ y español en values-es/: toda clave debe estar en los dos (StringsTranslationTest lo comprueba). -->
 <resources>
+    <string name="edit_profile_delete_reauth">Enter your current password to verify your identity before deleting any data. Deletion cannot be undone. If cleanup fails after verification, some data may already be deleted; sign in with the same account and retry.</string>
     <string name="qr_open_camera">Scan QR with camera</string>
     <string name="qr_camera_prompt">Scan the organizer’s event QR. Back cancels without checking in.</string>
     <string name="qr_camera_denied">Camera permission is required to scan. You can enter the event code manually or enable the camera in Settings.</string>
@@ -694,7 +695,7 @@
     <string name="edit_profile_error_email_in_use">That email already belongs to another account</string>
     <string name="edit_profile_error_not_found">We couldn\'t find your account</string>
     <string name="edit_profile_error_save">Could not save the profile. Try again</string>
-    <string name="edit_profile_error_delete">Could not delete the account</string>
+    <string name="edit_profile_error_delete">Could not complete deletion. Check your current password and connection. If cleanup had started, some data may be deleted; retry with the same account.</string>
     <plurals name="relative_minutes_ago">
         <item quantity="one">%d min ago</item>
         <item quantity="other">%d min ago</item>

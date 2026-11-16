@@ -1,5 +1,7 @@
 # Selección sugerida para compartir fase 3
 
+> Referencia histórica del bloque IA/QR/galerías, ya contenido en `000ec9d` al comenzar el cierre debug. El PR #7 está en borrador según el equipo. Para los **cambios locales posteriores**, revisar `git status` y el listado de `CIERRE_DEBUG_FASE3.md`; no volver a seleccionar archivos antiguos como si siguieran sin seguimiento. Esta etapa no ejecuta commit/push/merge ni despliegues.
+
 Rama: `fase3-ia-categorias`. Esta lista no ejecuta staging, commit ni push. Revisar el diff de todos los archivos, incluidos los nuevos (sin seguimiento); no seleccionar solo los cambios visuales del 15/11 porque dependen del trabajo previo de IA/QR/galerías.
 
 ## Seleccionar conjuntamente

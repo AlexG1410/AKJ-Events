@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
 const { initializeTestEnvironment, assertFails } = createRequire(import.meta.url)("@firebase/rules-unit-testing");
-const { doc, getDoc, getDocFromServer, setDoc, runTransaction, collection, query, where, getDocs } = createRequire(import.meta.url)("firebase/firestore");
+const { doc, getDoc, getDocFromServer, setDoc, updateDoc, deleteDoc, writeBatch, runTransaction, collection, query, where, getDocs } = createRequire(import.meta.url)("firebase/firestore");
 
 if (!process.env.FIRESTORE_EMULATOR_HOST?.startsWith("127.0.0.1:")) throw new Error("LOCAL_FIRESTORE_EMULATOR_REQUIRED");
 let env;
@@ -34,7 +34,7 @@ async function complete(db, uid = "attendee") {
     else { tx.update(e, { attendanceCount: event.attendanceCount + 1 }); tx.set(a, { eventId: "event", userId: uid, checkedIn: true }); }
     if (user.role !== "MODERATOR") {
       tx.update(u, { points: user.points + 15 });
-      tx.set(h, { userId: uid, points: 15, reason: "CHECK_IN", eventTitle: event.title, createdAt: new Date() });
+      tx.set(h, { userId: uid, points: 15, reason: "CHECK_IN", eventId: "event", eventTitle: event.title, createdAt: new Date() });
     }
     return "registered";
   }); } catch (error) {
@@ -101,4 +101,94 @@ test("moderator participation preserves the zero-reputation policy", async () =>
   assert.equal(await complete(db, "moderator"), "registered");
   assert.equal((await getDoc(doc(db, "users/moderator"))).data().points, 100);
   assert.equal((await getDocs(query(collection(db, "pointsHistory"), where("userId", "==", "moderator")))).size, 0);
+});
+
+test("standalone counters, forged QR history, role escalation and deleting a checked-in attendance are denied", async () => {
+  const db = env.authenticatedContext("attendee").firestore();
+  await assertFails(updateDoc(doc(db, "events/event"), { attendanceCount: 99 }));
+  await assertFails(updateDoc(doc(db, "events/event"), { interestCount: 99 }));
+  await assertFails(updateDoc(doc(db, "users/attendee"), { role: "MODERATOR" }));
+  await assertFails(setDoc(doc(db, "pointsHistory/checkin_event_attendee"), { userId: "attendee", reason: "CHECK_IN", eventId: "event", points: 15 }));
+  await complete(db);
+  await assertFails(deleteDoc(doc(db, "attendances/event_attendee")));
+  await assertFails(updateDoc(doc(db, "attendances/event_attendee"), { checkedIn: false }));
+  await assertFails(deleteDoc(doc(db, "pointsHistory/checkin_event_attendee")));
+});
+
+test("legitimate confirmation/cancellation and interest/uninterest require matching counters", async () => {
+  const db = env.authenticatedContext("attendee").firestore();
+  const event = doc(db, "events/event"), attendance = doc(db, "attendances/event_attendee"), interest = doc(db, "interests/event_attendee");
+  let batch = writeBatch(db);
+  batch.set(attendance, { eventId: "event", userId: "attendee", checkedIn: false });
+  batch.update(event, { attendanceCount: 1 });
+  await batch.commit();
+  batch = writeBatch(db); batch.delete(attendance); batch.update(event, { attendanceCount: 0 }); await batch.commit();
+  batch = writeBatch(db); batch.set(interest, { eventId: "event", userId: "attendee" }); batch.update(event, { interestCount: 1 }); await batch.commit();
+  batch = writeBatch(db); batch.delete(interest); batch.update(event, { interestCount: 0 }); await batch.commit();
+  assert.equal((await getDoc(event)).data().attendanceCount, 0);
+  assert.equal((await getDoc(event)).data().interestCount, 0);
+});
+
+test("moderation permits status/reward marker but not arbitrary content or counters", async () => {
+  await env.withSecurityRulesDisabled(async c => {
+    await setDoc(doc(c.firestore(), "users/mod"), { role: "MODERATOR", points: 0 });
+    await updateDoc(doc(c.firestore(), "events/event"), { status: "PENDING", verificationRewarded: false });
+  });
+  const db = env.authenticatedContext("mod").firestore();
+  const event = doc(db, "events/event");
+  await updateDoc(event, { status: "VERIFIED", rejectionReason: null });
+  await updateDoc(event, { verificationRewarded: true });
+  await assertFails(updateDoc(event, { attendanceCount: 100 }));
+  await assertFails(updateDoc(event, { organizerId: "mod" }));
+  await assertFails(updateDoc(event, { status: "REJECTED", rejectionReason: "" }));
+  await updateDoc(event, { status: "REJECTED", rejectionReason: "Fuera de alcance" });
+  await updateDoc(event, { status: "FINISHED", rejectionReason: null });
+});
+
+test("known residual risk: generic reputation and non-QR history remain writable by authenticated clients", async () => {
+  // Regresión explícita del riesgo que necesita operaciones de servidor; NO prueba de seguridad completa.
+  const db = env.authenticatedContext("other").firestore();
+  await updateDoc(doc(db, "users/attendee"), { points: 999, badges: ["FIRST_EVENT"] });
+  await setDoc(doc(db, "pointsHistory/forged-generic"), { userId: "attendee", reason: "COMMENT", points: 999 });
+  assert.equal((await getDoc(doc(db, "users/attendee"))).data().points, 999);
+});
+
+test("rules themselves reject own/full/non-public enrollment, even when bypassing client prechecks", async () => {
+  async function join(uid) {
+    const db = env.authenticatedContext(uid).firestore();
+    const batch = writeBatch(db);
+    const event = (await getDoc(doc(db, "events/event"))).data();
+    batch.set(doc(db, `attendances/event_${uid}`), { userId: uid, eventId: "event", checkedIn: false });
+    batch.update(doc(db, "events/event"), { attendanceCount: event.attendanceCount + 1 });
+    await batch.commit();
+  }
+  await assertFails(join("organizer"));
+  await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "events/event"), { attendanceCount: 2 }); });
+  await assertFails(join("attendee"));
+  for (const status of ["FINISHED", "PENDING", "REJECTED"]) {
+    await env.withSecurityRulesDisabled(async c => { await updateDoc(doc(c.firestore(), "events/event"), { status, attendanceCount: 0 }); });
+    await assertFails(join("attendee"));
+  }
+});
+
+test("only a recent identity can start deletion; personal edits cannot change another profile", async () => {
+  const old = env.authenticatedContext("attendee", { auth_time: 1 }).firestore();
+  await assertFails(updateDoc(doc(old, "users/attendee"), { deletionPending: true }));
+  const recent = env.authenticatedContext("attendee", { auth_time: Math.floor(Date.now() / 1000) }).firestore();
+  await updateDoc(doc(recent, "users/attendee"), { deletionPending: true });
+  await updateDoc(doc(recent, "users/attendee"), { name: "Edited profile" });
+  await assertFails(updateDoc(doc(recent, "users/other"), { email: "forged@example.test" }));
+});
+
+test("organizer deletion removes event and other users' related records in one batch", async () => {
+  await env.withSecurityRulesDisabled(async c => {
+    await setDoc(doc(c.firestore(), "attendances/event_attendee"), { eventId: "event", userId: "attendee", checkedIn: true });
+    await setDoc(doc(c.firestore(), "interests/event_attendee"), { eventId: "event", userId: "attendee" });
+    await setDoc(doc(c.firestore(), "comments/comment"), { eventId: "event", authorId: "attendee" });
+  });
+  const db = env.authenticatedContext("organizer").firestore();
+  const batch = writeBatch(db);
+  for (const path of ["events/event", "attendances/event_attendee", "interests/event_attendee", "comments/comment"]) batch.delete(doc(db, path));
+  await batch.commit();
+  assert.equal((await getDoc(doc(db, "events/event"))).exists(), false);
 });

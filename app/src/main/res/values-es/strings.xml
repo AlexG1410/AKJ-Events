@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Inglés en values/ y español en values-es/: toda clave debe estar en los dos (StringsTranslationTest lo comprueba). -->
 <resources>
+    <string name="edit_profile_delete_reauth">Ingresa tu contraseña actual para verificar tu identidad antes de borrar datos. La eliminación no se puede deshacer. Si la limpieza falla después de verificar, algunos datos podrían estar borrados; inicia sesión con la misma cuenta y reintenta.</string>
     <string name="qr_open_camera">Escanear QR con cámara</string>
     <string name="qr_camera_prompt">Escanea el QR del evento del organizador. Atrás cancela sin registrar asistencia.</string>
     <string name="qr_camera_denied">Se necesita permiso de cámara para escanear. Puedes escribir el código del evento o habilitar la cámara en Ajustes.</string>
@@ -693,7 +694,7 @@
     <string name="edit_profile_error_email_in_use">Ese correo ya pertenece a otra cuenta</string>
     <string name="edit_profile_error_not_found">No encontramos tu cuenta</string>
     <string name="edit_profile_error_save">No se pudo guardar el perfil. Intenta de nuevo</string>
-    <string name="edit_profile_error_delete">No se pudo eliminar la cuenta</string>
+    <string name="edit_profile_error_delete">No se pudo completar la eliminación. Revisa tu contraseña actual y conexión. Si la limpieza había comenzado, algunos datos podrían estar borrados; reintenta con la misma cuenta.</string>
     <plurals name="relative_minutes_ago">
         <item quantity="one">Hace %d min</item>
         <item quantity="many">Hace %d min</item>

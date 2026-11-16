@@ -83,11 +83,26 @@ class EditProfileViewModelTest {
 
     @Test
     fun deletingTheAccountRemovesTheUserAndTheirEvents() = runTest {
-        viewModel.deleteAccount()
+        viewModel.deleteAccount(DemoCredentials.password)
 
         assertTrue(viewModel.uiState.value.isAccountDeleted)
         assertNull(repos.users.findById(DEMO_USER))
         assertNull(repos.users.currentUser.value)
         assertTrue(repos.events.findEventsByOrganizer(DEMO_USER).isEmpty())
+    }
+
+    @Test fun wrongOrEmptyPasswordLeavesAllDataIntact() = runTest {
+        val users = repos.users.users.value
+        val events = repos.events.events.value
+        val history = repos.users.pointsHistory.value
+        val attendances = repos.events.attendances.value
+        viewModel.deleteAccount("incorrect-password")
+        assertTrue(viewModel.uiState.value.result is RequestResult.Failure)
+        viewModel.onFailureShown()
+        viewModel.deleteAccount("")
+        assertEquals(users, repos.users.users.value)
+        assertEquals(events, repos.events.events.value)
+        assertEquals(history, repos.users.pointsHistory.value)
+        assertEquals(attendances, repos.events.attendances.value)
     }
 }

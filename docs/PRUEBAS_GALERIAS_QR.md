@@ -18,13 +18,13 @@ El usuario reportó lo siguiente; no es una ejecución nueva del agente ni se co
 3. Permisos denegados/Ajustes, QR inválido/de otro evento, cupos y desconexión; galería en Inicio/lista/miniaturas, pausa, segundo plano, movimiento reducido e idiomas/accesibilidad siguen como recorridos no certificados manualmente.
 4. Validar el subtítulo corregido y cancelar antes/no cancelar después del check-in en el APK nuevo.
 
-Los riesgos generales de **reglas Firestore permisivas** y **eliminación parcial de cuenta** permanecen abiertos; ver `FASE3_AUDITORIA.md`. No se cambiaron reglas ni eliminación de cuenta en este ajuste.
+El ajuste previo del subtítulo no cambiaba reglas/eliminación. En el cierre debug posterior sí se preparan reglas locales y reautenticación antes de borrar; persisten riesgos de reputación cliente y eliminación parcial extrema. Ver [cierre debug](CIERRE_DEBUG_FASE3.md) y auditoría; nada se desplegó.
 
 ## Preparación
 
 - Compilar e instalar el debug actualizado en ambos teléfonos; no basta con actualizar el Worker. APK: `app/build/outputs/apk/debug/app-debug.apk`.
 - Usar cuentas y eventos de prueba autorizados: un organizador y un asistente **distinto**, evento verificado con cupo y sin check-in previo del asistente. Cualquier alta/asistencia modifica datos reales si Android apunta al proyecto real: hacerla solo con autorización.
-- No se requieren reglas, índices, facturación ni despliegue Worker nuevos para estos cambios. La revisión IA reportada por el usuario es `ai-dual-2026-11-11-2`.
+- La revisión IA reportada por el equipo es `ai-dual-2026-11-11-2`; sin despliegue nuevo en esta pasada. Las reglas candidatas y el `eventId` aditivo en nuevos premios QR requieren revisión de compatibilidad antes de una activación futura. Pruebas actuales solo locales, sin producción ni facturación.
 - Registrar dispositivo, versión Android/app, idioma y resultado. Repetir accesibilidad/textos en español e inglés. No incluir tokens, claves o información personal en capturas/logs.
 
 ## Galerías
@@ -69,7 +69,7 @@ No se cambia el límite de tres fotos, la subida Cloudinary ni el esquema `image
 - **Lecturas repetidas:** mantener QR en cámara/pulsar varias veces; sin solicitudes simultáneas desde la UI ni premio repetido.
 - **Cancelar inscripción:** antes del check-in, Cancelar asistencia debe eliminar la inscripción; después del check-in no debe ofrecer cancelación ni alterar asistencia/saldo/historial.
 
-La consistencia usa transacción de asistencia/saldo/historial fijo `checkin_<eventId>_<userId>`. Avisos/insignias son secundarios. No reparar manualmente check-ins históricos sin analizar si ya recibieron puntos. Las reglas actuales aún permiten abuso desde clientes manipulados: estas pruebas no certifican seguridad integral.
+La consistencia usa transacción de asistencia/saldo/historial fijo `checkin_<eventId>_<userId>`; los premios QR nuevos añaden `eventId` para reglas. Avisos/insignias son secundarios. No reparar manualmente check-ins históricos sin analizar si ya recibieron puntos. Las reglas locales nuevas frenan falsificación QR/contadores, pero reputación genérica sigue expuesta y no están desplegadas: no se certifica seguridad integral.
 
 ## IA y consumo
 
@@ -79,7 +79,8 @@ La consistencia usa transacción de asistencia/saldo/historial fijo `checkin_<ev
 
 ## Evidencia automatizada y reproducción
 
-- **15/11:** `assembleDebug` y **196 unitarias** correctos; **2 pruebas nuevas** de `AttendanceBarSmokeTest` aprobadas en Pixel_9a (sin cancelar tras QR/con cancelar antes). Firestore local **5** y Worker **42** aprobadas nuevamente. `git diff --check` sin errores. No se instaló/verificó este ajuste en Moto. Lint y las 10 instrumentadas históricas no se repitieron en esta pasada.
+- **Cierre debug actual (15/11):** debug correcto, **200 unitarias**, Lint **0 errores/62 advertencias/1 sugerencia**; **17 regresiones instrumentadas** (galerías/cámara/IA/procedencia/navegación/barra) y **3 nuevas** de eliminación/diálogo en ejecución separada, todas Pixel_9a; **16 Auth/Firestore locales**, **42 Worker**, diff correcto. Audit Worker 0, emuladores 15 moderadas/0 altas. Sin producción. Recorrido manual corto de todos los servicios y listado de cambios en `CIERRE_DEBUG_FASE3.md`.
+- **15/11, ajuste previo (histórico):** 196 unitarias, 2 `AttendanceBarSmokeTest`, 5 Firestore y 42 Worker correctas. No se verificó el ajuste en Moto; las comprobaciones nuevas de arriba sustituyen esos totales automatizados.
 - **11/11 (histórico):** **195 unitarias**, debug correcto, Lint **0 errores, 61 advertencias y 1 sugerencia**.
 - Pixel_9a/API 37: **10 instrumentadas** (8 galerías, 1 apertura de cámara/Atrás, 1 navegación con API simulada contada). No verifican lectura óptica física ni check-in Android/Firebase completo.
 - Firestore local: **5 pruebas** con reglas reales sin modificar, concurrencia entre clientes de la misma cuenta, rollback, cupo/propio/finalizado/inscrito, acceso no autenticado/historial y moderador sin premio. Clientes JS reproducen el protocolo Android; no son integración del SDK Android.
@@ -94,7 +95,7 @@ npm ci
 npm test
 ```
 
-El script usa `demo-akj-checkin`, configuración `firebase.checkin-test.json`, Firestore `127.0.0.1:8180` y rechaza hosts no loopback. No usa cuentas de servicio ni datos reales. Solo limpia datos del emulador de prueba. Tooling fijado en lockfile: 15 vulnerabilidades npm moderadas, ninguna alta; override grpc 1.14.7. No aplicar `npm audit fix --force` sin evaluar cambios incompatibles.
+El script usa `demo-akj-checkin`, `firebase.checkin-test.json`, Firestore `127.0.0.1:8180` y Auth `127.0.0.1:9199`; rechaza hosts no loopback. No usa cuentas de servicio ni datos reales. Solo limpia datos del emulador de prueba. `npm run test:android` ejecuta SDK Android/repositorios reales y diálogo con `ANDROID_SERIAL=emulator-5554`; crea instancias Firebase nombradas demo y usa `adb reverse`. El guard exige argumento explícito para no ejecutarlo por accidente sin emuladores. Tooling fijado en lockfile: último audit 15 moderadas/0 altas, grpc 1.14.7; no se aplicó `audit fix --force`.
 
 Para instrumentación, apuntar explícitamente a `ANDROID_SERIAL=emulator-5554` y a las clases `EventPhotoGallerySmokeTest`, `QrCameraSmokeTest`, `RecommendationNavigationSmokeTest`. Había también un Moto conectado: el primer intento sin selección falló allí con «No compose hierarchies found» y **no** cuenta como validación del teléfono.
 

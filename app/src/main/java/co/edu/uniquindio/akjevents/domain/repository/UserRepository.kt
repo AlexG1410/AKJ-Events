@@ -59,6 +59,12 @@ interface UserRepository {
     /** Cambia los datos personales; el rol, los puntos y las insignias no se modifican aquí. */
     suspend fun updateProfile(updated: User): ProfileUpdateResult
 
+    /** No escribe datos. Exige credenciales de la sesión actual antes de iniciar una eliminación. */
+    suspend fun reauthenticate(userId: String, password: String): Boolean
+
+    /** Marca una eliminación autorizada, para permitir limpieza/reintento de participación histórica. */
+    suspend fun beginAccountDeletion(userId: String)
+
     /** Elimina la cuenta con su historial de puntos y cierra la sesión si era la del usuario actual. */
     suspend fun deleteAccount(userId: String): Boolean
 

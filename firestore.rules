@@ -28,19 +28,69 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/events/$(eventId)).data.organizerId;
     }
 
+    function deletingSelf() {
+      return signedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('deletionPending', false) == true;
+    }
+
+    // Ambos lados de una transacción deben acompañar el cambio: no basta con inventar un contador.
+    function attendanceDelta(eventId, delta) {
+      let p = /databases/$(database)/documents/attendances/$(eventId + '_' + request.auth.uid);
+      return delta == 1 ? (!exists(p) && existsAfter(p)) : (exists(p) && !existsAfter(p));
+    }
+    function interestDelta(eventId, delta) {
+      let p = /databases/$(database)/documents/interests/$(eventId + '_' + request.auth.uid);
+      return delta == 1 ? (!exists(p) && existsAfter(p)) : (exists(p) && !existsAfter(p));
+    }
+    function validCounters(eventId) {
+      let d = request.resource.data;
+      let a = d.attendanceCount - resource.data.attendanceCount;
+      let i = d.interestCount - resource.data.interestCount;
+      return signedIn() && changedKeys().hasOnly(['attendanceCount', 'interestCount'])
+        && d.attendanceCount is int && d.interestCount is int
+        && d.attendanceCount >= 0 && d.interestCount >= 0
+        && (a == 0 || ((a == 1 || a == -1) && attendanceDelta(eventId, a)))
+        && (i == 0 || ((i == 1 || i == -1) && interestDelta(eventId, i)));
+    }
+    function eventDeleted(eventId) {
+      return !existsAfter(/databases/$(database)/documents/events/$(eventId));
+    }
+    function canJoin(eventId) {
+      let e = get(/databases/$(database)/documents/events/$(eventId)).data;
+      let after = getAfter(/databases/$(database)/documents/events/$(eventId)).data;
+      return e.status == 'VERIFIED' && e.organizerId != request.auth.uid
+        && (e.get('capacity', null) == null || e.attendanceCount < e.capacity)
+        && after.attendanceCount == e.attendanceCount + 1;
+    }
+    function qrHistory(entryId) {
+      let h = request.resource.data;
+      let p = /databases/$(database)/documents/attendances/$(h.eventId + '_' + request.auth.uid);
+      let u = /databases/$(database)/documents/users/$(request.auth.uid);
+      return isMe(h.userId) && entryId == 'checkin_' + h.eventId + '_' + request.auth.uid
+        && h.points == 15 && h.reason == 'CHECK_IN'
+        && (!exists(p) || get(p).data.checkedIn == false)
+        && getAfter(p).data.checkedIn == true
+        && get(u).data.role != 'MODERATOR'
+        && getAfter(u).data.points == get(u).data.points + 15;
+    }
+
     // Perfiles. Los puntos y las insignias los suman las acciones de otras personas (por ejemplo, un
     // "Me interesa" en tu evento), por eso cualquiera con sesión puede cambiar solo esos dos campos.
     match /users/{userId} {
       allow read: if signedIn();
       allow create: if isMe(userId) && request.resource.data.role == 'USER';
-      allow update: if (isMe(userId) && request.resource.data.role == resource.data.role)
+      allow update: if (isMe(userId) && changedKeys().hasOnly([
+          'name', 'email', 'city', 'address', 'latitude', 'longitude', 'interests', 'profilePictureUrl', 'deletionPending'
+        ]) && (!changedKeys().hasAny(['deletionPending'])
+          || (request.resource.data.deletionPending == true && request.auth.token.auth_time > request.time.toMillis() / 1000 - 300)))
         || (signedIn() && changedKeys().hasOnly(['points', 'badges']));
       allow delete: if isMe(userId);
     }
 
     match /pointsHistory/{entryId} {
-      allow read, delete: if isMe(resource.data.userId);
-      allow create: if signedIn();
+      allow read: if isMe(resource.data.userId);
+      allow delete: if isMe(resource.data.userId) && deletingSelf();
+      allow create: if signedIn() && (request.resource.data.reason == 'CHECK_IN'
+        ? qrHistory(entryId) : !entryId.matches('checkin_.*'));
     }
 
     // Eventos. Los verificados y finalizados son públicos; los pendientes y rechazados solo los ven su
@@ -62,14 +112,16 @@ service cloud.firestore {
         && request.resource.data.interestCount == 0
         && request.resource.data.verificationRewarded == false;
 
-      allow update: if isModerator()
+      allow update: if (isModerator() && changedKeys().hasOnly(['status', 'rejectionReason', 'verificationRewarded'])
+          && request.resource.data.status in ['VERIFIED', 'REJECTED', 'FINISHED']
+          && (request.resource.data.status != 'REJECTED' || request.resource.data.rejectionReason.size() > 0))
         // El organizador edita el contenido, lo reenvía (pendiente) o lo finaliza; no puede verificarlo
         || (resource.data.organizerId == request.auth.uid
             && request.resource.data.organizerId == request.auth.uid
             && request.resource.data.status in ['PENDING', 'FINISHED']
             && !changedKeys().hasAny(['attendanceCount', 'interestCount', 'verificationRewarded', 'createdAt']))
         // Confirmar asistencia, hacer check-in o marcar "Me interesa" solo cambia los conteos
-        || (signedIn() && changedKeys().hasOnly(['attendanceCount', 'interestCount']));
+        || validCounters(eventId);
 
       allow delete: if isModerator() || resource.data.organizerId == request.auth.uid;
     }
@@ -86,20 +138,32 @@ service cloud.firestore {
     match /attendances/{attendanceId} {
       allow read: if signedIn();
       allow create: if isMe(request.resource.data.userId)
-        && attendanceId == request.resource.data.eventId + '_' + request.auth.uid;
-      allow update: if isMe(resource.data.userId) && changedKeys().hasOnly(['checkedIn']);
-      allow delete: if isMe(resource.data.userId)
-        || organizerOf(resource.data.eventId) == request.auth.uid
-        || isModerator();
+        && attendanceId == request.resource.data.eventId + '_' + request.auth.uid
+        && canJoin(request.resource.data.eventId)
+        && request.resource.data.checkedIn is bool;
+      allow update: if isMe(resource.data.userId) && changedKeys().hasOnly(['checkedIn'])
+        && resource.data.checkedIn == false && request.resource.data.checkedIn == true
+        && get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.status == 'VERIFIED'
+        && organizerOf(resource.data.eventId) != request.auth.uid;
+      allow delete: if (isMe(resource.data.userId)
+          && (!resource.data.checkedIn || deletingSelf())
+          && (eventDeleted(resource.data.eventId)
+            || getAfter(/databases/$(database)/documents/events/$(resource.data.eventId)).data.attendanceCount
+               == get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.attendanceCount - 1))
+        || (eventDeleted(resource.data.eventId) && (organizerOf(resource.data.eventId) == request.auth.uid || isModerator()));
     }
 
     match /interests/{interestId} {
       allow read: if signedIn();
       allow create: if isMe(request.resource.data.userId)
-        && interestId == request.resource.data.eventId + '_' + request.auth.uid;
-      allow delete: if isMe(resource.data.userId)
-        || organizerOf(resource.data.eventId) == request.auth.uid
-        || isModerator();
+        && interestId == request.resource.data.eventId + '_' + request.auth.uid
+        && get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.status == 'VERIFIED'
+        && getAfter(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.interestCount
+           == get(/databases/$(database)/documents/events/$(request.resource.data.eventId)).data.interestCount + 1;
+      allow delete: if (isMe(resource.data.userId) && (eventDeleted(resource.data.eventId)
+          || getAfter(/databases/$(database)/documents/events/$(resource.data.eventId)).data.interestCount
+             == get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.interestCount - 1))
+        || (eventDeleted(resource.data.eventId) && (organizerOf(resource.data.eventId) == request.auth.uid || isModerator()));
     }
 
     // Notificaciones: cualquiera con sesión puede avisarle a otra persona; cada quien lee y marca las suyas

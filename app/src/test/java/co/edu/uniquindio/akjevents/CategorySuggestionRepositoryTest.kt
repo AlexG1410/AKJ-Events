@@ -26,7 +26,7 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class CategorySuggestionRepositoryTest {
+class   CategorySuggestionRepositoryTest {
     private fun repository(
         config: String = "https://worker.test/",
         tokens: AiSessionTokenProvider = AiSessionTokenProvider { "test-id-token" },

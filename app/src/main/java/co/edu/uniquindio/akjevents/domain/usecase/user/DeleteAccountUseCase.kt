@@ -11,8 +11,10 @@ class DeleteAccountUseCase @Inject constructor(
     private val eventRepository: EventRepository,
     private val notificationRepository: NotificationRepository
 ) {
-    suspend operator fun invoke(userId: String): Boolean {
+    suspend operator fun invoke(userId: String, password: String): Boolean {
+        if (password.isBlank() || !userRepository.reauthenticate(userId, password)) return false
         if (userRepository.findById(userId) == null) return false
+        userRepository.beginAccountDeletion(userId)
         eventRepository.removeUserData(userId)
         notificationRepository.deleteForUser(userId)
         return userRepository.deleteAccount(userId)
