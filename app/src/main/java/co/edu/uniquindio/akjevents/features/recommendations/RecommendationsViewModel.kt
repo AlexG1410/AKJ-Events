@@ -11,6 +11,8 @@ import java.time.Duration
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +32,8 @@ class RecommendationsViewModel(
     observeRecommendationChanges: ObserveRecommendationChangesUseCase,
     private val getRecommendations: GetRecommendationsUseCase,
     private val revalidateRecommendations: RevalidateRecommendationsUseCase,
-    private val now: () -> LocalDateTime
+    private val now: () -> LocalDateTime,
+    private val refreshDelayMs: Long = 0
 ) : ViewModel() {
 
     @Inject
@@ -38,7 +41,7 @@ class RecommendationsViewModel(
         observeRecommendationChanges: ObserveRecommendationChangesUseCase,
         getRecommendations: GetRecommendationsUseCase,
         revalidateRecommendations: RevalidateRecommendationsUseCase
-    ) : this(observeRecommendationChanges, getRecommendations, revalidateRecommendations, LocalDateTime::now)
+    ) : this(observeRecommendationChanges, getRecommendations, revalidateRecommendations, LocalDateTime::now, 750)
 
     private val _uiState = MutableStateFlow(RecommendationsUiState())
     val uiState = _uiState.asStateFlow()
@@ -50,8 +53,11 @@ class RecommendationsViewModel(
             combine(observeRecommendationChanges(), refreshVersion) { _, version -> version }.collectLatest {
                 expiryJob?.cancel()
                 // No se conservan recomendaciones de una sesión o contexto anterior mientras se clasifica.
-                _uiState.value = RecommendationsUiState()
+                _uiState.value = RecommendationsUiState(feed = revalidateRecommendations(_uiState.value.feed))
+                // Agrupa las emisiones iniciales de Firestore y cambios rápidos; no retrasa la retirada de datos inválidos.
+                delay(refreshDelayMs)
                 val feed = getRecommendations()
+                currentCoroutineContext().ensureActive()
                 _uiState.value = RecommendationsUiState(feed, isLoading = false)
                 // También retira eventos que comienzan aunque no haya cambios en los repositorios.
                 feed.items.minOfOrNull { it.event.startsAt }?.let { nextStart ->

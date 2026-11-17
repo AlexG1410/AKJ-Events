@@ -1,5 +1,6 @@
 *.iml
 .gradle
+/.kotlin/
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -23,3 +24,11 @@ local.properties
 /seed/node_modules
 *-firebase-adminsdk-*.json
 service-account*.json
+
+# Worker de IA: secretos locales y archivos generados
+/worker/node_modules/
+/worker/.wrangler/
+/worker/.dev.vars*
+/worker/.env*
+/firebase-tests/node_modules/
+/firebase-tests/.firebase/

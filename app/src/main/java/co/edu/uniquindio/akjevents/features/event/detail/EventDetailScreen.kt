@@ -66,7 +66,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -115,7 +114,6 @@ import co.edu.uniquindio.akjevents.domain.model.CommunityEvent
 import co.edu.uniquindio.akjevents.domain.model.EventStatus
 import co.edu.uniquindio.akjevents.domain.model.User
 import co.edu.uniquindio.akjevents.domain.model.UserLevel
-import coil3.compose.AsyncImage
 import java.util.Locale
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
@@ -154,6 +152,7 @@ fun EventDetailScreen(
                 AttendanceBar(
                     isInterested = state.isInterested,
                     isAttending = state.isAttending,
+                    isCheckedIn = state.isCheckedIn,
                     onToggleInterest = viewModel::toggleInterest,
                     onToggleAttendance = viewModel::toggleAttendance
                 )
@@ -350,19 +349,11 @@ private fun HeroImage(event: CommunityEvent) {
             .clip(CardShape)
             .background(SurfaceContainerHigh)
     ) {
-        AsyncImage(
-            model = event.imageUrls.first(),
-            contentDescription = stringResource(R.string.event_image_description, event.title),
-            contentScale = ContentScale.Crop,
-            placeholder = painterResource(R.drawable.event_placeholder),
-            error = painterResource(R.drawable.event_placeholder),
-            modifier = Modifier.fillMaxSize()
-        )
-        Box(
+        co.edu.uniquindio.akjevents.core.component.EventPhotoGallery(event, Modifier.fillMaxSize(), co.edu.uniquindio.akjevents.core.component.PhotoGalleryMode.DETAIL, imageOverlay = { Box(
             Modifier
                 .fillMaxSize()
                 .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Black.copy(alpha = 0.2f), Color.Black.copy(alpha = 0.7f))))
-        )
+        ) })
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -782,9 +773,10 @@ private fun CommentRow(item: CommentItem, isOrganizer: Boolean) {
 }
 
 @Composable
-private fun AttendanceBar(
+internal fun AttendanceBar(
     isInterested: Boolean,
     isAttending: Boolean,
+    isCheckedIn: Boolean,
     onToggleInterest: () -> Unit,
     onToggleAttendance: () -> Unit
 ) {
@@ -811,10 +803,11 @@ private fun AttendanceBar(
                     Text(stringResource(if (isInterested) R.string.detail_interested else R.string.interest_add), color = Terracotta, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
-            // Ya inscrito: el botón pasa a ser secundario y permite cancelar
+            // Solo se puede cancelar antes del check-in; después se muestra el estado sin acción.
             val contentColor = if (isAttending) Terracotta else Color.White
             Surface(
                 onClick = onToggleAttendance,
+                enabled = !isCheckedIn,
                 modifier = Modifier.weight(1f).height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 color = if (isAttending) Color.White else Terracotta,
@@ -826,13 +819,17 @@ private fun AttendanceBar(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        if (isAttending) Icons.Outlined.EventBusy else Icons.Outlined.HowToReg,
+                        if (isAttending && !isCheckedIn) Icons.Outlined.EventBusy else Icons.Outlined.HowToReg,
                         contentDescription = null,
                         tint = contentColor,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        "  " + stringResource(if (isAttending) R.string.detail_cancel_attendance else R.string.detail_confirm_attendance),
+                        "  " + stringResource(when {
+                            isCheckedIn -> R.string.detail_checked_in
+                            isAttending -> R.string.detail_cancel_attendance
+                            else -> R.string.detail_confirm_attendance
+                        }),
                         color = contentColor,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold

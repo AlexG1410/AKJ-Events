@@ -15,7 +15,9 @@ data class PointsEntryDto(
     val points: Int = 0,
     val reason: String = PointsReason.ACCUMULATED.name,
     val eventTitle: String? = null,
-    val createdAt: Timestamp? = null
+    val createdAt: Timestamp? = null,
+    /** Solo las nuevas recompensas QR necesitan ID para validar su vínculo en reglas. */
+    val eventId: String? = null
 ) {
     fun toDomain(): PointsEntry = PointsEntry(
         userId = userId,

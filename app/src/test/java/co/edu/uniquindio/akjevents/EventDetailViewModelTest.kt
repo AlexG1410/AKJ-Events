@@ -145,6 +145,28 @@ class EventDetailViewModelTest {
     }
 
     @Test
+    fun checkedInAttendanceCannotBeCancelledAndKeepsPointsAndHistory() = runTest {
+        val event = repository.findPublicEvent("ciclopaseo")!!
+        repos.useCases.checkIn(event.checkInCode, DEMO_USER)
+        val vm = detail(event.id)
+        val attendance = repository.attendances.value
+        val count = repository.findPublicEvent(event.id)!!.attendanceCount
+        val points = repos.pointsOf(DEMO_USER)
+        val history = repos.users.pointsHistory.value
+        assertTrue(vm.uiState.value.isCheckedIn)
+
+        vm.toggleAttendance()
+        // El caso de uso/repositorio también lo rechaza, aunque se omita la protección de la UI.
+        assertFalse(repos.useCases.cancelAttendance(event.id, DEMO_USER))
+
+        assertEquals(TestResourceProvider.getString(R.string.detail_cannot_cancel), vm.uiState.value.userMessage)
+        assertEquals(attendance, repository.attendances.value)
+        assertEquals(count, repository.findPublicEvent(event.id)!!.attendanceCount)
+        assertEquals(points, repos.pointsOf(DEMO_USER))
+        assertEquals(history, repos.users.pointsHistory.value)
+    }
+
+    @Test
     fun fullEventShowsErrorAndKeepsAttendance() = runTest {
         val viewModel = detail("encuentro-vecinal")
         val event = viewModel.uiState.value.event!!

@@ -2,7 +2,7 @@
 
 Aplicación Android para descubrir, crear y participar en eventos comunitarios del Quindío. Es parte del proyecto de clase: una única `MainActivity` con Jetpack Compose, Material 3, `ViewModel` + `StateFlow` y Navigation Compose con rutas tipadas. Las pantallas replican los mockups de la carpeta `mockups/`.
 
-Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Firebase**: registro, inicio de sesión, cierre de sesión y recuperación de contraseña con **Firebase Authentication**, y los datos en **Cloud Firestore**: perfiles, historial de puntos, eventos, comentarios, asistencias, intereses y notificaciones. Los cambios se ven en tiempo real y los permisos se aplican en la base de datos con reglas de seguridad (`firestore.rules`). La sesión se mantiene al cerrar la app si se marca «Recordar este dispositivo» (preferencia guardada con DataStore).
+Estamos cerrando la fase 3 **en debug**; R8, firma, release y App Distribution se preparan después. La app usa **Firebase Authentication** para cuentas/recuperación y **Cloud Firestore** para perfiles, historial, eventos, comentarios, participación y notificaciones internas. Usa listeners y DataStore para recordar el dispositivo. Las reglas locales se han endurecido y probado, pero **no están desplegadas y aún queda un bloqueo de seguridad en reputación genérica**. Ver [cierre funcional debug](docs/CIERRE_DEBUG_FASE3.md) para proveedores, recuperación de eliminación, evidencia y recorrido pendiente.
 
 ## Cuentas
 
@@ -26,7 +26,7 @@ Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Fireba
 - **Mis eventos:** pestañas por estado. Según el estado se puede editar, eliminar, reenviar un rechazado, **marcar como finalizado**, mostrar el **QR de asistencia**, ver los inscritos y enviarles un aviso.
 - **Notificaciones:** comentarios en mis eventos, verificación o rechazo (con el motivo), avisos de organizadores, eventos finalizados, insignias y subidas de nivel. Se marcan como leídas o no leídas y abren el evento relacionado.
 - **Perfil:** nivel, puntos, ruta de los 4 niveles, estadísticas, insignias, eventos recientes y cierre de sesión.
-- **Editar perfil:** **foto de perfil** (cámara o galería), datos personales, ciudad, **ubicación en el mapa**, intereses y **eliminar la cuenta** (borra también sus eventos, comentarios y asistencias).
+- **Editar perfil:** foto, datos, mapa, intereses y eliminación con **contraseña actual antes de borrar datos**. Cancelar/contraseña incorrecta no inicia limpieza. Fallos posteriores pueden ser parciales: reintentar con la misma cuenta; límites/recuperación asistida en la guía de cierre. Cloudinary no se borra automáticamente.
 - **Mis estadísticas:** eventos activos, finalizados y pendientes, asistencias con QR, comentarios, alcance, tasa de cumplimiento, gráfica por categoría e historial de puntos.
 - **Check-in con QR:** el organizador muestra el QR de su evento; el asistente valida el código y suma puntos. También está el QR personal del usuario.
 
@@ -44,8 +44,20 @@ Estamos en la fase 3 (entrega final), que se hace por pasos. La app usa **Fireba
 
 - **Búsqueda de lugares:** el buscador del selector usa `SamplePlaces` (referencias locales), no búsqueda remota. El mapa y la geocodificación inversa sí son reales. Solo se usa una dirección del catálogo como respaldo al elegir expresamente uno de sus lugares; no se asigna una ciudad local a cualquier punto del mundo.
 - **Filtros de ubicación y fecha:** "En mi ciudad" usa las coordenadas: respeta el municipio de los lugares conocidos del catálogo local y, para otros puntos, aproxima por el centro más cercano. No depende del texto de la dirección ni usa límites municipales reales. "Esta semana" muestra inicios desde el momento actual hasta antes de siete días después.
-- **QR:** los códigos QR son reales (librería ZXing), pero no se usa la cámara: el escaneo se simula escribiendo el código o eligiendo un evento confirmado.
+- **QR:** ya no es simulado: ZXing Embedded abre la cámara y decodifica offline; se conserva entrada manual. Elegir un evento abre el escáner y exige su código, no fabrica una lectura. El usuario reportó lectura con cámara en Moto G15 y confirmación/+15/historial; saldo del reintento y misma cuenta en otro dispositivo siguen pendientes.
 - **Imágenes de ejemplo:** los eventos de muestra usan fotos de picsum.photos. Las fotos que suben los usuarios sí van a la nube (ver «Fotos en la nube»).
+
+## Galerías y check-in: actualización local
+
+Las fotos mantienen el orden de `imageUrls` y la primera como portada. Destacados y vista previa de recomendaciones usan flechas para no interferir con el swipe entre eventos; la lista completa permite deslizar fotos; Próximos usa un control compacto. El detalle permite swipe y avance circular cada 5 s, con pausa/reanudación, pausa al tocar y detención fuera de vista/segundo plano o con animaciones desactivadas. Se reutilizan Compose Foundation (BOM actual) y Coil, sin cambiar subidas ni esquema Firestore.
+
+`CheckInUseCase` usa `FirestoreCheckInRepository`: asistencia, saldo (+15 para usuario, 0 para moderador) e historial determinista se confirman en una transacción. Los reintentos no vuelven a premiar; una carrera se confirma con lecturas de servidor, nunca con éxito offline supuesto. Insignias/avisos son secundarios. Se conserva acceso sin inscripción si hay cupo, prohibición de evento propio y ausencia de ventana horaria explícita. Los check-ins históricos parciales no se reparan automáticamente.
+
+**Cierre debug 15/11:** `assembleDebug`, **200 unitarias**, **20 instrumentadas** en Pixel_9a (3 eliminación/diálogo contra emuladores + 17 regresiones), **16 Auth/Firestore locales** y **42 Worker** correctos. Lint: **0 errores, 62 advertencias, 1 sugerencia**; sin baseline/supresiones. Comando HTTP solicitado con JBR 25 pasó sus 7+9 pruebas conservando HttpServer. `git diff --check` correcto. Reglas modificadas solo localmente, sin despliegues/escrituras reales. Seguridad residual y recorridos externos pendientes en [cierre debug](docs/CIERRE_DEBUG_FASE3.md) y [auditoría](docs/FASE3_AUDITORIA.md).
+
+El equipo reportó desplegada y usada la revisión IA `ai-dual-2026-11-11-2`, con categorías y recomendaciones remotas/locales visibles. No se ha vuelto a consultar/desplegar el Worker en esta pasada; no hay un pendiente confirmado de volverlo a desplegar. 429/503 y POST reales Inicio → Ver todos siguen por medir. La propuesta local de reglas/contrato QR requiere revisión coordinada con clientes antes de cualquier despliegue futuro, no activación de facturación.
+
+**Actualización 15/11:** Moto G15: QR y swipe/autoplay del detalle reportados por el usuario. El mensaje de reintento ya registrado no certifica todavía saldo invariable; capturas de 117/146 no son un antes/después. Se corrigió el subtítulo QR en ambos idiomas y se sustituyó Cancelar asistencia por estado deshabilitado tras check-in, conforme a la prohibición ya existente; cancelar antes sigue permitido. Evidencia/pendientes en la guía de pruebas. Para compartir todos los cambios previos, ver [selección sugerida de commit](docs/REVISION_COMMIT_FASE3.md).
 
 ## Mapbox: integración incremental
 
@@ -77,7 +89,7 @@ Mapbox sigue mostrando el mapa; `AndroidGeocodingRepository` usa **`android.loca
 
 `MapBoxSmokeTest` contiene tres pruebas instrumentadas aisladas, sin escrituras en Firebase: carga real y selección de un evento local por ID, selección/reselección de coordenadas por toque y bloqueo de selección en modo de solo lectura. Se repitieron correctamente en Pixel_9a. `GeocodingSmokeTest` pasó otras cuatro: consulta real del servicio Android para un punto público, mapeo de dirección/municipio, confirmar una dirección encontrada en la UI y edición manual durante una consulta pendiente. Se revisó una captura del selector. No verifican agrupación, GPS/permisos ni navegación autenticada completa. Las advertencias de destino Compose de Mapbox y la deprecación de la regla Compose usada en instrumentación siguen pendientes.
 
-Última comprobación (10 de noviembre de 2026, tras corregir inscripción propia y mensajes de permiso de cámara): **165 pruebas unitarias aprobadas**, `assembleDebug` y `lintDebug` correctos. Lint reporta **0 errores, 59 advertencias y 1 sugerencia**, sin supresiones ni baseline. Los mensajes de cámara en crear evento y editar perfil usan `stringResource` (guía 14). Las cinco pruebas nuevas cubren bloqueo del organizador en asistencia/check-in, ausencia de puntos o cupos consumidos, UI state, cancelación de inscripción antigua y exclusión del check-in pendiente. No se repitieron pruebas instrumentadas ni el recorrido visual de estos últimos cambios: no había dispositivo conectado. No hubo escrituras ni despliegues de Firebase.
+Referencia histórica (10 de noviembre de 2026, no comprobación actual): 165 unitarias y debug/Lint correctos (0 errores/59 advertencias/1 sugerencia) tras corregir inscripción propia y mensajes de permiso de cámara. Las comprobaciones actuales se registran en la auditoría, separadas de la evidencia manual.
 
 ## Fotos en la nube
 
@@ -92,14 +104,38 @@ cloudinary.uploadPreset=<preset sin firma>
 
 El preset se crea en Cloudinary → Settings → Upload → Upload presets, con *Signing mode* = Unsigned. Sin estos datos la app funciona, pero no puede guardar fotos nuevas.
 
+## Sugerencia de categoría con IA
+
+Crear/editar evento incluye sugerencia mediante Cloudflare Worker, ID tokens Firebase y `openrouter/free`. El equipo reportó desplegada `ai-dual-2026-11-11-2` y éxito con aceptación explícita; quedan estabilidad y diagnóstico de fallos intermitentes, no un despliegue pendiente confirmado. No confundir sugerencia con ranking de eventos ni tests simulados con éxito externo.
+
+La consulta automática espera 1,5 s sin cambios, con al menos 5 caracteres de título y 20 de descripción. La sugerencia requiere aceptación explícita; elegir una categoría manualmente cancela la consulta y detiene nuevas consultas automáticas. Al editar se conserva la categoría guardada y se consulta solo con el botón. Si falla la IA, el formulario sigue permitiendo selección manual y publicación normal.
+
+Para conectar el servicio desplegado, agregar su URL pública a `local.properties`:
+
+```properties
+ai.baseUrl=https://akj-events-ai.TU-SUBDOMINIO.workers.dev/
+```
+
+**La clave de OpenRouter nunca va en Android.** Se guarda como secreto `OPENROUTER_API_KEY` en el Worker. Instrucciones desde «Crear aplicación», límites gratuitos, privacidad, pruebas y limitaciones de autenticación/cuotas en [`worker/README.md`](worker/README.md). Sin URL, la app compila y explica que se debe elegir categoría manualmente. No se ha activado facturación ni se han desplegado servicios desde este cambio.
+
+### Recomendaciones de eventos con IA
+
+Inicio y «Recomendados para ti» comparten ViewModel y repositorio. Hilt conecta ahora `RemoteRecommendationRanker` a `POST /recommend-events`; `LocalRecommendationRanker` sigue como respaldo ante error, cuota, respuesta inválida o espera de actualización. Las pantallas indican «Ordenados con IA remota» o «Recomendaciones locales» sin presentar el respaldo como IA. «Eventos Destacados» conserva el orden por votos.
+
+Se mantienen filtros de elegibilidad, preselección de 24 candidatos, hasta 20 interacciones, validación de IDs/motivos y revalidación de sesión/contexto. Solo se envían textos breves de eventos, categorías, actividad e idioma; no perfil, dirección ni coordenadas. Caché remota 5 minutos, respaldo 60 segundos y máximo un intento por usuario/minuto en el repositorio; la cuota del Worker/OpenRouter se comparte con categorías. No hay consultas duplicadas solo por abrir la pantalla completa. Detalles y prueba remota/respaldo en [`features/recommendations/README.md`](app/src/main/java/co/edu/uniquindio/akjevents/features/recommendations/README.md).
+
+Estado: ambas rutas probadas localmente y éxito externo reportado por equipo; sin consultas reales ni despliegues en esta pasada. La matriz está en [`docs/FASE3_AUDITORIA.md`](docs/FASE3_AUDITORIA.md).
+
 Solo los eventos `VERIFIED` se muestran públicamente. Los rechazados y pendientes no aparecen en el feed ni en el mapa.
 
 ## Cómo ejecutar la app
 
 1. En Android Studio, selecciona **Open** y abre la carpeta del proyecto (la que contiene `settings.gradle.kts`).
-2. Espera a que termine **Gradle Sync**. El proyecto usa JDK 17, Gradle 9.6 y Android SDK 37; instala los componentes que Android Studio indique.
+2. En **Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK**, selecciona el JDK integrado de Android Studio (`jbr`). Espera a que termine **Gradle Sync**. El proyecto usa Gradle 9.6 y Android SDK 37; instala los componentes que Android Studio indique. La compilación local se comprobó con el JBR 25 incluido en Android Studio.
 3. Elige un emulador o dispositivo con Android 9 (API 28) o superior y pulsa **Run 'app'**.
 4. Crea una cuenta desde Registro o inicia sesión con una cuenta existente.
+
+**Si la terminal muestra `JAVA_HOME is set to an invalid directory`:** la variable apunta a una instalación de Java inexistente. Configura `JAVA_HOME` en las variables de entorno de tu usuario con la carpeta del JDK integrado de tu instalación de Android Studio (por ejemplo, `C:\Program Files\Android\Android Studio\jbr`, sin añadir `\bin`). Cierra y vuelve a abrir Android Studio y la terminal para cargar el cambio. No guardes rutas de Java específicas de tu equipo en `gradle.properties`.
 
 El archivo `app/google-services.json` conecta la app con el proyecto de Firebase `akj---events`.
 
@@ -129,7 +165,7 @@ Desde la terminal, en la raíz del proyecto (`.\gradlew.bat` en PowerShell):
 
 Dentro de `app/src/main/java/co/edu/uniquindio/akjevents/`:
 
-- `core/`: tema, componentes compartidos (barras, tarjetas, mapa simulado, QR) y utilidades (`RequestResult`, validación, formatos, búsqueda).
+- `core/`: tema, componentes compartidos (barras, tarjetas, Mapbox, galerías, QR) y utilidades (`RequestResult`, validación, formatos, búsqueda).
 - `domain/`: modelos (`CommunityEvent`, `User`, `Comment`, `AppNotification`, insignias, niveles, puntos...), las interfaces de los repositorios y los casos de uso (`domain/usecase/`), que aplican las reglas: permisos, puntos, insignias y notificaciones.
 - `data/`: los repositorios, que solo guardan y consultan datos: `FirebaseUserRepository` (Authentication + Firestore), `FirestoreEventRepository` y `FirestoreNotificationRepository`, con sus DTO en `data/remote/`; la preferencia de sesión con DataStore; los repositorios en memoria, que usan las pruebas unitarias, y los datos de demostración.
 - `di/`: los módulos de Hilt: `RepositoryModule` (qué implementación usar para cada repositorio), `FirebaseModule` (instancias de Firebase), `NetworkModule` (Retrofit para Cloudinary) y `CoroutinesModule`.
@@ -146,6 +182,6 @@ Las dependencias las crea Hilt: pantalla (`hiltViewModel()`) → ViewModel → c
 4. ~~Eventos, comentarios, asistencias y notificaciones en Firestore, con reglas de seguridad y datos de ejemplo.~~
 5. ~~Fotos de eventos y de perfil con cámara o galería, subidas a Cloudinary.~~
 6. Mapa real con Mapbox y permiso de ubicación: Explorar, selector y detalle integrados; GPS opcional y geocodificación inversa con Geocoder de Android. Pendientes búsqueda remota, mejoras visuales y validación completa en teléfono.
-7. Sugerencia de categoría con IA (OpenRouter), siempre con opción de cambiarla.
-8. APK release distribuido con Firebase App Distribution.
+7. Dos funciones IA implementadas, éxito externo reportado; cerrar recorridos/estabilidad sin consumir cuota en bucles. Ver `worker/README.md`.
+8. APK release/App Distribution: **siguiente etapa**, no parte del cierre debug actual.
 9. Documentación de los servicios, bibliotecas y herramientas usadas.

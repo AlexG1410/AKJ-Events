@@ -89,7 +89,7 @@ class TestUseCases(
     val observeComments = ObserveCommentsUseCase(events)
     val confirmAttendance = ConfirmAttendanceUseCase(events)
     val cancelAttendance = CancelAttendanceUseCase(events)
-    val checkIn = CheckInUseCase(events, awardPoints, awardBadge)
+    val checkIn = CheckInUseCase(events, co.edu.uniquindio.akjevents.data.repository.InMemoryCheckInRepository(events, users), awardBadge, notifications)
     val toggleInterest = ToggleInterestUseCase(events, awardPoints, awardBadge)
     val addComment = AddCommentUseCase(events, users, notifications, awardPoints, awardBadge)
 

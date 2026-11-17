@@ -1,6 +1,8 @@
 package co.edu.uniquindio.akjevents.di
 
-import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRanker
+import co.edu.uniquindio.akjevents.data.repository.remote.RemoteRecommendationRanker
+import co.edu.uniquindio.akjevents.data.repository.remote.RemoteCategorySuggestionRepository
+import co.edu.uniquindio.akjevents.domain.repository.CategorySuggestionRepository
 import co.edu.uniquindio.akjevents.data.repository.LocalRecommendationRepository
 import co.edu.uniquindio.akjevents.data.repository.local.DataStoreSessionPreferences
 import co.edu.uniquindio.akjevents.data.repository.remote.CloudinaryImageRepository
@@ -32,6 +34,12 @@ import javax.inject.Singleton
 abstract class RepositoryModule {
 
     @Binds
+    abstract fun bindCheckInRepository(impl: co.edu.uniquindio.akjevents.data.repository.remote.FirestoreCheckInRepository): co.edu.uniquindio.akjevents.domain.repository.CheckInRepository
+
+    @Binds
+    abstract fun bindCategorySuggestionRepository(impl: RemoteCategorySuggestionRepository): CategorySuggestionRepository
+
+    @Binds
     @Singleton
     abstract fun bindGeocodingRepository(impl: AndroidGeocodingRepository): GeocodingRepository
 
@@ -60,5 +68,5 @@ abstract class RepositoryModule {
     abstract fun bindRecommendationRepository(impl: LocalRecommendationRepository): RecommendationRepository
 
     @Binds
-    abstract fun bindRecommendationRanker(impl: LocalRecommendationRanker): RecommendationRanker
+    abstract fun bindRecommendationRanker(impl: RemoteRecommendationRanker): RecommendationRanker
 }

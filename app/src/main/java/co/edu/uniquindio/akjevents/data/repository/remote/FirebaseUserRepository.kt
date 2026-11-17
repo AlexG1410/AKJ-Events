@@ -17,9 +17,10 @@ import co.edu.uniquindio.akjevents.domain.repository.ProfileUpdateResult
 import co.edu.uniquindio.akjevents.domain.repository.RegisterResult
 import co.edu.uniquindio.akjevents.domain.repository.UserRepository
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.EmailAuthProvider
+import kotlinx.coroutines.CancellationException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
-import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.DocumentSnapshot
@@ -61,6 +62,7 @@ class FirebaseUserRepository @Inject constructor(
 
     private val usersCollection = firestore.collection(USERS)
     private val historyCollection = firestore.collection(POINTS_HISTORY)
+    @Volatile private var finalizingDeletionUid: String? = null
 
     /** UID de la sesión de Authentication; cambia al iniciar o cerrar sesión. */
     private val sessionUid: Flow<String?> = callbackFlow {
@@ -100,6 +102,7 @@ class FirebaseUserRepository @Inject constructor(
     override suspend fun logout() = auth.signOut()
 
     override suspend fun sendPasswordReset(email: String) {
+        auth.useAppLanguage()
         auth.sendPasswordResetEmail(email.trim()).await()
     }
 
@@ -151,7 +154,12 @@ class FirebaseUserRepository @Inject constructor(
             interests = updated.interests,
             profilePictureUrl = updated.profilePictureUrl
         )
-        usersCollection.document(saved.id).set(UserDto.fromDomain(saved)).await()
+        // No sobrescribir puntos/insignias/rol con una lectura vieja mientras otro dispositivo hace check-in.
+        usersCollection.document(saved.id).update(mapOf(
+            "name" to saved.name, "city" to saved.city, "address" to saved.address,
+            "latitude" to saved.location.latitude, "longitude" to saved.location.longitude,
+            "interests" to saved.interests.map { it.name }, "profilePictureUrl" to saved.profilePictureUrl
+        )).await()
 
         val newEmail = updated.email.trim()
         if (newEmail.equals(existing.email, ignoreCase = true)) return ProfileUpdateResult.UPDATED
@@ -163,20 +171,44 @@ class FirebaseUserRepository @Inject constructor(
         }
     }
 
+    override suspend fun reauthenticate(userId: String, password: String): Boolean {
+        val user = auth.currentUser?.takeIf { it.uid == userId } ?: return false
+        val email = user.email ?: return false
+        return try {
+            user.reauthenticate(EmailAuthProvider.getCredential(email, password)).await()
+            auth.currentUser?.uid == userId
+        } catch (_: FirebaseAuthInvalidCredentialsException) { false }
+          catch (_: FirebaseAuthInvalidUserException) { false }
+    }
+
+    override suspend fun beginAccountDeletion(userId: String) {
+        check(auth.currentUser?.uid == userId)
+        usersCollection.document(userId).update("deletionPending", true).await()
+    }
+
     override suspend fun deleteAccount(userId: String): Boolean {
         val firebaseUser = auth.currentUser?.takeIf { it.uid == userId } ?: return false
+        // Mantener una copia para recuperar el perfil si Auth rechaza el paso final.
+        val profile = usersCollection.document(userId).get().await().data ?: return false
         val history = historyCollection.whereEqualTo(FIELD_USER_ID, userId).get().await()
-        firestore.runBatch { batch ->
-            history.documents.forEach { batch.delete(it.reference) }
-            batch.delete(usersCollection.document(userId))
-        }.await()
+        history.documents.chunked(400).forEach { chunk ->
+            firestore.runBatch { batch -> chunk.forEach { batch.delete(it.reference) } }.await()
+        }
+        finalizingDeletionUid = userId
         return try {
+            usersCollection.document(userId).delete().await()
             firebaseUser.delete().await()
             true
-        } catch (e: FirebaseAuthRecentLoginRequiredException) {
-            // Firebase pide un inicio de sesión reciente para borrar la cuenta: se cierra la sesión para reintentar
-            auth.signOut()
-            false
+        } catch (error: Exception) {
+            // No cerrar sesión: conservar acceso para reautenticar y reintentar la limpieza idempotente.
+            // Si también falla restaurar (red/cierre de proceso), se requiere recuperación asistida.
+            withContext(NonCancellable) {
+                if (auth.currentUser?.uid == userId) runCatching { usersCollection.document(userId).set(profile).await() }
+            }
+            if (error is CancellationException) throw error
+            throw error
+        } finally {
+            finalizingDeletionUid = null
         }
     }
 
@@ -239,7 +271,8 @@ class FirebaseUserRepository @Inject constructor(
             } else if (snapshot != null && !snapshot.exists()) {
                 Log.w("AKJUserProfile", "Authenticated account has no profile document")
             }
-            trySend(snapshot?.toUser())
+            // No navegar al Login por la ventana entre borrar perfil y confirmar Auth/compensación.
+            if (!(snapshot?.exists() == false && finalizingDeletionUid == uid)) trySend(snapshot?.toUser())
         }
         awaitClose { registration.remove() }
     }

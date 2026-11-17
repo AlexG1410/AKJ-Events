@@ -123,6 +123,15 @@ class InMemoryUserRepository(
         ProfileUpdateResult.UPDATED
     }
 
+    override suspend fun reauthenticate(userId: String, password: String): Boolean = synchronized(lock) {
+        val user = _currentUser.value?.takeIf { it.id == userId } ?: return@synchronized false
+        passwords[user.email.lowercase()] == password
+    }
+
+    override suspend fun beginAccountDeletion(userId: String) {
+        check(_currentUser.value?.id == userId)
+    }
+
     override suspend fun deleteAccount(userId: String): Boolean = synchronized(lock) {
         val user = userById(userId) ?: return false
         _users.update { list -> list.filterNot { it.id == userId } }

@@ -18,7 +18,8 @@ data class RecommendationCandidate(
 data class RecommendationRequest(
     val interests: Set<EventCategory>,
     val interactions: List<RecommendationInteraction>,
-    val candidates: List<RecommendationCandidate>
+    val candidates: List<RecommendationCandidate>,
+    val language: String = "en"
 )
 
 /** Contrato de salida del clasificador: solo referencias a los candidatos recibidos. */
@@ -26,8 +27,11 @@ data class RankedRecommendation(val eventId: String, val reason: String)
 
 data class RecommendedEvent(val event: CommunityEvent, val reason: String, val distanceKm: Double)
 
+enum class RecommendationSource { LOCAL, REMOTE }
+
 data class RecommendationFeed(
     val userId: String? = null,
     val items: List<RecommendedEvent> = emptyList(),
-    val hasPersonalization: Boolean = false
+    val hasPersonalization: Boolean = false,
+    val source: RecommendationSource = RecommendationSource.LOCAL
 )

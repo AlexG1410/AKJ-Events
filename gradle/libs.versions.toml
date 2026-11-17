@@ -1,5 +1,5 @@
 [versions]
-agp = "9.4.1"
+agp = "9.3.0"
 mapbox = "11.22.0"
 coreKtx = "1.19.1"
 junit = "4.13.2"
@@ -16,6 +16,7 @@ navigationCompose = "2.10.2"
 kotlinxSerialization = "1.11.0"
 kotlinxCoroutines = "1.10.2"
 zxing = "3.5.3"
+zxingEmbedded = "4.3.0"
 hiltAndroid = "2.60.1"
 hiltNavigationCompose = "1.4.0"
 ksp = "2.3.6"
@@ -35,6 +36,7 @@ androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecyc
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
@@ -49,6 +51,7 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref= "kotlinxSerialization" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+zxing-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingEmbedded" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hiltAndroid" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }

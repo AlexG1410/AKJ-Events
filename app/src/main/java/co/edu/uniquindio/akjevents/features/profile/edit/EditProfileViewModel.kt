@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
 
 data class EditProfileUiState(
     val user: User? = null,
@@ -148,13 +149,15 @@ class EditProfileViewModel @Inject constructor(
     }
 
     /** Borra la cuenta junto con sus eventos, comentarios y participación, y cierra la sesión. */
-    fun deleteAccount() {
+    fun deleteAccount(password: String) {
         val state = _uiState.value
         val user = state.user ?: return
         if (state.isBusy) return
         _uiState.update { it.copy(result = RequestResult.Loading) }
         viewModelScope.launch {
-            val deleted = runCatching { deleteAccountUseCase(user.id) }.getOrDefault(false)
+            val deleted = try { deleteAccountUseCase(user.id, password) }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { false }
             _uiState.update {
                 if (deleted) it.copy(isAccountDeleted = true, result = null)
                 else it.copy(result = RequestResult.Failure(resources.getString(R.string.edit_profile_error_delete)))

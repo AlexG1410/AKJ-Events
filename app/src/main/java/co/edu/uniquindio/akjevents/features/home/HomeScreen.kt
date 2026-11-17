@@ -82,7 +82,6 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.R
 import co.edu.uniquindio.akjevents.core.component.CapacityBar
 import co.edu.uniquindio.akjevents.core.component.CategoryChip
-import co.edu.uniquindio.akjevents.core.component.EventImage
 import co.edu.uniquindio.akjevents.core.component.FilterPill
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
@@ -393,7 +392,7 @@ private fun SectionHeader(icon: ImageVector, iconTint: Color, title: String, act
 }
 
 @Composable
-private fun FeaturedEventCard(
+internal fun FeaturedEventCard(
     event: CommunityEvent,
     isInterested: Boolean,
     onOpen: () -> Unit,
@@ -404,12 +403,11 @@ private fun FeaturedEventCard(
     Surface(onClick = onOpen, modifier = modifier, shape = shape, color = Color.White, shadowElevation = 3.dp) {
         Column {
             Box(modifier = Modifier.fillMaxWidth().height(176.dp)) {
-                EventImage(event, Modifier.fillMaxSize())
-                Box(
+                co.edu.uniquindio.akjevents.core.component.EventPhotoGallery(event, Modifier.fillMaxSize(), imageOverlay = { Box(
                     Modifier
                         .fillMaxSize()
                         .background(Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent, Color.Black.copy(alpha = 0.6f))))
-                )
+                ) })
                 Column(
                     modifier = Modifier
                         .padding(12.dp)
@@ -424,12 +422,12 @@ private fun FeaturedEventCard(
                 }
                 CategoryChip(event.category, showIcon = true, modifier = Modifier.align(Alignment.TopEnd).padding(12.dp))
                 Row(
-                    modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth().padding(start = 12.dp, end = if (event.imageUrls.size > 1) 96.dp else 12.dp, top = 8.dp, bottom = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Icon(Icons.Outlined.Schedule, contentDescription = null, tint = TertiaryFixed, modifier = Modifier.size(16.dp))
-                    Text(EventFormat.weekdayDateTime(event.startsAt), color = Color.White, fontSize = 12.sp)
+                    Text(EventFormat.weekdayDateTime(event.startsAt), color = Color.White, fontSize = 12.sp, maxLines = 2)
                 }
             }
 
@@ -533,7 +531,7 @@ private fun CapacitySummary(event: CommunityEvent) {
 }
 
 @Composable
-private fun UpcomingEventCard(
+internal fun UpcomingEventCard(
     event: CommunityEvent,
     isInterested: Boolean,
     distanceKm: Double?,
@@ -545,7 +543,7 @@ private fun UpcomingEventCard(
         Column(modifier = Modifier.padding(12.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(modifier = Modifier.size(96.dp).clip(RoundedCornerShape(12.dp))) {
-                    EventImage(event, Modifier.fillMaxSize())
+                    co.edu.uniquindio.akjevents.core.component.EventPhotoGallery(event, Modifier.fillMaxSize(), co.edu.uniquindio.akjevents.core.component.PhotoGalleryMode.COMPACT)
                     Text(
                         "${event.startsAt.dayOfMonth} ${EventFormat.monthBadge(event.startsAt)}",
                         color = Color.White,

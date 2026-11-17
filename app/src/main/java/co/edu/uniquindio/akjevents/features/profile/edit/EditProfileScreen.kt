@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import co.edu.uniquindio.akjevents.R
-import co.edu.uniquindio.akjevents.core.component.ConfirmDialog
 import co.edu.uniquindio.akjevents.core.component.FormFieldStyle
 import co.edu.uniquindio.akjevents.core.component.FormTextField
 import co.edu.uniquindio.akjevents.core.component.ImagePickerSheet
@@ -237,18 +236,43 @@ fun EditProfileScreen(
     ImagePickerSheet(imagePicker)
 
     if (confirmDelete) {
-        ConfirmDialog(
-            title = stringResource(R.string.edit_profile_delete_title),
-            message = stringResource(R.string.edit_profile_delete_message),
-            confirmText = stringResource(R.string.edit_profile_delete_confirm),
-            isDestructive = true,
-            onConfirm = {
-                confirmDelete = false
-                viewModel.deleteAccount()
-            },
+        DeleteAccountDialog(
+            onConfirm = { password -> confirmDelete = false; viewModel.deleteAccount(password) },
             onDismiss = { confirmDelete = false }
         )
     }
+}
+
+/** La contraseña solo vive en memoria mientras el diálogo está abierto; nunca en SavedState/logs. */
+@Composable
+internal fun DeleteAccountDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    var password by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = { password = ""; onDismiss() },
+        title = { Text(stringResource(R.string.edit_profile_delete_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.edit_profile_delete_reauth))
+                androidx.compose.material3.OutlinedTextField(
+                    value = password, onValueChange = { password = it },
+                    // Sin etiqueta flotante: el tema proporcional em y los estilos M3 en sp
+                    // no pueden interpolarse; el placeholder conserva el texto accesible.
+                    placeholder = { Text(stringResource(R.string.field_password)) },
+                    singleLine = true,
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(enabled = password.isNotBlank(), onClick = {
+                val credential = password; password = ""; onConfirm(credential)
+            }) { Text(stringResource(R.string.edit_profile_delete_confirm), color = Terracotta) }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = { password = ""; onDismiss() }) { Text(stringResource(R.string.action_cancel)) }
+        }
+    )
 }
 
 /** Foto circular con el botón de cámara para cambiarla (mockup 13). */
